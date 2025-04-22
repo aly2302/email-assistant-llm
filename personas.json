@@ -19,6 +19,7 @@
       "recipient_adaptation_rules": {
         "professor": {"tone": "Formal", "greeting": "Caro(a) Professor(a) [Apelido],", "farewell": "Com os melhores cumprimentos,\nRodrigo Novelo"},
         "colleague_student": {"tone": "Casual", "greeting": "Olá [Nome],", "farewell": "Abraço,\nRodrigo"},
+        
         "admin_services": {"tone": "FormalFuncional", "greeting": "Exmos(as). Senhores(as),", "farewell": "Com os melhores cumprimentos,\nRodrigo Novelo"},
         "external_formal": {"tone": "Formal", "greeting": "Boa tarde/noite,", "farewell": "Com os melhores cumprimentos,\nRodrigo Novelo"},
         "research_collaborator_external": {"tone": "FormalColaborativo", "greeting": "Estimado(a) Professor(a)/Doutor(a) [Apelido],", "farewell": "Com os melhores cumprimentos,\nRodrigo Novelo"},

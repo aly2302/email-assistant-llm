@@ -19,6 +19,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - [%
 APP_HOST = os.environ.get('APP_HOST', '127.0.0.1')
 APP_PORT = int(os.environ.get('APP_PORT', 5001))
 GENERATION_TEMPERATURE = float(os.environ.get('GENERATION_TEMPERATURE', 0.8)) # Temperatura padrão para geração criativa
+REFINEMENT_TEMPERATURE = float(os.environ.get('REFINEMENT_TEMPERATURE', 0.6))
 DEBUG_MODE = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
 
 # --- Gemini Configuration ---
@@ -727,6 +728,79 @@ Sugestão de Texto de Resposta para este Ponto:
 """
     return system_prompt
 
+
+
+# --- PROMPT 4: REFINAMENTO DE TEXTO ---
+def build_prompt_4_refinement(persona, selected_text, full_context, action):
+    """
+    Constrói o prompt para solicitar um REFINAMENTO específico (Prompt 4)
+    numa parte selecionada do texto do rascunho, mantendo a persona.
+
+    Args:
+        persona (dict): O dicionário da persona selecionada.
+        selected_text (str): O trecho de texto selecionado pelo utilizador.
+        full_context (str): O texto completo do rascunho atual (para contexto).
+        action (str): A chave da ação de refinamento a realizar (ex: "make_formal").
+
+    Returns:
+        str: O prompt formatado para o LLM realizar o refinamento.
+    """
+    # Informações básicas da Persona para consistência
+    persona_lang = persona.get("attributes", {}).get("language", "pt-PT")
+    lang_instruction = f"Usa exclusivamente {persona_lang}."
+    persona_info = f"System: Aja como {persona['name']} ({persona.get('role', 'Assistente')}). Mantenha o estilo e tom geral da persona (Tom Base: {persona.get('attributes', {}).get('tone', 'Neutro')}, Linguagem: {lang_instruction})."
+
+    # Descrições das ações para o LLM entender a tarefa
+    action_instructions = {
+        "make_formal": "Reescreva o 'Texto Selecionado' abaixo para ser significativamente mais formal, adequado ao 'Contexto Completo'. Use linguagem e tratamento formais.",
+        "make_casual": "Reescreva o 'Texto Selecionado' abaixo para ser mais casual e direto, adequado ao 'Contexto Completo'. Use linguagem informal apropriada para a persona, se aplicável.",
+        "shorten": "Encurte significativamente o 'Texto Selecionado' abaixo, preservando o seu significado central. Torne-o conciso e direto ao ponto, encaixando no 'Contexto Completo'. Remova redundâncias.",
+        "expand": "Elabore sobre o 'Texto Selecionado' abaixo, adicionando detalhes ou explicações relevantes, mantendo o tópico e encaixando no 'Contexto Completo'. Mantenha o estilo da persona.",
+        "simplify": "Simplifique a linguagem e a estrutura das frases do 'Texto Selecionado' abaixo, tornando-o mais fácil de entender, mas mantendo o significado e encaixando no 'Contexto Completo'.",
+        "improve_flow": "Reescreva o 'Texto Selecionado' abaixo para melhorar a sua fluidez e ligação com o 'Contexto Completo'. Ajuste a formulação e adicione transições se necessário.",
+        "rephrase": "Reescreva o 'Texto Selecionado' abaixo, expressando a mesma ideia central de uma forma diferente, encaixando no 'Contexto Completo'.",
+        "translate_en": "Traduza o 'Texto Selecionado' abaixo de forma precisa para um Inglês que soe natural, considerando o 'Contexto Completo'."
+    }
+
+    # Obtém a instrução específica ou uma genérica se a ação não for reconhecida
+    instruction = action_instructions.get(action, f"Modifique o 'Texto Selecionado' conforme solicitado ({action}), garantindo que se encaixa no 'Contexto Completo'.")
+
+    # Construção do prompt final
+    prompt = f"""{persona_info}
+
+A sua tarefa é refinar uma parte específica de um rascunho de email, conforme instruído.
+
+**Ação Requerida:** {instruction}
+
+**Contexto Completo (Rascunho Atual):**
+---
+{full_context}
+---
+
+**Texto Selecionado (A parte a modificar):**
+---
+{selected_text}
+---
+
+**Regras de Saída OBRIGATÓRIAS:**
+1.  Modifique APENAS o 'Texto Selecionado' de acordo com a 'Ação Requerida'.
+2.  MANTENHA o estilo e a voz da persona {persona['name']} na sua resposta.
+3.  GARANTA que o texto modificado se encaixa naturalmente no 'Contexto Completo'.
+4.  **RETORNE APENAS O TEXTO MODIFICADO.** Não inclua o contexto completo, nem explicações, nem marcadores como "Texto Modificado:", nem ```. Apenas o segmento de texto resultante da modificação.
+
+Texto Modificado:
+"""
+    # Log do prompt de refinamento em modo debug
+    if DEBUG_MODE:
+        logging.debug(f"--- DEBUG: PROMPT 4 (Refinement) Action: {action} Persona: {persona['name']} ---")
+        log_limit = 1500 # Limite para não sobrecarregar logs
+        logging.debug(f"Selected Text (len {len(selected_text)}): {selected_text[:log_limit//3]}...")
+        logging.debug(f"Full Context (len {len(full_context)}): {full_context[:log_limit//2]}...")
+        logging.debug(f"Generated Prompt (len {len(prompt)}): {prompt[:log_limit]}...")
+        logging.debug("--- FIM DEBUG PROMPT 4 ---")
+
+    return prompt
+
 # --- Rotas da Aplicação Flask ---
 
 @app.route('/')
@@ -949,6 +1023,70 @@ def draft_response_route(): # Renomeado
         })
 
 
+# --- NOVA ROTA: /refine_text ---
+@app.route('/refine_text', methods=['POST'])
+def refine_text_route():
+    """Endpoint para refinar um trecho selecionado do rascunho (Prompt 4)."""
+    # Validação do pedido JSON
+    if not request.json:
+        logging.warning("Pedido /refine_text inválido: Sem JSON.")
+        return jsonify({"error": "Pedido inválido (JSON esperado)."}), 400
+
+    required_fields = ['selected_text', 'full_context', 'action', 'persona_name']
+    if not all(field in request.json for field in required_fields):
+        missing = [field for field in required_fields if field not in request.json]
+        logging.warning(f"Pedido /refine_text inválido: Faltam dados: {missing}")
+        return jsonify({"error": f"Faltam dados no pedido: {', '.join(missing)}."}), 400
+
+    selected_text = request.json['selected_text']
+    full_context = request.json['full_context']
+    action = request.json['action']
+    persona_name = request.json['persona_name']
+
+    # Validações adicionais
+    if not selected_text: # Não refinar texto vazio
+         return jsonify({"error": "Nenhum texto selecionado para refinar."}), 400
+    if not PERSONAS:
+         logging.error("Erro crítico: PERSONAS não carregadas, impossível processar /refine_text.")
+         return jsonify({"error": "Erro interno do servidor: Definições de persona não disponíveis."}), 500
+    if persona_name not in PERSONAS:
+        logging.error(f"Persona '{persona_name}' não encontrada em /refine_text.")
+        return jsonify({"error": f"Persona '{persona_name}' não encontrada."}), 400
+
+    selected_persona = PERSONAS[persona_name]
+    logging.info(f"Solicitando Refinamento via Gemini. Ação: '{action}', Persona: {persona_name}, Texto (início): '{selected_text[:50]}...'")
+
+    # Constrói o prompt de refinamento (Prompt 4)
+    refinement_prompt = build_prompt_4_refinement(selected_persona, selected_text, full_context, action)
+
+    # Chama o LLM com temperatura mais baixa para edições focadas
+    llm_response_data = call_gemini(refinement_prompt, model=GEMINI_MODEL, temperature=REFINEMENT_TEMPERATURE)
+
+    # Verifica erros da API Gemini
+    if "error" in llm_response_data:
+        status_code = 503 if "TIMEOUT" in llm_response_data["error"] or "CONNECTION" in llm_response_data["error"] else 500
+        if "CONFIG" in llm_response_data["error"] or "BLOCKED" in llm_response_data["error"]: status_code = 400
+        logging.error(f"Erro na chamada Gemini para /refine_text: {llm_response_data['error']}")
+        return jsonify({"error": f"Falha ao refinar texto com o LLM: {llm_response_data['error']}"}), status_code
+
+    # Extrai o texto refinado
+    refined_text = llm_response_data.get("text", "").strip() # .strip() é importante aqui
+
+    # Verificação extra: Se o LLM devolver vazio (pode acontecer com pedidos de 'encurtar' extremos)
+    if not refined_text and action == 'shorten':
+        logging.warning(f"Refinamento 'shorten' resultou em texto vazio para a seleção: '{selected_text[:100]}...'")
+        # Poderíamos retornar uma string vazia ou talvez a original? Por agora, retorna vazio.
+        # Se quisermos evitar que desapareça texto, podemos retornar o texto selecionado original
+        # refined_text = selected_text # Descomentar para evitar que o texto desapareça
+
+    logging.info(f"Refinamento '{action}' concluído com sucesso. Texto refinado (início): '{refined_text[:100]}...'")
+    app.logger.debug(f"Texto Refinado Completo:\n{refined_text}")
+
+    # Retorna o texto refinado
+    return jsonify({"refined_text": refined_text})
+
+
+
 # --- Ponto de Entrada da Aplicação ---
 if __name__ == '__main__':
     # Logs iniciais ao arrancar a aplicação
@@ -974,6 +1112,8 @@ if __name__ == '__main__':
          logging.warning("Certifique-se de completar as Personas dos Professores (dos, donts, writing_examples) em 'personas.json' para melhores resultados.")
 
     logging.info(f"Default Generation Temperature: {GENERATION_TEMPERATURE}")
+    logging.info(f"Refinement Temperature: {REFINEMENT_TEMPERATURE}")
+
 
     # Inicia o servidor Flask
     # use_reloader=False é útil em debug para evitar que o código execute duas vezes ao iniciar

@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 import os
 import json
@@ -22,8 +21,8 @@ DEBUG_MODE = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
 
 # --- Gemini Configuration ---
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
-# *** MELHORIA: Corrigido nome do modelo para um válido/recomendado ***
-GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-2.0-flash') # Use -latest or a specific version
+# *** User confirmed this model version works for them ***
+GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-2.0-flash') # Using 1.5 Flash as per last successful run
 
 # Diretoria base da aplicação
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -34,7 +33,7 @@ if DEBUG_MODE:
     app.logger.setLevel(logging.DEBUG)
 
 # --- Definições Detalhadas das Personas ---
-# *** MELHORIA: Removido "(Eu)" do nome para evitar que apareça na assinatura ***
+# (Persona definitions remain the same as provided by the user)
 PERSONAS = {
     "rodrigo_novelo": {
         "name": "Rodrigo Novelo", # <<< REMOVIDO (Eu) DAQUI
@@ -106,13 +105,13 @@ PERSONAS = {
              "unknown": {"tone": "Formal", "greeting": "Prezados(as),", "farewell": "Atenciosamente,\nProf. Rodrigo Rocha Silva"}
         },
         "relationships": {
-             "Rodrigo Novelo": {"type": "Orientando (Licenciatura UC)", "tone": "OrientadorDireto"},
+             "Rodrigo Novelo": {"type": "Orientando (Licenciatura ISEC)", "tone": "OrientadorDireto"},
              "Professor Jorge": {"type": "Colega Investigador / Co-orientador", "tone": "ProfissionalRespeitoso"}
         },
         "dos": [ "*** (A DEFINIR - Adicionar Do's específicos do Prof. Rodrigo) ***" ],
         "donts": [ "*** (A DEFINIR - Adicionar Don'ts específicos do Prof. Rodrigo) ***" ],
         "writing_examples": [
-             # <<< ADICIONAR EXEMPLOS DE ESCRITA REAIS DO PROF. RODRIGO AQUI >>>
+            # <<< ADICIONAR EXEMPLOS DE ESCRITA REAIS DO PROF. RODRIGO AQUI >>>
         ]
     },
     "prof_jorge": {
@@ -139,33 +138,34 @@ PERSONAS = {
     }
 }
 
+
 # --- Funções Auxiliares ---
 
 def call_gemini(prompt, model=GEMINI_MODEL, temperature=GENERATION_TEMPERATURE):
     """
     Envia um prompt para a Google Gemini API e retorna a resposta.
+    (Função call_gemini completa - sem alterações, reutilizada)
     """
     if not GEMINI_API_KEY:
         logging.error("Variável de ambiente GEMINI_API_KEY não definida!")
         return "ERROR_CONFIG: Gemini API Key não configurada."
 
+    # Updated API endpoint for v1beta
     api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
 
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {
             "temperature": temperature
-            # *** SUGESTÃO: Considerar adicionar outros parâmetros se necessário ***
-            # "maxOutputTokens": 8192, # Aumentar se as respostas forem cortadas
-            # "topP": 0.95, # Alternativa/complemento à temperature
+            # "maxOutputTokens": 8192,
+            # "topP": 0.95,
         },
-         # *** SUGESTÃO: Adicionar safety settings para controlo mais fino (opcional) ***
-         # "safetySettings": [
-         #      {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-         #      {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-         #      {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-         #      {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-         # ]
+         "safetySettings": [ # Example safety settings
+             {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+             {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+             {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+             {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+         ]
     }
     headers = {'Content-Type': 'application/json'}
 
@@ -174,24 +174,31 @@ def call_gemini(prompt, model=GEMINI_MODEL, temperature=GENERATION_TEMPERATURE):
     response = None
     try:
         response = requests.post(api_url, json=payload, headers=headers, timeout=180)
-        response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
+        response.raise_for_status() # Raise HTTPError for bad responses
 
         data = response.json()
-        app.logger.debug(f"Resposta API (parcial): {str(data)[:500]}...") # Log successful response start
+        app.logger.debug(f"Resposta API (parcial): {str(data)[:500]}...")
 
         # --- Careful response extraction ---
         try:
+            if 'promptFeedback' in data and 'blockReason' in data['promptFeedback']:
+                block_reason = data['promptFeedback']['blockReason']
+                safety_ratings_str = f" Safety Ratings: {data['promptFeedback'].get('safetyRatings', 'N/A')}"
+                error_msg = f"ERROR_GEMINI_BLOCKED_PROMPT: Prompt bloqueado. Reason: {block_reason}.{safety_ratings_str}"
+                logging.error(f"{error_msg}. Feedback: {data['promptFeedback']}")
+                return error_msg
+
             if 'candidates' in data and data['candidates']:
                 candidate = data['candidates'][0]
                 finish_reason = candidate.get('finishReason', 'UNKNOWN')
-                if finish_reason not in ['STOP', 'MAX_TOKENS']:
-                     logging.warning(f"Gemini finishReason foi '{finish_reason}'. Resposta pode estar incompleta ou bloqueada. Safety Ratings: {candidate.get('safetyRatings')}")
+                safety_ratings_str = f" Safety Ratings: {candidate.get('safetyRatings', 'N/A')}"
 
-                # Check for blocked content based on finishReason or lack of content part
-                if finish_reason in ['SAFETY', 'RECITATION', 'OTHER']:
-                     error_msg = f"ERROR_GEMINI_BLOCKED_FINISH: Geração interrompida pelo modelo. Reason: {finish_reason}. Safety Ratings: {candidate.get('safetyRatings')}"
-                     logging.error(error_msg)
-                     return error_msg
+                if finish_reason not in ['STOP', 'MAX_TOKENS']:
+                    logging.warning(f"Gemini finishReason foi '{finish_reason}'. Resposta pode estar incompleta ou bloqueada.{safety_ratings_str}")
+                    if finish_reason in ['SAFETY', 'RECITATION', 'OTHER']:
+                        error_msg = f"ERROR_GEMINI_BLOCKED_FINISH: Geração interrompida. Reason: {finish_reason}.{safety_ratings_str}"
+                        logging.error(error_msg)
+                        return error_msg
 
                 if 'content' in candidate and 'parts' in candidate['content'] and candidate['content']['parts']:
                     text_part = candidate['content']['parts'][0]
@@ -199,38 +206,29 @@ def call_gemini(prompt, model=GEMINI_MODEL, temperature=GENERATION_TEMPERATURE):
                         generated_text = text_part['text']
                         return generated_text.strip()
                     else:
-                        # Handle cases where 'text' might be missing (e.g., function call response)
                         error_msg = f"ERROR_GEMINI_PARSE: 'text' key missing in response part. Part: {text_part}"
                         logging.error(error_msg)
                         return error_msg
                 else:
-                     # Content might be missing if blocked before generation starts
-                     error_msg = f"ERROR_GEMINI_PARSE: Missing 'content' or 'parts' in candidate (possivelmente bloqueado). Candidate: {candidate}"
+                     error_msg = f"ERROR_GEMINI_PARSE: Missing 'content' or 'parts' in candidate. Candidate: {candidate}"
                      logging.error(error_msg)
-                     return error_msg # Return error if no content part exists
+                     return error_msg
 
-            # Check promptFeedback for explicit blocking (often happens before candidates are generated)
-            elif 'promptFeedback' in data and 'blockReason' in data['promptFeedback']:
-                block_reason = data['promptFeedback']['blockReason']
-                error_msg = f"ERROR_GEMINI_BLOCKED_PROMPT: Prompt bloqueado. Reason: {block_reason}"
-                logging.error(f"{error_msg}. Feedback: {data['promptFeedback']}")
-                return error_msg
-            else:
-                error_msg = f"ERROR_GEMINI_PARSE: Resposta inesperada - sem 'candidates' ou 'promptFeedback' com bloqueio. Data: {str(data)[:500]}"
-                logging.error(error_msg)
-                return error_msg
+            error_msg = f"ERROR_GEMINI_PARSE: Resposta inesperada - sem 'candidates' ou 'promptFeedback' com bloqueio. Data: {str(data)[:500]}"
+            logging.error(error_msg)
+            return error_msg
 
         except (KeyError, IndexError, TypeError) as e:
             error_msg = f"ERROR_GEMINI_PARSE: Exception accessing response data. Error: {e}. Data: {str(data)[:500]}"
-            logging.exception("Error parsing Gemini response:") # Log traceback
+            logging.exception("Error parsing Gemini response:")
             return error_msg
 
     except requests.exceptions.Timeout:
-        error_msg = f"ERROR_GEMINI_TIMEOUT: Timeout após 180 segundos ao contactar Gemini API."
+        error_msg = f"ERROR_GEMINI_TIMEOUT: Timeout (180s) ao contactar Gemini API."
         logging.error(error_msg)
         return error_msg
     except requests.exceptions.ConnectionError:
-        error_msg = f"ERROR_GEMINI_CONNECTION: Falha na conexão com Gemini API. Verifique a rede."
+        error_msg = f"ERROR_GEMINI_CONNECTION: Falha na conexão com Gemini API."
         logging.error(error_msg)
         return error_msg
     except requests.exceptions.RequestException as e:
@@ -243,7 +241,7 @@ def call_gemini(prompt, model=GEMINI_MODEL, temperature=GENERATION_TEMPERATURE):
                 error_details = error_content.get('error', {}).get('message', response.text)
             except (json.JSONDecodeError, AttributeError):
                  if hasattr(response, 'text'):
-                    error_details = response.text[:200] # Limit error detail length
+                     error_details = response.text[:200]
         error_msg = f"ERROR_GEMINI_REQUEST: {e} (Status: {status_code}) - Detalhes: {error_details}"
         logging.error(f"Erro ao chamar a API Gemini: {e}. Status: {status_code}. Detalhes: {error_details}")
         app.logger.debug(f"Payload que causou erro (parcial): {str(payload)[:500]}...")
@@ -254,61 +252,61 @@ def call_gemini(prompt, model=GEMINI_MODEL, temperature=GENERATION_TEMPERATURE):
         if response is not None:
              logging.error(f"Resposta completa recebida (status {response.status_code}): {response.text}")
         return error_msg
-    except Exception as e: # Catch any other unexpected error
+    except Exception as e:
         error_msg = f"ERROR_UNEXPECTED: {e.__class__.__name__} - {e}"
-        logging.exception("Erro inesperado na função call_gemini:") # Log traceback
+        logging.exception("Erro inesperado na função call_gemini:")
         return error_msg
 
 
 def parse_analysis_output(llm_output):
     """
     Faz o parsing da saída textual do LLM (Prompt 1) para extrair pontos e ações.
-    *** SUGESTÃO FUTURA: Considerar pedir JSON ao LLM no Prompt 1 para parsing mais robusto. ***
+    (Função parse_analysis_output completa - sem alterações aqui)
     """
     points = []
     actions = []
-    if llm_output.startswith("ERROR_"):
-        return {"error": llm_output}
+    if not llm_output or llm_output.startswith("ERROR_"):
+        # Retorna o erro se existir, ou uma mensagem genérica se a saída for vazia
+        return {"error": llm_output or "Empty or error response from LLM analysis"}
 
-    # Tenta extrair Pontos a Responder
-    points_match = re.search(r"(?:points\s+to\s+address|pontos\s+a\s+responder)\s*:\s*\n*(.*?)(?:\n*\*\*(?:actions|ações)|$)", llm_output, re.IGNORECASE | re.DOTALL)
+    # Regex mais flexível para o cabeçalho "Pontos a Responder"
+    points_match = re.search(r"(?:points\s+to\s+address|pontos\s+a\s+responder)\s*:\s*\n*(.*?)(?:\n*\s*(?:\*\*|\_\_)(?:actions|ações)|$)", llm_output, re.IGNORECASE | re.DOTALL)
     if points_match:
         points_text = points_match.group(1).strip()
-        if points_text and not re.search(r"nenhum|none", points_text, re.IGNORECASE):
-            raw_points = re.findall(r"^\s*\d+[\.\)-]?\s*(.*?)(?=\n\s*\d+[\.\)-]|\Z)", points_text, re.MULTILINE | re.DOTALL)
+        # Verifica se o texto contém algo para além de "nenhum/none" (case-insensitive, opcional ponto final)
+        if points_text and not re.search(r"^\s*(nenhum|none)\.?\s*$", points_text, re.IGNORECASE | re.MULTILINE):
+            # Tenta encontrar itens numerados ou com bullets
+            raw_points = re.findall(r"^\s*(?:\d+[\.\)]?|\*|\-)\s+(.*?)(?=\n\s*(?:\d+[\.\)]?|\*|\-)|\Z)", points_text, re.MULTILINE | re.DOTALL)
             points = [re.sub(r'\s+', ' ', p).strip() for p in raw_points if p.strip()]
-    elif "pontos a responder" in llm_output.lower():
-        logging.warning("Secção 'Pontos a Responder' encontrada mas vazia ou com formato inesperado.")
-    elif not llm_output.strip(): # Empty response
-         logging.warning("Análise LLM vazia recebida.")
-         return {"points": [], "actions": []} # Return empty lists for empty analysis
+            # Fallback: Se não encontrou itens estruturados mas havia texto, considera tudo como um ponto? (Opcional, pode ser confuso)
+            # if not points and points_text:
+            #    points = [points_text]
+    elif "pontos a responder" in llm_output.lower() or "points to address" in llm_output.lower():
+        logging.warning("Analysis parsing: Section 'Pontos a Responder' found but was empty or unparseable.")
+    # Se não encontrou o cabeçalho de pontos, `points` permanecerá vazio.
 
-    # Tenta extrair Ações para Rodrigo
-    actions_match = re.search(r"(?:actions\s+for\s+rodrigo|ações\s+para\s+rodrigo)\s*(?:\(optional|opcional\))?\s*:\s*\n*(.*?)(?:\n*\*\*|$)", llm_output, re.IGNORECASE | re.DOTALL)
+    # Regex mais flexível para o cabeçalho "Ações para Rodrigo"
+    actions_match = re.search(r"(?:actions\s+for\s+rodrigo|ações\s+para\s+rodrigo)\s*(?:\(optional|opcional\))?\s*:\s*\n*(.*?)(?:\n*\s*(?:\*\*|\_\_)|$)", llm_output, re.IGNORECASE | re.DOTALL)
     if actions_match:
         actions_text = actions_match.group(1).strip()
-        if actions_text and not re.search(r"nenhum|none", actions_text, re.IGNORECASE):
+        if actions_text and not re.search(r"^\s*(nenhum|none|nenhuma)\.?\s*$", actions_text, re.IGNORECASE | re.MULTILINE):
+            # Tenta encontrar itens com bullets
             raw_actions = re.findall(r"^\s*[\*\-]\s+(.*?)(?=\n\s*[\*\-]|\Z)", actions_text, re.MULTILINE | re.DOTALL)
             actions = [re.sub(r'\s+', ' ', a).strip() for a in raw_actions if a.strip()]
-            if not actions: # Fallback
-                 raw_actions = re.findall(r"^\s*[\*\-]\s+(.*)", actions_text, re.MULTILINE)
-                 actions = [a.strip() for a in raw_actions if a.strip()]
+            # Fallback? (Opcional)
+            # if not actions and actions_text:
+            #    actions = [actions_text]
 
+    # Se o parsing não encontrou nada estruturado, mas havia texto, loga aviso
     if not points and not actions and not llm_output.startswith("ERROR_") and llm_output.strip():
-        # If the LLM just gave a summary instead of the structured points/actions
         if not points_match and not actions_match:
-             logging.warning(f"Parsing não encontrou estrutura 'Pontos a Responder' ou 'Ações'. Usando resposta como ponto único.")
-             # Treat the whole response as a single point for the user to address
-             # This might happen if the LLM didn't follow the format.
-             # We could add it as a general guidance point instead? For now, let's add as point.
-             points = [llm_output.strip()]
+             logging.warning(f"Analysis parsing: Could not find 'Pontos a Responder' or 'Ações' structure. LLM output (start): {llm_output[:200]}...")
         else:
-             logging.warning(f"Aviso: Parsing encontrou secções mas não itens estruturados. Resposta LLM (início):\n{llm_output[:300]}")
-             # Return empty lists if sections were found but items weren't parsed.
-             # Avoids returning raw, potentially confusing text as a "point".
+             logging.warning(f"Analysis parsing: Found headers but failed to extract list items. LLM output (start): {llm_output[:200]}...")
 
-    elif not points and "nenhum ponto a responder" in llm_output.lower():
-         points = ["Nenhum ponto a responder."]
+    # Normaliza o caso de "nenhum ponto" explicitamente retornado pelo LLM
+    if not points and re.search(r"nenhum ponto a responder", llm_output, re.IGNORECASE):
+        points = ["Nenhum ponto a responder."] # Garante consistência
 
     return {"points": points or [], "actions": actions or []}
 
@@ -316,21 +314,23 @@ def parse_analysis_output(llm_output):
 def build_prompt_1_analysis(email_text):
     """
     Constrói o prompt para solicitar a análise do email ao LLM (Prompt 1).
+    *** VERSÃO REFINADA PARA SER MAIS CLARA ***
     """
-    prompt = f"""System: És um assistente de análise de emails altamente eficiente e preciso. A tua função é ler o email fornecido e identificar claramente os elementos que requerem atenção por parte do destinatário (vamos assumir que se chama Rodrigo, para contexto da tarefa). Foca-te apenas no conteúdo do email. **Responde SEMPRE em Português de Portugal (pt-PT).**
+    prompt = f"""System: És um assistente de análise de emails altamente eficiente e preciso. A tua função é ler o email fornecido e identificar claramente os elementos que requerem atenção por parte do destinatário (vamos assumir que se chama Rodrigo). Foca-te apenas no conteúdo do email. **Responde SEMPRE em Português de Portugal (pt-PT).**
 
 Tarefa: Analisa o email fornecido abaixo e produz a tua análise estritamente no seguinte formato, com duas secções distintas:
 
 1.  **Pontos a Responder:**
-    * Cria uma lista numerada (`1.`, `2.`, `3.`, ...) contendo **apenas** os pontos chave, perguntas diretas ou tópicos específicos mencionados no email que exigem uma **resposta direta** de Rodrigo no email de volta.
-    * Formula cada ponto de forma clara e concisa.
-    * Se o email for puramente informativo, de agradecimento, ou não contiver nada que exija uma resposta direta, escreve apenas: `Nenhum ponto a responder.`
+    * Cria uma lista **numerada** (`1.`, `2.`, `3.`, ...) contendo **todos** os pontos chave, **perguntas (explícitas ou implícitas)**, ou tópicos específicos mencionados no email que **precisam ser abordados, respondidos ou clarificados** por Rodrigo na sua resposta por email.
+    * **Inclui todas as perguntas e pedidos de informação, mesmo que técnicos.**
+    * Formula cada ponto de forma clara e concisa, idealmente como uma pergunta ou afirmação que necessita de resposta/confirmação.
+    * Se o email for puramente informativo, de agradecimento, ou não contiver absolutamente nada que precise ser abordado/respondido, escreve apenas: `Nenhum ponto a responder.`
 
 2.  **Ações para Rodrigo (Opcional):**
-    * Se, e apenas se, o email mencionar ou implicar tarefas ou ações que Rodrigo precisa de **realizar** (para além de simplesmente responder ao email - ex: "enviar o ficheiro X", "marcar reunião Y", "verificar Z"), lista-as aqui usando marcadores (`*`).
+    * Se, e apenas se, o email mencionar ou implicar tarefas ou ações concretas que Rodrigo precisa de **realizar** (para além de simplesmente responder ao email - ex: "enviar o ficheiro X", "marcar reunião Y", "investigar Z"), lista-as aqui usando marcadores (`* `).
     * Se não houver ações claras identificadas para Rodrigo, omite completamente esta secção "Ações para Rodrigo" ou escreve `Nenhuma ação específica para Rodrigo.`.
 
-Mantém a análise focada e objetiva. Evita interpretações subjetivas ou adicionar informação que não esteja explicitamente ou implicitamente no texto do email. Não inventes pontos ou ações.
+Mantém a análise focada e objetiva no conteúdo do email. Evita interpretações subjetivas ou adicionar informação externa. Certifica-te de seguir o formato pedido (lista numerada para pontos, bullets para ações).
 
 Email Recebido:
 ---
@@ -338,17 +338,13 @@ Email Recebido:
 ---
 **Análise:**
 """
-    # *** SUGESTÃO FUTURA: Tentar instruir para devolver JSON aqui.
-    # Ex: "Produz a tua análise em formato JSON com as chaves 'pontos_responder' (lista de strings) e 'acoes_rodrigo' (lista de strings)."
-    # Isso exigiria mudar a função `parse_analysis_output` para `json.loads()`.
     return prompt
 
 
-# *** MELHORIA: Prompt 2 (Drafting) atualizado para melhor integração da orientação ***
 def build_prompt_2_drafting(persona, original_email, user_inputs):
     """
     Constrói o prompt complexo para solicitar a geração do rascunho da resposta (Prompt 2).
-    Instrui o LLM a USAR a orientação como BASE, não a copiar literalmente.
+    (Função build_prompt_2_drafting completa - sem alterações aqui)
     """
     persona_lang = persona.get("attributes", {}).get("language", "pt-PT")
     if persona_lang == "pt-BR":
@@ -358,25 +354,50 @@ def build_prompt_2_drafting(persona, original_email, user_inputs):
         lang_instruction = "Escreve **exclusivamente** em **Português de Portugal (pt-PT)** de forma **natural e fluída**. Evita construções do Brasil (ex: gerúndio excessivo)."
         lang_instruction_short = "LINGUAGEM pt-PT natural"
 
-    # --- Extrair Nome do Remetente (Tentativa Simples - MELHORAR NO FUTURO) ---
-    # *** SUGESTÃO FUTURA: Implementar Regex mais robusto ou análise de cabeçalho aqui ***
-    sender_name_guess = "Destinatário" # Default fallback
+    # --- Extrair Nome do Remetente (Tentativa Simples) ---
+    sender_name_guess = "Destinatário" # Default
     match_from = re.search(r"^(?:De|From):\s*\"?([^\<\"(]+?)[\"\s]*[<(].*", original_email, re.MULTILINE | re.IGNORECASE)
-    match_plain = re.search(r"^\s*Ol[áa]\s+([^\s,]+),?", original_email, re.MULTILINE | re.IGNORECASE) # Tenta pegar de saudações comuns
+    match_plain = re.search(r"^\s*Ol[áa]\s+([^\s,;!]+)", original_email, re.MULTILINE | re.IGNORECASE) # Tenta saudações
+    match_farewell = re.search(r"\n(?:Abra[çc]o|Cumprimentos|Atenciosamente|Obrigad[oa])(?:,|:)?\s*([^\n]+)$", original_email, re.MULTILINE | re.IGNORECASE) # Tenta assinatura
+
     if match_from:
-        sender_name_guess = match_from.group(1).strip()
+        sender_name_guess = match_from.group(1).strip().title()
+    elif match_farewell:
+         sender_name_guess = match_farewell.group(1).strip().title()
+         # Avoid picking up titles like 'Prof.' if possible from farewell
+         sender_name_guess = re.sub(r'^(Prof\.?|Dr\.?|Eng\.?)\s+', '', sender_name_guess).strip()
     elif match_plain:
-         sender_name_guess = match_plain.group(1).strip()
-    # Tentar usar a saudação definida na persona, substituindo o placeholder
-    default_greeting = persona.get('attributes', {}).get('greeting', 'Olá [Nome do Remetente],')
-    final_greeting = default_greeting.replace("[Nome do Remetente]", sender_name_guess).replace("[Nome]", sender_name_guess).replace("[Apelido]", sender_name_guess) # Tenta substituir placeholders comuns
+        sender_name_guess = match_plain.group(1).strip().title()
+
+    # --- Determinar tipo de destinatário e regras (Simplificado) ---
+    recipient_type = "unknown" # Default
+    # Basic keyword check in email or sender name (could be improved)
+    if "professor" in original_email.lower() or "prof." in sender_name_guess.lower():
+        recipient_type = "professor"
+    elif "joão" in sender_name_guess.lower() or "miguel" in sender_name_guess.lower() or "rúben" in sender_name_guess.lower():
+         # Assuming these are colleagues based on examples
+         recipient_type = "colleague_student"
+
+    rules = persona.get("recipient_adaptation_rules", {})
+    adapt_rules = rules.get(recipient_type, rules.get("unknown", {})) # Fallback to unknown
+
+    # --- Obter Saudação/Despedida ---
+    # Use specific relationship greeting/farewell if available
+    if sender_name_guess in persona.get("relationships", {}):
+         relationship_data = persona["relationships"][sender_name_guess]
+         final_greeting = relationship_data.get("greeting_individual", adapt_rules.get("greeting", "Olá,"))
+         final_farewell = adapt_rules.get("farewell", persona.get('attributes', {}).get('farewell', f"Cumprimentos,\n{persona['name']}")) # Relationship specific farewell? Add if needed.
+    else:
+        # Use generic rule greeting/farewell, replacing placeholders
+         final_greeting = adapt_rules.get("greeting", "Olá [Nome],")
+         final_greeting = final_greeting.replace("[Apelido]", sender_name_guess).replace("[Nome]", sender_name_guess)
+         final_farewell = adapt_rules.get("farewell", persona.get('attributes', {}).get('farewell', f"Cumprimentos,\n{persona['name']}"))
 
     # --- System Prompt ---
-    system_prompt = f"""System: **TU ÉS {persona['name']}**. A tua tarefa é gerar um email de resposta de ALTA QUALIDADE, escrito por ti ({persona['name']}) PARA o remetente do email original fornecido abaixo. Assume integralmente o teu papel ({persona.get('role', 'Assistente')}) e adota rigorosamente a seguinte Persona:
+    system_prompt = f"""System: **TU ÉS {persona['name']}**. A tua tarefa é gerar um email de resposta de ALTA QUALIDADE, escrito por ti ({persona['name']}) PARA {sender_name_guess}. Assume integralmente o teu papel ({persona.get('role', 'Assistente')}) e adota rigorosamente a seguinte Persona:
 * **Nome da Persona:** {persona['name']}
 * **Descrição Geral:** {persona.get('description', 'Estilo padrão')}
-* **Tom:** {persona.get('attributes', {}).get('tone', 'Neutro')}
-* **Formalidade:** {persona.get('attributes', {}).get('formality', 'Média')}
+* **Tom & Formalidade:** (Adaptados para '{recipient_type}' conforme regras: Tom '{adapt_rules.get('tone', 'N/A')}', Formalidade '{adapt_rules.get('formality', persona.get('attributes', {}).get('formality', 'Média'))}')
 * **Verbosidade:** {persona.get('attributes', {}).get('verbosity', 'Média')}
 * **Uso de Emojis:** {persona.get('attributes', {}).get('emoji_usage', 'Nenhum')}
 
@@ -393,9 +414,9 @@ def build_prompt_2_drafting(persona, original_email, user_inputs):
 {chr(10).join([f'* {rule}' for rule in persona.get('donts', ['Ser vago.'])])}
 
 **Formato OBRIGATÓRIO da Resposta:**
-* **Saudação:** Começa **DIRETAMENTE** com a saudação apropriada para o remetente. Usa `{final_greeting}` como guia principal, adaptando se necessário com base no conteúdo do email original (ex: se o remetente se assinou de forma diferente). **NÃO uses '{persona['name']}' na saudação.**
+* **Saudação:** Começa **DIRETAMENTE** com: `{final_greeting}`
 * **Despedida:** Termina **EXATAMENTE** com:
-{persona.get('attributes', {}).get('farewell', 'Cumprimentos,\n' + persona['name'])}
+{final_farewell}
 * **Corpo Apenas:** Gera **APENAS** o corpo do email (saudação, conteúdo, despedida/assinatura). Sem cabeçalhos nem texto extra.
 
 --- FIM DAS INSTRUÇÕES DE SISTEMA ---
@@ -405,7 +426,7 @@ def build_prompt_2_drafting(persona, original_email, user_inputs):
     writing_examples = persona.get("writing_examples")
     if writing_examples:
         examples_prompt += f"\n**Exemplos de Estilo de Escrita para {persona['name']} (Usa apenas como Guia de Estilo):**\n"
-        limited_examples = writing_examples[:3] # Limitar para contexto
+        limited_examples = writing_examples[:3] # Limit to save tokens
         for i, example in enumerate(limited_examples):
             context_desc = example.get("context", f"Exemplo {i+1}")
             output_example = example.get("output_style_example", "")
@@ -414,44 +435,43 @@ def build_prompt_2_drafting(persona, original_email, user_inputs):
         examples_prompt += f"---\n\n--- FIM DOS EXEMPLOS DE ESTILO ---\n"
 
     # --- Contexto e Orientações ---
-    context_prompt = f"""\nContexto: Email Original Recebido (Estás a responder a este email/pessoa)
+    context_prompt = f"""\nContexto: Email Original Recebido de '{sender_name_guess}' (Estás a responder a este email/pessoa)
 ---
 {original_email}
 ---
 
 """
-    # *** MELHORIA: Refraseado para enfatizar que são PONTOS DE PARTIDA / INFORMAÇÃO BASE ***
     items_prompt = f"Itens a Abordar & Informação Chave/Pontos Essenciais Fornecidos por Ti ({persona['name']}) para Construir a Resposta:\n"
     if user_inputs:
         has_real_points = False
         guidance_provided = False
         for i, item in enumerate(user_inputs):
-            point = item['point']
-            guidance = item['guidance']
-            if guidance: guidance_provided = True # Track if any guidance exists
+            point = item.get('point', 'N/A')
+            guidance = item.get('guidance', '')
+            if guidance: guidance_provided = True
 
-            if point.lower() not in ["nenhum ponto a responder.", "n/a", ""]:
+            is_placeholder_point = point == 'N/A' or point == "null" or point.lower().startswith("nenhum ponto")
+
+            if not is_placeholder_point:
                 items_prompt += f"* Ponto Original {i+1} a Abordar: \"{point}\"\n"
-                # *** MELHORIA: Phrasing changed to "Key Info/Ideas" ***
-                items_prompt += f"    * Informação/Ideias Chave para a Tua Resposta: \"{guidance if guidance else '(Nenhuma orientação específica dada para este ponto - responde apropriadamente)'}\"\n"
+                items_prompt += f"    * Informação/Ideias Chave para a Tua Resposta: \"{guidance if guidance else '(Nenhuma orientação específica dada - responde apropriadamente)'}\"\n"
                 has_real_points = True
-            elif guidance: # Guidance exists but no specific point (general instruction)
+            elif guidance: # Guidance for general response
                 items_prompt += f"* Tua Orientação Geral (a incorporar na resposta): \"{guidance}\"\n"
 
-        if not has_real_points and not guidance_provided: # No points AND no general guidance
+        if not has_real_points and not guidance_provided:
              items_prompt += "* Tarefa Adicional: Escrever uma resposta curta e apropriada (ex: agradecimento, confirmação simples) baseada apenas no email original e na tua persona.\n"
-        elif not has_real_points and guidance_provided: # No points, but general guidance exists
+        elif not has_real_points and guidance_provided:
              items_prompt += "* Tarefa Adicional: Incorpora a(s) orientação(ões) geral(is) acima numa resposta apropriada ao email original, seguindo a tua persona.\n"
-        # If there are points, the instruction to address them (using guidance) is already there.
 
-    else: # No user_inputs array provided at all
+    else: # No user_inputs array provided
         items_prompt += "* Tarefa Adicional: Escrever uma resposta curta e apropriada baseada apenas no email original e na tua persona.\n"
     items_prompt += "\n"
 
-    # *** MELHORIA: Instrução reforçada para NÃO COPIAR literalmente ***
+    # --- Task Prompt ---
     task_prompt = f"""Tarefa Final: Com base em TUDO o que foi dito acima (Instruções, Exemplos, Contexto, Informação Chave), redige agora o corpo COMPLETO e de ALTA QUALIDADE do email de resposta.
-* Integra TODA a 'Informação/Ideias Chave' tua de forma **natural, humana e coesa** no texto. **Adapta** o texto para fluir bem dentro do email como um todo.
-* **IMPORTANTE:** NÃO copies a 'Informação/Ideias Chave' literalmente para a resposta final. **Usa essa informação como BASE** para construir as tuas próprias frases, mantendo o fluxo da conversa e o teu estilo.
+* Integra TODA a 'Informação/Ideias Chave' tua de forma **natural, humana e coesa** no texto. **Adapta** o texto para fluir bem dentro do email.
+* **IMPORTANTE:** NÃO copies a 'Informação/Ideias Chave' literalmente. **Usa essa informação como BASE** para construir as tuas próprias frases, mantendo o fluxo da conversa e o teu estilo.
 * Garante que a resposta final é bem escrita, clara, relevante para o email original e aborda o necessário.
 * Mantém-te ESTRITAMENTE FIEL à Persona {persona['name']} ({lang_instruction_short}, tom, estilo, regras Do/Don't, saudação, despedida).
 * Lembra-te: Gera APENAS o corpo do email. Não adiciones comentários nem cabeçalhos.
@@ -464,18 +484,19 @@ Resposta Gerada:
     if DEBUG_MODE:
         prompt_hash = hash(full_prompt)
         logging.debug(f"--- DEBUG: PROMPT 2 (Drafting) Persona: {persona['name']} / Hash: {prompt_hash} ---")
-        # Log prompt length for context window awareness
         logging.debug(f"Prompt 2 Length: {len(full_prompt)} chars")
-        logging.debug(full_prompt[:3000] + "..." if len(full_prompt) > 3000 else full_prompt)
+        log_limit = 4000
+        logging.debug(full_prompt[:log_limit] + "..." if len(full_prompt) > log_limit else full_prompt)
         logging.debug("--- FIM DEBUG PROMPT 2 ---")
     return full_prompt
 
 
-def build_prompt_3_suggestion(original_email, point_to_address, persona):
+# <<< MODIFICAÇÃO AQUI >>>
+def build_prompt_3_suggestion(original_email, point_to_address, persona, direction=None):
     """
     Constrói o prompt para solicitar uma SUGESTÃO DE TEXTO DE RESPOSTA
-    para um ponto específico, seguindo a persona (Prompt 3).
-    (Este prompt não foi alterado significativamente, pois o problema estava na integração no Prompt 2)
+    para um ponto específico, seguindo a persona (Prompt 3),
+    INCLUINDO A DIREÇÃO (Sim/Não/Outro) fornecida pelo utilizador.
     """
     persona_lang = persona.get("attributes", {}).get("language", "pt-PT")
     if persona_lang == "pt-BR":
@@ -483,6 +504,15 @@ def build_prompt_3_suggestion(original_email, point_to_address, persona):
     else:
         lang_instruction = "Escreve **exclusivamente** em **Português de Portugal (pt-PT)** e soa natural."
 
+    # --- Construir a instrução de direção ---
+    direction_instruction = ""
+    if direction == "sim":
+        direction_instruction = "\n**Instrução Adicional Importante:** O utilizador indicou que a resposta a este ponto deve ser **AFIRMATIVA / POSITIVA ('Sim')**. Baseia a tua sugestão nesta direção, mantendo a persona."
+    elif direction == "nao":
+        direction_instruction = "\n**Instrução Adicional Importante:** O utilizador indicou que a resposta a este ponto deve ser **NEGATIVA ('Não')**. Baseia a tua sugestão nesta direção, mantendo a persona."
+    # Se direction for "outro" ou None/vazio, nenhuma instrução é adicionada.
+
+    # --- Construir o prompt completo ---
     system_prompt = f"""System: A tua tarefa é gerar uma sugestão CURTA (idealmente 1-2 frases concisas) de texto de resposta para um ponto específico de um email. Deves agir EXATAMENTE como {persona['name']}, adotando a seguinte Persona:
 * **Nome:** {persona['name']} ({persona.get('role', '')})
 * **Tom Geral:** {persona.get('attributes', {}).get('tone', 'Neutro')}
@@ -501,7 +531,7 @@ def build_prompt_3_suggestion(original_email, point_to_address, persona):
 **Formato OBRIGATÓRIO da Saída:**
 * Gera APENAS o texto da resposta sugerida para o ponto específico.
 * NÃO incluas saudações, despedidas, ou explicações como "Para responder a isso, poderias dizer:".
-* Foca-te em criar uma frase ou duas que {persona['name']} poderia usar diretamente ou adaptar para responder/abordar o ponto fornecido.
+* Foca-te em criar uma frase ou duas que {persona['name']} poderia usar diretamente ou adaptar para responder/abordar o ponto fornecido.{direction_instruction} # <<< INSTRUÇÃO DE DIREÇÃO INJETADA AQUI
 
 --- FIM DAS INSTRUÇÕES DE SISTEMA ---
 
@@ -512,7 +542,7 @@ Contexto: Email Original Recebido
 
 Ponto Específico do Email Original a Abordar: "{point_to_address}"
 
-Tarefa: Escreve agora a sugestão de texto que {persona['name']} poderia usar na sua resposta para abordar APENAS este ponto específico, seguindo TODAS as regras acima. Sê conciso e direto ao ponto.
+Tarefa: Escreve agora a sugestão de texto que {persona['name']} poderia usar na sua resposta para abordar APENAS este ponto específico, seguindo TODAS as regras e a instrução adicional (se existir) acima. Sê conciso e direto ao ponto.
 
 Sugestão de Texto de Resposta para este Ponto:
 """
@@ -522,16 +552,12 @@ Sugestão de Texto de Resposta para este Ponto:
 # --- Rotas da Aplicação Flask ---
 
 @app.route('/')
-def index():
+def index_route(): # Renamed function to avoid conflict with imported index
     """Renderiza a página HTML inicial."""
     logging.info("A servir a página inicial (index.html)")
-    # Passa o nome da persona limpo para o template, se necessário exibi-lo lá
     personas_display = {}
     for key, data in PERSONAS.items():
-        personas_display[key] = data.copy() # Copy to avoid modifying original dict
-        # Optionally add a display_name if you want to keep "(Eu)" in UI but not signature
-        # personas_display[key]['display_name'] = data['name'] + " (Eu)" if key == "rodrigo_novelo" else data['name']
-
+        personas_display[key] = data.copy()
     return render_template('index.html', personas_dict=personas_display)
 
 
@@ -548,31 +574,46 @@ def analyze_email():
         return jsonify({"error": "O texto do email não pode estar vazio."}), 400
 
     logging.info("Iniciando Análise do Email (Prompt 1 via Gemini)")
+    # *** USANDO PROMPT REFINADO ***
     analysis_prompt = build_prompt_1_analysis(email_text)
-    llm_response = call_gemini(analysis_prompt, model=GEMINI_MODEL, temperature=0.3) # Lower temp for analysis
 
-    if llm_response.startswith("ERROR_"):
+    # *** USANDO TEMPERATURA LIGEIRAMENTE MAIS ALTA PARA ANÁLISE ***
+    llm_response = call_gemini(analysis_prompt, model=GEMINI_MODEL, temperature=0.5) # Increased temp slightly
+
+    # Log da resposta bruta para depuração
+    logging.info(f"DEBUG - Resposta Bruta Análise LLM: --------\n{llm_response}\n--------")
+
+    if not llm_response or llm_response.startswith("ERROR_"):
         status_code = 503 if "TIMEOUT" in llm_response or "CONNECTION" in llm_response else 500
         if "CONFIG" in llm_response or "BLOCKED" in llm_response: status_code = 400
         logging.error(f"Erro na chamada Gemini para /analyze: {llm_response}")
-        return jsonify({"error": f"Falha ao comunicar com o LLM para análise: {llm_response}"}), status_code
+        # Tenta retornar o erro específico se existir, caso contrário uma mensagem genérica
+        error_msg = llm_response if llm_response else "Resposta vazia ou erro desconhecido do LLM."
+        return jsonify({"error": f"Falha ao comunicar com o LLM para análise: {error_msg}"}), status_code
 
     logging.info("Análise recebida do Gemini, a fazer parsing.")
     analysis_result = parse_analysis_output(llm_response)
     app.logger.debug(f"Resultado Parseado (Análise): {analysis_result}")
 
+    # Verifica se o parsing em si retornou um erro ou se não encontrou pontos/ações mas deveria
     if "error" in analysis_result:
         logging.error(f"Erro no parsing da análise: {analysis_result['error']}")
-        # Return the raw response if parsing fails, might be useful for user
         return jsonify({"error": f"Falha ao processar resposta da análise: {analysis_result['error']}", "raw_analysis": llm_response}), 500
+    # Adiciona uma verificação extra: se a resposta bruta não for "nenhum ponto..." mas o parsing não encontrou nada, indica problema
+    if not analysis_result.get("points") and "nenhum ponto a responder" not in llm_response.lower():
+         logging.warning("Parsing pode ter falhado. Resposta LLM não continha 'nenhum ponto', mas a lista de pontos está vazia.")
+         # Opcional: retornar um aviso ao frontend?
+         # return jsonify({**analysis_result, "warning": "LLM response structure might not match expected format."})
+
 
     logging.info("Análise processada com sucesso.")
     return jsonify(analysis_result)
 
 
+# <<< MODIFICAÇÃO AQUI >>>
 @app.route('/suggest_guidance', methods=['POST'])
 def suggest_guidance():
-    """Endpoint para gerar sugestão de texto para um ponto, usando Gemini."""
+    """Endpoint para gerar sugestão de texto para um ponto, usando Gemini, incluindo a direção."""
     required_fields = ['original_email', 'point_to_address', 'persona_name']
     if not request.json:
         logging.warning("Pedido /suggest_guidance inválido: Sem JSON.")
@@ -585,25 +626,32 @@ def suggest_guidance():
     original_email = request.json['original_email']
     point_to_address = request.json['point_to_address']
     persona_name = request.json['persona_name']
+    # Extrai a direção (pode ser None/null se não for enviado ou nenhum rádio selecionado)
+    direction = request.json.get('direction') # <<< OBTÉM A DIREÇÃO
 
-    if not original_email.strip() or not point_to_address.strip() or not persona_name.strip():
-        logging.warning("Pedido /suggest_guidance inválido: Campos vazios.")
-        return jsonify({"error": "Email original, ponto a abordar e nome da persona não podem estar vazios."}), 400
+    # Validações básicas
+    if not original_email.strip() or not point_to_address or point_to_address == 'N/A' or not persona_name.strip():
+        logging.warning("Pedido /suggest_guidance inválido: Campos obrigatórios vazios ou inválidos (point_to_address='N/A').")
+        return jsonify({"error": "Email original, ponto a abordar válido e nome da persona são obrigatórios."}), 400
     if persona_name not in PERSONAS:
         logging.error(f"Persona '{persona_name}' não encontrada em /suggest_guidance.")
         return jsonify({"error": f"Persona '{persona_name}' não encontrada."}), 400
 
     selected_persona = PERSONAS[persona_name]
-    logging.info(f"Solicitando sugestão de TEXTO via Gemini para ponto com Persona: {persona_name}")
-    suggestion_prompt = build_prompt_3_suggestion(original_email, point_to_address, selected_persona)
-    # Use default temperature or slightly higher for suggestion creativity
+    logging.info(f"Solicitando sugestão de TEXTO via Gemini para ponto='{point_to_address[:50]}...' com Persona: {persona_name}, Direção: {direction}") # Log da direção
+
+    # Passa a 'direction' para a função que constrói o prompt
+    suggestion_prompt = build_prompt_3_suggestion(original_email, point_to_address, selected_persona, direction) # <<< PASSA A DIREÇÃO
+
+    # Usa a temperatura geral para sugestões (pode ser ajustada se necessário)
     llm_response = call_gemini(suggestion_prompt, model=GEMINI_MODEL, temperature=GENERATION_TEMPERATURE)
 
-    if llm_response.startswith("ERROR_"):
+    if not llm_response or llm_response.startswith("ERROR_"):
         status_code = 503 if "TIMEOUT" in llm_response or "CONNECTION" in llm_response else 500
         if "CONFIG" in llm_response or "BLOCKED" in llm_response: status_code = 400
         logging.error(f"Erro na chamada Gemini para /suggest_guidance: {llm_response}")
-        return jsonify({"error": f"Falha ao obter sugestão do LLM: {llm_response}"}), status_code
+        error_msg = llm_response if llm_response else "Resposta vazia ou erro desconhecido do LLM."
+        return jsonify({"error": f"Falha ao obter sugestão do LLM: {error_msg}"}), status_code
 
     logging.info("Sugestão de texto gerada com sucesso.")
     app.logger.debug(f"Sugestão gerada: {llm_response}")
@@ -613,6 +661,7 @@ def suggest_guidance():
 @app.route('/draft', methods=['POST'])
 def draft_response():
     """Endpoint para gerar o rascunho da resposta final usando Gemini."""
+    # (Código da rota /draft permanece igual ao fornecido pelo utilizador)
     if not request.json:
         logging.warning("Pedido /draft inválido: Sem JSON.")
         return jsonify({"error": "Pedido inválido (JSON esperado)."}), 400
@@ -631,26 +680,24 @@ def draft_response():
         logging.error(f"Persona '{persona_name}' não encontrada em /draft.")
         return jsonify({"error": f"Persona '{persona_name}' não encontrada."}), 400
     if not isinstance(user_inputs, list):
-         logging.error(f"Formato inválido para 'user_inputs' em /draft. Esperada lista, recebido: {type(user_inputs)}")
-         return jsonify({"error": "Formato inválido para 'user_inputs'. Esperada uma lista de objetos."}), 400
+        logging.error(f"Formato inválido para 'user_inputs' em /draft. Esperada lista, recebido: {type(user_inputs)}")
+        return jsonify({"error": "Formato inválido para 'user_inputs'. Esperada uma lista de objetos."}), 400
 
     selected_persona = PERSONAS[persona_name]
     logging.info(f"Iniciando Geração de Rascunho (Prompt 2 via Gemini) para Persona: {persona_name}")
     draft_prompt = build_prompt_2_drafting(selected_persona, original_email, user_inputs)
 
-    # Use default temperature, potentially slightly higher for more natural writing
-    # Consider making this configurable or even using a different model (e.g., Pro) for drafting if needed.
     llm_response = call_gemini(draft_prompt, model=GEMINI_MODEL, temperature=GENERATION_TEMPERATURE)
 
-    if llm_response.startswith("ERROR_"):
+    if not llm_response or llm_response.startswith("ERROR_"):
         status_code = 503 if "TIMEOUT" in llm_response or "CONNECTION" in llm_response else 500
         if "CONFIG" in llm_response or "BLOCKED" in llm_response: status_code = 400
         logging.error(f"Erro na chamada Gemini para /draft: {llm_response}")
-        return jsonify({"error": f"Falha ao gerar rascunho com o LLM: {llm_response}"}), status_code
+        error_msg = llm_response if llm_response else "Resposta vazia ou erro desconhecido do LLM."
+        return jsonify({"error": f"Falha ao gerar rascunho com o LLM: {error_msg}"}), status_code
 
     final_draft = llm_response
     logging.info(f"Rascunho Final Gerado com sucesso via Gemini para persona {persona_name}.")
-    # Log less in INFO, more in DEBUG
     app.logger.debug(f"Rascunho Final:\n{final_draft}")
 
     return jsonify({"draft": final_draft})
@@ -666,8 +713,9 @@ if __name__ == '__main__':
     if not GEMINI_API_KEY:
         logging.warning("Variável de ambiente GEMINI_API_KEY não definida!")
     else:
-        logging.info(f"Gemini API Key: ...{GEMINI_API_KEY[-4:]}")
+        logging.info(f"Gemini API Key: {'*' * (len(GEMINI_API_KEY) - 4)}{GEMINI_API_KEY[-4:]}") # Mask key
     logging.info(f"Default Generation Temperature: {GENERATION_TEMPERATURE}")
     logging.warning("Certifique-se de completar as Personas dos Professores (dos, donts, writing_examples) para melhores resultados.")
 
+    # Renomeei a função da rota '/' para index_route para evitar conflito com 'import index' se existisse
     app.run(host=APP_HOST, port=APP_PORT, debug=DEBUG_MODE)

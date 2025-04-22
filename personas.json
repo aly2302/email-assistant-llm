@@ -45,73 +45,55 @@
         "Usar emojis."
       ],
       "writing_examples": [
-        {"context": "Update formal para orientadores após reunião", "output_style_example": "Caros Professores,\n\nDurante a última reunião:\nDiscutimos a vertente prática do trabalho que desenvolvi ao longo da última semana, focada em técnicas de prompt engineering. Recebi recomendações muito úteis que irão orientar o desenvolvimento das próximas etapas.\n\nAo longo desta semana pretendo:\nEntregar a versão revista do survey ao Professor Jorge;\nInvestigar a possibilidade de utilização de um modelo LLM mais avançado e gratuito...\nCaso não seja viável..., irei focar-me em melhorar o código actual...\n\nAtenciosamente,\nRodrigo Novelo"},
-        {"context": "Update formal para orientadores sobre progresso semanal", "output_style_example": "Boa tarde professores,\n\nSegue um pequeno resumo da última reunião e o que ficou proposto fazer durante esta semana.\n\nResumo da Reunião Anterior: apresentei uma pequena amostra de outputs criados por diversos modelos LLM... Contudo, como discutido, houve dificuldade em identificar padrões claros...\n\nProgresso Atual:\nConclusões mais objetivas sobre os modelos LLM:\nEstou a tentar usar 1 ou 2 benchmarks...\nAnalisar pros e contras...\nSurvey:\nDesenvolvimento da versão inicial...\nPretendo apresentar esta versão inicial na próxima quarta-feira...\n\nAtenciosamente,\nRodrigo Novelo."},
-        {"context": "Pedido formal de estágio (Deloitte)", "output_style_example": "Boa noite,\n\nEstou a contactar para perguntar sobre a possibilidade de realizar um estágio Curricular na Deloitte, na área de Redes e Administração de Sistemas.\n\nAtualmente, estou na reta final da licenciatura em Engenharia Informática no ISEC, em Coimbra, e estou à procura de uma oportunidade para desenvolver as competências aprendidas...\n\nSe eventualmente houver abertura para receber estagiários..., estou disponível para enviar o meu CV...\n\nAgradeço desde já a sua atenção.\n\nCom os melhores cumprimentos,\nRodrigo Novelo"},
-        {"context": "Pedido formal de estágio (AIRC)", "output_style_example": "Boa noite,\n\nEstou a contactar para perguntar sobre a possibilidade de realizar um estágio Curricular na AIRC, na área de Redes e Administração de Sistemas.\n\nAtualmente, estou na reta final da licenciatura em Engenharia Informática no ISEC, em Coimbra, e estou à procura de uma oportunidade para desenvolver as competências aprendidas...\n\nSe eventualmente houver abertura para receber estagiários..., estou disponível para enviar o meu CV...\n\nAgradeço desde já a sua atenção.\n\nCom os melhores cumprimentos,\nRodrigo Novelo"},
-        {"context": "Casual - Partilhar descoberta tech com colega (João)", "output_style_example": "Boas João,\nJá experimentaste o novo modelo do GPT? Estive a testar umas automações com ele e está a dar resultados brutais, muito mais coerente que o anterior.\nDepois mostro-te o que fiz com integração no Notion — está mesmo incrivel.\nAbraço,\nRodrigo."},
-        {"context": "Casual - Pedir ajuda técnica a colega (Miguel)", "output_style_example": "Boas Miguel,\n\nEstou preso naquela parte do módulo “Web Requests” no HackTheBox — acho que estou a fazer bem o encoding mas não passo do check. Tu conseguiste à primeira?\n\nSe tiveres uma dica, agradecia bastante.\nAbraço,\nRodrigo."},
-        {"context": "Casual - Pedir sugestão técnica a colega (Rúben)", "output_style_example": "Boas Rúben,\n\nTiveste a experimentar o LLaMA 3 8B localmente? Consegui meter a correr com o Ollama, mas agora queria fazer uma ligação simples a uma página web que estou a montar (tipo fetch para mandar prompts e receber resposta).\n\nTens alguma sugestão rápida ou setup base que possa seguir? Não precisa de ser nada muito complexo, só quero começar a testar.\nAbraço,\nRodrigo."}
+         {"context": "Update formal para orientadores após reunião", "output_style_example": "Caros Professores,\n\nDurante a última reunião:\nDiscutimos a vertente prática do trabalho que desenvolvi ao longo da última semana, focada em técnicas de prompt engineering. Recebi recomendações muito úteis que irão orientar o desenvolvimento das próximas etapas.\n\nAo longo desta semana pretendo:\nEntregar a versão revista do survey ao Professor Jorge;\nInvestigar a possibilidade de utilização de um modelo LLM mais avançado e gratuito...\nCaso não seja viável..., irei focar-me em melhorar o código actual...\n\nAtenciosamente,\nRodrigo Novelo"},
+         {"context": "Update formal para orientadores sobre progresso semanal", "output_style_example": "Boa tarde professores,\n\nSegue um pequeno resumo da última reunião e o que ficou proposto fazer durante esta semana.\n\nResumo da Reunião Anterior: apresentei uma pequena amostra de outputs criados por diversos modelos LLM... Contudo, como discutido, houve dificuldade em identificar padrões claros...\n\nProgresso Atual:\nConclusões mais objetivas sobre os modelos LLM:\nEstou a tentar usar 1 ou 2 benchmarks...\nAnalisar pros e contras...\nSurvey:\nDesenvolvimento da versão inicial...\nPretendo apresentar esta versão inicial na próxima quarta-feira...\n\nAtenciosamente,\nRodrigo Novelo."},
+         {"context": "Pedido formal de estágio (Deloitte)", "output_style_example": "Boa noite,\n\nEstou a contactar para perguntar sobre a possibilidade de realizar um estágio Curricular na Deloitte, na área de Redes e Administração de Sistemas.\n\nAtualmente, estou na reta final da licenciatura em Engenharia Informática no ISEC, em Coimbra, e estou à procura de uma oportunidade para desenvolver as competências aprendidas...\n\nSe eventualmente houver abertura para receber estagiários..., estou disponível para enviar o meu CV...\n\nAgradeço desde já a sua atenção.\n\nCom os melhores cumprimentos,\nRodrigo Novelo"},
+         {"context": "Pedido formal de estágio (AIRC)", "output_style_example": "Boa noite,\n\nEstou a contactar para perguntar sobre a possibilidade de realizar um estágio Curricular na AIRC, na área de Redes e Administração de Sistemas.\n\nAtualmente, estou na reta final da licenciatura em Engenharia Informática no ISEC, em Coimbra, e estou à procura de uma oportunidade para desenvolver as competências aprendidas...\n\nSe eventualmente houver abertura para receber estagiários..., estou disponível para enviar o meu CV...\n\nAgradeço desde já a sua atenção.\n\nCom os melhores cumprimentos,\nRodrigo Novelo"},
+         {"context": "Casual - Partilhar descoberta tech com colega (João)", "output_style_example": "Boas João,\nJá experimentaste o novo modelo do GPT? Estive a testar umas automações com ele e está a dar resultados brutais, muito mais coerente que o anterior.\nDepois mostro-te o que fiz com integração no Notion — está mesmo incrivel.\nAbraço,\nRodrigo."},
+         {"context": "Casual - Pedir ajuda técnica a colega (Miguel)", "output_style_example": "Boas Miguel,\n\nEstou preso naquela parte do módulo “Web Requests” no HackTheBox — acho que estou a fazer bem o encoding mas não passo do check. Tu conseguiste à primeira?\n\nSe tiveres uma dica, agradecia bastante.\nAbraço,\nRodrigo."},
+         {"context": "Casual - Pedir sugestão técnica a colega (Rúben)", "output_style_example": "Boas Rúben,\n\nTiveste a experimentar o LLaMA 3 8B localmente? Consegui meter a correr com o Ollama, mas agora queria fazer uma ligação simples a uma página web que estou a montar (tipo fetch para mandar prompts e receber resposta).\n\nTens alguma sugestão rápida ou setup base que possa seguir? Não precisa de ser nada muito complexo, só quero começar a testar.\nAbraço,\nRodrigo."}
       ]
     },
     "prof_rodrigo": {
       "name": "Professor Rodrigo Rocha Silva",
       "role": "Pesquisador Associado (CISUC/DEIS/UC), Professor (Fatec Mogi das Cruzes)",
       "area": "Ciência da Computação (Arquitetura de Sistemas, Big Data, Data Mining, IA)",
-      "current_context": [
-        "Orientador de Projeto (Assistente LLM)",
-        "Interesses: Big Data, Data Mining, DW, NoSQL, Sentiment Analysis, IA Aplicada, Arquitetura de Sistemas"
-      ],
-      "description": "Professor e Investigador (UC & Fatec) com experiência em indústria e academia. Foco em Arquitetura de Sistemas, Big Data e IA. Estilo adaptável, usa Português do Brasil (pt-BR).",
-      "attributes": {
-        "tone": "Adaptável (a definir)",
-        "formality": "Variável (a definir)",
-        "verbosity": "InformativoProfissional",
-        "emoji_usage": "Nenhum",
-        "language": "pt-BR"
-      },
+      "current_context": [ "Orientador de Projeto (Assistente LLM)", "Interesses: Big Data, Data Mining, DW, NoSQL, Sentiment Analysis, IA Aplicada, Arquitetura de Sistemas" ],
+      "description": "Professor e Investigador (UC & Fatec) com experiência em indústria e academia. Foco em Arquitetura de Sistemas, Big Data e IA. Estilo adaptável, usa Português do Brasil (pt-BR). ***(NECESSITA MAIS DETALHES E EXEMPLOS)***",
+      "attributes": { "tone": "Adaptável (a definir)", "formality": "Variável (a definir)", "verbosity": "InformativoProfissional", "emoji_usage": "Nenhum", "language": "pt-BR" },
       "recipient_adaptation_rules": {
-        "orientando_uc": {"tone": "OrientadorDireto", "greeting": "Prezado Rodrigo,", "farewell": "Atenciosamente,\nProf. Rodrigo Rocha Silva"},
-        "professor_colega_uc": {"tone": "ProfissionalRespeitoso", "greeting": "Prezado Prof. [Apelido],", "farewell": "Atenciosamente,\nProf. Rodrigo Rocha Silva"},
-        "unknown": {"tone": "Formal", "greeting": "Prezados(as),", "farewell": "Atenciosamente,\nProf. Rodrigo Rocha Silva"}
+         "orientando_uc": {"tone": "OrientadorDireto", "greeting": "Prezado Rodrigo,", "farewell": "Atenciosamente,\nProf. Rodrigo Rocha Silva"},
+         "professor_colega_uc": {"tone": "ProfissionalRespeitoso", "greeting": "Prezado Prof. [Apelido],", "farewell": "Atenciosamente,\nProf. Rodrigo Rocha Silva"},
+         "unknown": {"tone": "Formal", "greeting": "Prezados(as),", "farewell": "Atenciosamente,\nProf. Rodrigo Rocha Silva"}
       },
       "relationships": {
-        "Rodrigo Novelo": {"type": "Orientando (Licenciatura UC)", "tone": "OrientadorDireto"},
-        "Professor Jorge": {"type": "Colega Investigador / Co-orientador", "tone": "ProfissionalRespeitoso"}
+         "Rodrigo Novelo": {"type": "Orientando (Licenciatura ISEC)", "tone": "OrientadorDireto"},
+         "Professor Jorge": {"type": "Colega Investigador / Co-orientador", "tone": "ProfissionalRespeitoso"}
       },
-      "dos": [],
-      "donts": [],
-      "writing_examples": []
+      "dos": [ "*** (A DEFINIR - Adicionar Do's específicos do Prof. Rodrigo) ***" ],
+      "donts": [ "*** (A DEFINIR - Adicionar Don'ts específicos do Prof. Rodrigo) ***" ],
+      "writing_examples": [
+      ]
     },
     "prof_jorge": {
       "name": "Professor Jorge Bernardino",
       "role": "Professor Coordenador (ISEC/DEIS)",
       "area": "Ciência da Computação (Big Data, Data Warehousing, BI, IoT, Eng. Software)",
-      "current_context": [
-        "Orientador de Projeto (Assistente LLM)",
-        "Experiência anterior: Presidente ISEC, Presidente Conselho Científico ISEC, Diretor i2A, Visiting Prof CMU",
-        "Membro ACM e IEEE",
-        "Interesses de investigação: Big Data, DW, BI, IoT, Eng. Software"
-      ],
-      "description": "Professor Coordenador no ISEC/DEIS com vasta experiência académica e de gestão. Investigação em Big Data, BI, IoT, Eng. Software. Utiliza Português de Portugal (pt-PT).",
-      "attributes": {
-        "tone": "ProfissionalAcadémico",
-        "formality": "Alta",
-        "verbosity": "Estruturado",
-        "emoji_usage": "Nenhum",
-        "language": "pt-PT"
-      },
+      "current_context": [ "Orientador de Projeto (Assistente LLM)", "Experiência anterior: Presidente ISEC, Presidente Conselho Científico ISEC, Diretor i2A, Visiting Prof CMU", "Membro ACM e IEEE", "Interesses de investigação: Big Data, DW, BI, IoT, Eng. Software" ],
+      "description": "Professor Coordenador no ISEC/DEIS com vasta experiência académica e de gestão. Investigação em Big Data, BI, IoT, Eng. Software. Utiliza Português de Portugal (pt-PT). ***(NECESSITA DETALHES DE ESTILO E EXEMPLOS)***",
+      "attributes": { "tone": "ProfissionalAcadémico", "formality": "Alta", "verbosity": "Estruturado", "emoji_usage": "Nenhum", "language": "pt-PT" },
       "recipient_adaptation_rules": {
-        "orientando_licenciatura": {"tone": "OrientadorFormal", "greeting": "Caro Rodrigo,", "farewell": "Com os melhores cumprimentos,\nJorge Bernardino"},
-        "professor_colega_uc": {"tone": "ProfissionalRespeitoso", "greeting": "Caro Prof. [Apelido],", "farewell": "Com os melhores cumprimentos,\nJorge Bernardino"},
-        "unknown": {"tone": "Formal", "greeting": "Exmo(a). Sr(a). [Apelido],", "farewell": "Com os melhores cumprimentos,\nJorge Bernardino"}
+         "orientando_licenciatura": {"tone": "OrientadorFormal", "greeting": "Caro Rodrigo,", "farewell": "Com os melhores cumprimentos,\nJorge Bernardino"},
+         "professor_colega_uc": {"tone": "ProfissionalRespeitoso", "greeting": "Caro Prof. [Apelido],", "farewell": "Com os melhores cumprimentos,\nJorge Bernardino"},
+         "unknown": {"tone": "Formal", "greeting": "Exmo(a). Sr(a). [Apelido],", "farewell": "Com os melhores cumprimentos,\nJorge Bernardino"}
       },
       "relationships": {
-        "Rodrigo Novelo": {"type": "Orientando (Licenciatura UC)", "tone": "OrientadorFormal"},
-        "Professor Rodrigo": {"type": "Colega Investigador / Co-orientador", "tone": "ProfissionalRespeitoso"}
+         "Rodrigo Novelo": {"type": "Orientando (Licenciatura UC)", "tone": "OrientadorFormal"},
+         "Professor Rodrigo": {"type": "Colega Investigador / Co-orientador", "tone": "ProfissionalRespeitoso"}
       },
-      "dos": [],
-      "donts": [],
-      "writing_examples": []
+      "dos": [ "*** (A DEFINIR - Adicionar Do's específicos do Prof. Jorge) ***" ],
+      "donts": [ "*** (A DEFINIR - Adicionar Don'ts específicos do Prof. Jorge) ***" ],
+      "writing_examples": [
+      ]
     }
   }

@@ -8,52 +8,65 @@
     <style>
         body {
             padding: 20px;
-            background-color: #f8f9fa;
-            font-family: sans-serif;
+            background-color: #f8f9fa; /* Light grey background */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Modern font */
         }
         .container {
-            max-width: 900px;
-            background-color: #ffffff;
+            max-width: 900px; /* Slightly wider container */
+            background-color: #ffffff; /* White background for content */
             padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            margin: 20px auto;
+            border-radius: 8px; /* Rounded corners */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Subtle shadow */
+            margin: 20px auto; /* Center container */
         }
         h1, h2, h3, h4 {
-            color: #343a40;
+            color: #343a40; /* Dark grey heading color */
             margin-bottom: 1.2rem;
+            font-weight: 600; /* Slightly bolder headings */
         }
         .form-label {
             font-weight: bold;
             margin-bottom: 0.5rem;
             display: block;
+            color: #495057; /* Label color */
         }
-        .form-label-sm { /* Smaller label for radio groups */
-             font-size: 0.875em;
-             font-weight: normal;
-             color: #495057;
+        .form-label-sm { /* Smaller label for radio groups etc. */
+            font-size: 0.875em;
+            font-weight: normal;
+            color: #495057;
         }
         textarea.form-control {
-            min-height: 150px;
+            min-height: 150px; /* Default textarea height */
             border-radius: 5px;
+            border: 1px solid #ced4da; /* Standard border */
+        }
+        textarea.form-control:focus {
+            border-color: #86b7fe; /* Bootstrap focus color */
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25); /* Bootstrap focus shadow */
         }
         .analysis-section, .draft-section {
             margin-top: 30px;
-            border-top: 1px solid #dee2e6;
+            border-top: 1px solid #dee2e6; /* Separator line */
             padding-top: 25px;
         }
+        /* Styling for the user input groups (for each point) */
         .point-input-group {
             margin-bottom: 25px; /* Increased margin */
             padding: 20px; /* Increased padding */
-            background-color: #eef2f7;
+            background-color: #eef2f7; /* Light blue-grey background */
             border-radius: 5px;
-            border: 1px solid #d1d9e6;
+            border: 1px solid #d1d9e6; /* Slightly darker border */
+            transition: background-color 0.2s ease-in-out; /* Smooth hover effect */
+        }
+        .point-input-group:hover {
+             background-color: #e3e9f1; /* Slightly darker on hover */
         }
         .point-input-group .form-label {
-             font-weight: normal;
-             margin-bottom: 0.25rem;
+            font-weight: normal; /* Normal weight for sub-labels */
+            margin-bottom: 0.25rem;
         }
-        .point-input-group p.point-text { /* Specific class for point text */
+        /* Styling for the original point text display */
+        .point-input-group p.point-text {
             margin-bottom: 1rem; /* More space below point */
             font-size: 0.95rem;
             color: #495057;
@@ -63,45 +76,54 @@
             border-radius: 4px;
             border: 1px solid #ced4da;
         }
+        /* Styling for the user guidance textarea within the group */
         .point-input-group textarea {
-            min-height: 60px;
+            min-height: 70px; /* Slightly taller guidance textarea */
             margin-top: 10px; /* Space above textarea */
         }
-        .guidance-direction-group { /* Style for the radio group */
-             margin-bottom: 1rem;
+        /* Styling for the direction radio button group */
+        .guidance-direction-group {
+            margin-bottom: 1rem;
         }
         .guidance-direction-group .form-check-label {
-             font-size: 0.9em;
+            font-size: 0.9em;
         }
+        /* Loading spinner styles */
         .loading-spinner {
-            display: none;
+            display: none; /* Hidden by default */
             width: 1.2rem;
             height: 1.2rem;
-            vertical-align: text-bottom;
+            vertical-align: text-bottom; /* Align with button text */
         }
-        .btn-sm .loading-spinner {
-             width: 0.8rem;
-             height: 0.8rem;
+        .btn-sm .loading-spinner { /* Smaller spinner for small buttons */
+            width: 0.8rem;
+            height: 0.8rem;
         }
+        /* Error message styling */
         .error-message {
-            color: #dc3545;
+            color: #dc3545; /* Bootstrap danger color */
             font-weight: bold;
             margin-top: 10px;
             font-size: 0.9rem;
-            display: none;
+            display: none; /* Hidden by default */
         }
+        /* Invalid input field styling */
         .is-invalid {
-            border-color: #dc3545 !important;
+            border-color: #dc3545 !important; /* Force danger border color */
         }
+        /* General button styling */
         .btn {
-            margin-right: 5px;
+            margin-right: 5px; /* Space between buttons */
             border-radius: 5px;
-            padding: 0.5rem 1rem;
+            padding: 0.5rem 1rem; /* Standard padding */
+            transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out; /* Smooth transitions */
         }
+        /* Specific button colors */
         .btn-primary { background-color: #0d6efd; border-color: #0d6efd; }
         .btn-success { background-color: #198754; border-color: #198754; }
         .btn-secondary { background-color: #6c757d; border-color: #6c757d; }
-        .btn-outline-secondary { /* Estilos mantidos da versão anterior */
+        .btn-warning { background-color: #ffc107; border-color: #ffc107; color: #000; } /* Warning for copy fallback */
+        .btn-outline-secondary { /* Styles for the suggest button */
              --bs-btn-color: #6c757d;
              --bs-btn-border-color: #6c757d;
              --bs-btn-hover-color: #fff;
@@ -117,6 +139,7 @@
              --bs-btn-disabled-border-color: #6c757d;
              --bs-gradient: none;
         }
+        /* Responsive adjustments */
         @media (max-width: 768px) {
             body { padding: 10px; }
             .container { padding: 20px; }
@@ -130,7 +153,7 @@
     <div class="container">
         <header class="text-center mb-4">
             <h1>Assistente de Email Personalizado</h1>
-            <p class="lead">Analise emails e gere rascunhos com Gemini 1.5 Flash usando personas definidas</p>
+            <p class="lead">Analise emails e gere rascunhos com Gemini usando personas definidas</p>
         </header>
 
         <section id="emailInputSection" class="mb-4">
@@ -142,8 +165,7 @@
                     <div class="spinner-border spinner-border-sm text-light ms-1 loading-spinner" role="status" id="analyzeSpinner"></div>
                 </button>
             </div>
-            <div id="analyzeError" class="error-message"></div>
-        </section>
+            <div id="analyzeError" class="error-message"></div> </section>
 
         <section class="analysis-section" id="analysisSection" style="display: none;">
             <h2>Análise do Email</h2>
@@ -157,22 +179,30 @@
             </div>
 
             <div class="mt-4">
-                 <label for="personaSelect" class="form-label">Selecione a Persona (Voz) para Responder:</label>
-                 <select class="form-select" id="personaSelect">
-                     {% for key, persona in personas_dict.items() %}
-                         <option value="{{ key }}">{{ persona.name }}</option>
-                     {% endfor %}
-                 </select>
+                <label for="personaSelect" class="form-label">Selecione a Persona (Voz) para Responder:</label>
+                <select class="form-select" id="personaSelect" {% if error_loading_personas %}disabled{% endif %}>
+                    {% if error_loading_personas %}
+                        <option value="">Erro ao carregar personas</option>
+                    {% elif personas_dict %}
+                        {% for key, persona in personas_dict.items() %}
+                            <option value="{{ key }}">{{ persona.name }}</option>
+                        {% endfor %}
+                    {% else %}
+                         <option value="">Nenhuma persona disponível</option>
+                    {% endif %}
+                </select>
+                 {% if error_loading_personas %}
+                    <div class="text-danger small mt-1">Não foi possível carregar as personas do ficheiro 'personas.json'. Verifique os logs do servidor.</div>
+                 {% endif %}
             </div>
 
             <div class="mt-3">
-                <button id="draftBtn" class="btn btn-success">
+                <button id="draftBtn" class="btn btn-success" {% if error_loading_personas or not personas_dict %}disabled{% endif %}>
                     Gerar Rascunho da Resposta
                     <div class="spinner-border spinner-border-sm text-light ms-1 loading-spinner" role="status" id="draftSpinner"></div>
                 </button>
             </div>
-            <div id="draftError" class="error-message"></div>
-        </section>
+            <div id="draftError" class="error-message"></div> </section>
 
         <section class="draft-section" id="draftSection" style="display: none;">
             <h2>Rascunho da Resposta Gerado (Editável)</h2>
@@ -182,14 +212,15 @@
                     Copiar Texto Editado
                 </button>
             </div>
+             <div id="contextInfo" class="mt-3 small text-muted" style="display: none;">
+                <strong>Contexto Usado:</strong> <span id="contextDetails"></span>
+            </div>
         </section>
 
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    </div> <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
     <script>
-        // --- Seletores de Elementos do DOM ---
+        // --- DOM Element Selectors ---
         const originalEmailEl = document.getElementById('originalEmail');
         const analyzeBtn = document.getElementById('analyzeBtn');
         const analyzeSpinner = document.getElementById('analyzeSpinner');
@@ -205,15 +236,18 @@
         const draftSection = document.getElementById('draftSection');
         const generatedDraftEl = document.getElementById('generatedDraft');
         const copyDraftBtn = document.getElementById('copyDraftBtn');
+        const contextInfoEl = document.getElementById('contextInfo');
+        const contextDetailsEl = document.getElementById('contextDetails');
 
-        // --- Estado da Aplicação ---
-        let currentAnalysisPoints = [];
+        // --- Application State ---
+        let currentAnalysisPoints = []; // Stores the points identified by the analysis
 
-        // --- Funções Auxiliares ---
+        // --- Helper Functions ---
         function showSpinner(spinner) { spinner.style.display = 'inline-block'; }
         function hideSpinner(spinner) { spinner.style.display = 'none'; }
         function showError(element, message) { element.textContent = message; element.style.display = 'block'; }
         function hideError(element) { element.textContent = ''; element.style.display = 'none'; }
+        // Basic HTML escaping function
         function escapeHtml(unsafe) {
             if (typeof unsafe !== 'string') return '';
             return unsafe
@@ -224,71 +258,83 @@
                  .replace(/'/g, "&#039;");
         }
 
-        // --- Lógica Principal ---
+        // --- Core Logic ---
 
-        // 1. Event Listener para o Botão Analisar Email
+        // 1. Event Listener for the "Analisar Email" Button
         analyzeBtn.addEventListener('click', async () => {
             const emailText = originalEmailEl.value.trim();
+            // Basic validation: Ensure email text is not empty
             if (!emailText) {
                 showError(analyzeErrorEl, "Por favor, insira o texto do email recebido.");
                 originalEmailEl.focus();
                 originalEmailEl.classList.add('is-invalid');
                 return;
             } else {
-                 originalEmailEl.classList.remove('is-invalid');
+                 originalEmailEl.classList.remove('is-invalid'); // Remove error state if valid
             }
 
+            // Reset UI elements
             showSpinner(analyzeSpinner);
             hideError(analyzeErrorEl);
             hideError(draftErrorEl);
-            analysisSection.style.display = 'none';
-            draftSection.style.display = 'none';
-            analysisResultEl.innerHTML = '';
-            userInputsSection.innerHTML = '';
-            generatedDraftEl.value = '';
-            analyzeBtn.disabled = true;
+            analysisSection.style.display = 'none'; // Hide analysis section
+            draftSection.style.display = 'none'; // Hide draft section
+            analysisResultEl.innerHTML = ''; // Clear previous analysis results
+            userInputsSection.innerHTML = ''; // Clear previous user inputs
+            generatedDraftEl.value = ''; // Clear previous draft
+            contextInfoEl.style.display = 'none'; // Hide context info
+            analyzeBtn.disabled = true; // Disable buttons during processing
             draftBtn.disabled = true;
 
             try {
+                // Call the backend /analyze endpoint
                 const response = await fetch('/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email_text: emailText })
                 });
                 const data = await response.json();
+
+                // Handle API errors or unsuccessful responses
                 if (!response.ok || data.error) {
                     let errorMsg = data.error || `Erro HTTP ${response.status}: ${response.statusText}`;
-                    // Append raw analysis if available on error
+                    // Append raw analysis if available for debugging
                     if (data.raw_analysis) {
                          errorMsg += ` | Resposta LLM (RAW): ${data.raw_analysis.substring(0, 100)}...`;
                     }
                     throw new Error(errorMsg);
                 }
-                currentAnalysisPoints = data.points || [];
-                displayAnalysisResults(data);
-                createUserInputFields(currentAnalysisPoints); // Pass points here
-                analysisSection.style.display = 'block';
+
+                // Store analysis points and display results
+                currentAnalysisPoints = data.points || []; // Store points for later use (suggestions)
+                displayAnalysisResults(data); // Show points and actions
+                createUserInputFields(currentAnalysisPoints); // Create input fields based on points
+                analysisSection.style.display = 'block'; // Show the analysis section
+
             } catch (error) {
                 console.error("Erro durante a análise:", error);
                 showError(analyzeErrorEl, `Erro na análise: ${error.message}`);
             } finally {
+                // Re-enable buttons and hide spinner
                 hideSpinner(analyzeSpinner);
                 analyzeBtn.disabled = false;
-                if (analysisSection.style.display === 'block') {
+                // Only enable draft button if analysis was successful and personas are available
+                if (analysisSection.style.display === 'block' && personaSelect.value && !personaSelect.disabled) {
                     draftBtn.disabled = false;
                 }
             }
         });
 
-        // Função para mostrar os resultados da análise
+        // Function to display the analysis results (points and actions)
         function displayAnalysisResults(data) {
             let html = '<h4>Pontos a Responder:</h4>';
-            // Check if points array exists and is not empty or just contains the "nenhum" message
+            // Check if there are actual points beyond a potential "nenhum ponto" message
             const hasRealPoints = data.points && data.points.length > 0 && !(data.points.length === 1 && data.points[0].toLowerCase().includes("nenhum ponto"));
 
             if (hasRealPoints) {
                 html += '<ol class="list-group list-group-numbered list-group-flush">';
                 data.points.forEach(point => {
+                    // Escape HTML in point text before displaying
                     html += `<li class="list-group-item">${escapeHtml(point)}</li>`;
                 });
                 html += '</ol>';
@@ -296,6 +342,7 @@
                  html += '<p class="text-muted">Nenhum ponto específico identificado para resposta direta.</p>';
             }
 
+            // Display actions if any were found
             if (data.actions && data.actions.length > 0) {
                 html += '<h4 class="mt-3">Ações Sugeridas:</h4>';
                 html += '<ul class="list-group list-group-flush">';
@@ -304,29 +351,32 @@
                 });
                 html += '</ul>';
             }
-             analysisResultEl.innerHTML = html;
+            analysisResultEl.innerHTML = html; // Update the DOM
         }
 
-        // <<< MODIFICAÇÃO AQUI >>>
-        // Função para criar dinamicamente os campos de input, incluindo rádios de direção
+        // Function to dynamically create user input fields (guidance textareas)
+        // Includes radio buttons for suggestion direction and the "Suggest Text" button
         function createUserInputFields(points) {
-            userInputsSection.innerHTML = ''; // Limpa a secção antes de adicionar novos inputs
+            userInputsSection.innerHTML = ''; // Clear previous inputs
 
+            // Helper function to create a single input group (for a point or general guidance)
             const createGroup = (point, index, isGeneral = false) => {
                 const div = document.createElement('div');
                 div.className = 'point-input-group';
                 const inputId = isGeneral ? 'userInput-general' : `userInput-${index}`;
-                // Use "N/A" or similar if point is null/undefined for data attribute
+                // Use "N/A" as identifier if it's general guidance or point is null
                 const pointIdentifier = isGeneral ? "N/A" : (point || "N/A");
+                // Different label for general vs specific point
                 const labelText = isGeneral
-                    ? '<strong>Orientação Geral para a Resposta:</strong> (Opcional - se não houver pontos específicos acima ou quiser dar instruções gerais)'
+                    ? '<strong>Orientação Geral para a Resposta:</strong> (Opcional - se não houver pontos específicos ou quiser dar instruções gerais)'
                     : `<strong>Ponto ${index + 1}:</strong>`;
-                 // Only display the point text if it's not a general input
-                 const pointDisplay = !isGeneral ? `<p class="point-text">"${escapeHtml(point)}"</p>` : '';
+                // Display the original point text only if it's not general guidance
+                const pointDisplay = !isGeneral ? `<p class="point-text">"${escapeHtml(point)}"</p>` : '';
+                // Mark textarea as required only for specific points
                 const requiredAttr = !isGeneral ? 'required' : '';
                 const requiredFeedback = !isGeneral ? '<div class="invalid-feedback">Por favor, forneça resposta/orientação para este ponto.</div>' : '';
 
-                // --- HTML para os botões de rádio ---
+                // --- HTML for Direction Radio Buttons ---
                 // Only add radio buttons if it's NOT a general guidance input
                 const directionRadiosHTML = !isGeneral ? `
                     <div class="mb-2 guidance-direction-group">
@@ -340,53 +390,52 @@
                             <label class="form-check-label" for="direction-${index}-nao">Não</label>
                         </div>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="direction-${index}" id="direction-${index}-outro" value="outro">
-                            <label class="form-check-label" for="direction-${index}-outro">Outro/N/A</label>
+                            <input class="form-check-input" type="radio" name="direction-${index}" id="direction-${index}-outro" value="outro" checked> <label class="form-check-label" for="direction-${index}-outro">Outro/N/A</label>
                         </div>
                     </div>
                 ` : ''; // No radios for the general guidance input
 
-                // --- HTML para o botão Sugerir e Textarea ---
-                // Disable suggest button for general guidance
+                // --- HTML for Suggest Button ---
+                // Only add suggest button if it's NOT general guidance
                 const suggestButtonHTML = !isGeneral ? `
-                         <button class="btn btn-sm btn-outline-secondary suggest-btn"
-                                 data-target-textarea="${inputId}"
-                                 data-point-index="${index}"
-                                 type="button"
-                                 title="Gerar sugestão de texto com IA para este ponto, usando a Direção Rápida selecionada (se houver)">
-                             Sugerir Texto
-                             <div class="spinner-border spinner-border-sm text-secondary ms-1 loading-spinner" role="status" style="display: none;"></div>
-                         </button>
-                 ` : '';
+                    <button class="btn btn-sm btn-outline-secondary suggest-btn"
+                            data-target-textarea="${inputId}"
+                            data-point-index="${index}"
+                            type="button"
+                            title="Gerar sugestão de texto com IA para este ponto, usando a Direção Rápida selecionada (se houver)">
+                        Sugerir Texto
+                        <div class="spinner-border spinner-border-sm text-secondary ms-1 loading-spinner" role="status" style="display: none;"></div>
+                    </button>
+                ` : '';
 
+                // Assemble the HTML for the input group
                 div.innerHTML = `
-                     <div class="d-flex justify-content-between align-items-start mb-1">
-                         <label for="${inputId}" class="form-label mb-0">${labelText}</label>
-                         ${suggestButtonHTML}
-                     </div>
-                     ${pointDisplay}
-                     ${directionRadiosHTML}
-                     <textarea class="form-control user-guidance" id="${inputId}" data-point="${escapeHtml(pointIdentifier)}" rows="3" ${requiredAttr} placeholder="Escreva aqui a sua resposta/orientação para este ponto..."></textarea>
-                     ${requiredFeedback}
-                 `;
-                userInputsSection.appendChild(div);
+                    <div class="d-flex justify-content-between align-items-start mb-1 flex-wrap"> <label for="${inputId}" class="form-label mb-0 me-2">${labelText}</label> ${suggestButtonHTML}
+                    </div>
+                    ${pointDisplay}
+                    ${directionRadiosHTML}
+                    <textarea class="form-control user-guidance" id="${inputId}" data-point="${escapeHtml(pointIdentifier)}" rows="3" ${requiredAttr} placeholder="Escreva aqui a sua resposta/orientação para este ponto..."></textarea>
+                    ${requiredFeedback}
+                `;
+                userInputsSection.appendChild(div); // Add the group to the DOM
             };
 
-            // Decide whether to show specific points or general guidance input
-            // Use the same logic as displayAnalysisResults to check for "real" points
+            // Determine if there are specific points to address
             const hasRealPoints = points && points.length > 0 && !(points.length === 1 && points[0].toLowerCase().includes("nenhum ponto"));
 
             if (hasRealPoints) {
+                // Create an input group for each specific point
                 points.forEach((point, index) => {
-                    createGroup(point, index, false); // Create input for each specific point
+                    createGroup(point, index, false);
                 });
-            } else {
-                 // If no specific points were found (or only "Nenhum ponto"), create one general input field
-                 createGroup(null, 0, true); // isGeneral = true
             }
+            // Always add a general guidance input field, even if there are specific points
+            // This allows users to add overall instructions.
+            createGroup(null, 'general', true); // Use 'general' index for the general input
+
         }
 
-        // 2. Event Listener para o Botão Gerar Rascunho
+        // 2. Event Listener for the "Gerar Rascunho" Button
         draftBtn.addEventListener('click', async () => {
             const originalEmail = originalEmailEl.value.trim();
             const selectedPersona = personaSelect.value;
@@ -394,129 +443,183 @@
             let userInputsData = [];
             let formIsValid = true;
 
-            hideError(draftErrorEl);
+            hideError(draftErrorEl); // Clear previous draft errors
+            contextInfoEl.style.display = 'none'; // Hide previous context info
 
+            // Collect guidance from all textareas and validate required fields
             guidanceInputs.forEach(input => {
                 const pointText = input.getAttribute('data-point'); // Gets the original point text or "N/A"
                 const guidanceText = input.value.trim();
 
-                // Validation only for non-general inputs that are required
+                // Validate only if the input is marked as required (i.e., for specific points)
                 if (input.required && !guidanceText) {
-                    input.classList.add('is-invalid');
-                    if (formIsValid) input.focus(); // Focus on the first invalid
-                    formIsValid = false;
+                    input.classList.add('is-invalid'); // Add error style
+                    if (formIsValid) input.focus(); // Focus the first invalid field
+                    formIsValid = false; // Mark form as invalid
                 } else {
-                    input.classList.remove('is-invalid');
+                    input.classList.remove('is-invalid'); // Remove error style if valid
                 }
-                userInputsData.push({ point: pointText, guidance: guidanceText });
+                // Add the point and guidance to the data array
+                // Only add if guidance is provided OR if it's a required point (even if empty, to signal it was shown)
+                if (guidanceText || input.required) {
+                     userInputsData.push({ point: pointText, guidance: guidanceText });
+                }
             });
 
+            // Stop if validation failed
             if (!formIsValid) {
                 showError(draftErrorEl, "Por favor, forneça resposta/orientação para todos os pontos marcados como obrigatórios.");
                 return;
             }
+            // Basic check if persona is selected
+            if (!selectedPersona) {
+                 showError(draftErrorEl, "Por favor, selecione uma persona.");
+                 personaSelect.focus();
+                 return;
+            }
 
+
+            // Update UI for processing
             showSpinner(draftSpinner);
-            draftSection.style.display = 'none';
-            generatedDraftEl.value = '';
-            draftBtn.disabled = true;
+            draftSection.style.display = 'none'; // Hide draft section
+            generatedDraftEl.value = ''; // Clear previous draft
+            draftBtn.disabled = true; // Disable buttons
             analyzeBtn.disabled = true;
 
             try {
+                 // Call the backend /draft endpoint
                  const response = await fetch('/draft', {
                      method: 'POST',
                      headers: { 'Content-Type': 'application/json' },
                      body: JSON.stringify({
                          original_email: originalEmail,
                          persona_name: selectedPersona,
-                         user_inputs: userInputsData
+                         user_inputs: userInputsData // Send collected guidance
                      })
                  });
                  const data = await response.json();
+
+                 // Handle API or backend errors
                  if (!response.ok || data.error) {
-                      throw new Error(data.error || `Erro HTTP ${response.status}: ${response.statusText}`);
+                      // Include context analysis info in the error if available
+                      let errorMsg = data.error || `Erro HTTP ${response.status}: ${response.statusText}`;
+                      if(data.context_analysis && data.context_analysis.error) {
+                          errorMsg += ` (Erro na pré-análise: ${data.context_analysis.error})`;
+                      } else if (data.context_analysis) {
+                          errorMsg += ` (Contexto: ${data.context_analysis.recipient_category}, Tom: ${data.context_analysis.incoming_tone})`;
+                      }
+                      throw new Error(errorMsg);
                  }
+
+                 // Display the generated draft
                  generatedDraftEl.value = data.draft;
-                 draftSection.style.display = 'block';
+                 draftSection.style.display = 'block'; // Show the draft section
+
+                 // Optionally display the context analysis used by the backend
+                 if (data.context_analysis) {
+                     contextDetailsEl.textContent = `Categoria: ${data.context_analysis.recipient_category || 'N/A'}, Tom Recebido: ${data.context_analysis.incoming_tone || 'N/A'}, Remetente: ${data.context_analysis.sender_name_guess || 'N/A'}`;
+                     contextInfoEl.style.display = 'block';
+                 }
+
             } catch (error) {
-                 console.error("Erro durante a geração do rascunho:", error);
-                 showError(draftErrorEl, `Erro na geração do rascunho: ${error.message}`);
+                console.error("Erro durante a geração do rascunho:", error);
+                showError(draftErrorEl, `Erro na geração do rascunho: ${error.message}`);
             } finally {
-                 hideSpinner(draftSpinner);
-                 draftBtn.disabled = false;
-                 analyzeBtn.disabled = false;
+                // Re-enable buttons and hide spinner
+                hideSpinner(draftSpinner);
+                // Re-enable buttons only if personas are available
+                 if (personaSelect.value && !personaSelect.disabled) {
+                    draftBtn.disabled = false;
+                 }
+                analyzeBtn.disabled = false;
             }
         });
 
-        // 3. Event Listener para o Botão Copiar Rascunho
+        // 3. Event Listener for the "Copiar Texto" Button
         copyDraftBtn.addEventListener('click', () => {
-            if (!generatedDraftEl.value) return;
+            if (!generatedDraftEl.value) return; // Do nothing if draft is empty
             const textToCopy = generatedDraftEl.value;
+            // Use modern Clipboard API
             navigator.clipboard.writeText(textToCopy).then(() => {
+                // Success feedback
+                const originalText = copyDraftBtn.textContent;
                 copyDraftBtn.textContent = 'Copiado!';
                 copyDraftBtn.classList.add('btn-success');
-                copyDraftBtn.classList.remove('btn-secondary');
+                copyDraftBtn.classList.remove('btn-secondary', 'btn-warning');
+                // Reset button after 2 seconds
                 setTimeout(() => {
-                    copyDraftBtn.textContent = 'Copiar Texto Editado';
+                    copyDraftBtn.textContent = originalText;
                     copyDraftBtn.classList.remove('btn-success');
                     copyDraftBtn.classList.add('btn-secondary');
                 }, 2000);
             }).catch(err => {
-                console.error('Falha ao copiar com navigator.clipboard:', err);
-                // Fallback using execCommand (less reliable)
+                // Fallback for older browsers or if Clipboard API fails
+                console.warn('Falha ao copiar com navigator.clipboard, tentando fallback:', err);
                 try {
-                    generatedDraftEl.select();
-                    document.execCommand('copy');
+                    generatedDraftEl.select(); // Select the text
+                    document.execCommand('copy'); // Attempt to copy using older command
+                    // Fallback success feedback
+                    const originalText = copyDraftBtn.textContent;
                     copyDraftBtn.textContent = 'Copiado (Fallback)!';
                     copyDraftBtn.classList.add('btn-warning'); // Use warning color for fallback
-                    copyDraftBtn.classList.remove('btn-secondary');
-                     setTimeout(() => {
-                        copyDraftBtn.textContent = 'Copiar Texto Editado';
+                    copyDraftBtn.classList.remove('btn-secondary', 'btn-success');
+                    // Reset button after 2 seconds
+                    setTimeout(() => {
+                        copyDraftBtn.textContent = originalText;
                         copyDraftBtn.classList.remove('btn-warning');
                         copyDraftBtn.classList.add('btn-secondary');
-                     }, 2000);
+                    }, 2000);
                 } catch (execErr) {
-                     console.error('Fallback execCommand falhou:', execErr);
-                     alert('Não foi possível copiar o texto automaticamente. Por favor, copie manualmente.');
+                     console.error('Fallback execCommand também falhou:', execErr);
+                     alert('Não foi possível copiar o texto automaticamente. Por favor, copie manualmente (Ctrl+C ou Cmd+C).'); // Inform user
                 }
             });
         });
 
-        // <<< MODIFICAÇÃO AQUI >>>
-        // 4. Event Listener (Delegado) para os Botões "Sugerir Texto"
+        // 4. Event Listener (Delegated) for the "Sugerir Texto" Buttons within userInputsSection
         userInputsSection.addEventListener('click', async (event) => {
+            // Find the closest ancestor button with the 'suggest-btn' class
             const button = event.target.closest('.suggest-btn');
-            if (button) {
+            if (button) { // Ensure a suggest button was clicked
                 const spinner = button.querySelector('.loading-spinner');
                 const targetTextareaId = button.dataset.targetTextarea;
-                const pointIndex = button.dataset.pointIndex; // Use index to find correct point and radio
+                const pointIndex = parseInt(button.dataset.pointIndex, 10); // Get the index (as number)
                 const targetTextarea = document.getElementById(targetTextareaId);
                 const originalEmail = originalEmailEl.value.trim();
                 const selectedPersonaName = personaSelect.value;
 
-                // --- Obter a direção selecionada ---
+                // --- Get the selected direction (Sim/Não/Outro) ---
                 const radioGroupName = `direction-${pointIndex}`;
                 const checkedRadio = userInputsSection.querySelector(`input[name="${radioGroupName}"]:checked`);
-                const selectedDirection = checkedRadio ? checkedRadio.value : null; // Será "sim", "nao", "outro", ou null
+                // Value will be "sim", "nao", "outro", or null if none checked (though 'outro' is default checked)
+                const selectedDirection = checkedRadio ? checkedRadio.value : "outro";
 
-                // --- Obter o texto do ponto original ---
-                // We need the original text of the point to send to the backend
-                // Let's retrieve it from the stored analysis data using the index
-                const pointToAddress = (currentAnalysisPoints && pointIndex < currentAnalysisPoints.length)
+                // --- Get the original point text using the index ---
+                // Retrieve from the stored `currentAnalysisPoints` array
+                const pointToAddress = (currentAnalysisPoints && pointIndex >= 0 && pointIndex < currentAnalysisPoints.length)
                                         ? currentAnalysisPoints[pointIndex]
-                                        : targetTextarea.dataset.point; // Fallback to data-point on textarea if needed
+                                        : null; // Or some error handling
 
+                // Validate necessary data before making the API call
                 if (!targetTextarea || !originalEmail || !pointToAddress || !selectedPersonaName || pointToAddress === 'N/A') {
-                    console.error("Dados em falta para o pedido de sugestão (incluindo ponto, persona). Ponto:", pointToAddress);
+                    console.error("Dados em falta para o pedido de sugestão (email, ponto, persona). Ponto:", pointToAddress);
                     showError(draftErrorEl, "Erro interno: Não foi possível obter dados, ponto ou persona para a sugestão.");
                     return;
                 }
+                 if (!selectedPersonaName) {
+                    showError(draftErrorEl, "Por favor, selecione uma persona antes de pedir sugestões.");
+                    personaSelect.focus();
+                    return;
+                 }
 
+
+                // Update UI for processing
                 if (spinner) spinner.style.display = 'inline-block';
                 button.disabled = true;
                 hideError(draftErrorEl); // Clear previous errors
 
                 try {
+                    // Call the backend /suggest_guidance endpoint
                     const response = await fetch('/suggest_guidance', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -524,22 +627,28 @@
                             original_email: originalEmail,
                             point_to_address: pointToAddress, // Send the actual point text
                             persona_name: selectedPersonaName,
-                            direction: selectedDirection // Envia a direção selecionada (pode ser null)
+                            direction: selectedDirection // Send the selected direction
                         })
                     });
                     const data = await response.json();
+
+                    // Handle API errors
                     if (!response.ok || data.error) {
                          throw new Error(data.error || `Erro HTTP ${response.status}: ${response.statusText}`);
                     }
-                    // Preenche a textarea com a sugestão
+
+                    // Fill the target textarea with the suggestion
                     targetTextarea.value = data.suggestion || '';
-                    // Trigger input event for potential frameworks/listeners
+                    // Trigger input event in case other scripts are listening
                     targetTextarea.dispatchEvent(new Event('input', { bubbles: true }));
                     targetTextarea.classList.remove('is-invalid'); // Remove validation error if present
+
                 } catch (error) {
                     console.error("Erro ao obter sugestão de texto:", error);
+                    // Show error message in the draft error area, as it's related to response generation
                     showError(draftErrorEl, `Erro na sugestão: ${error.message}`);
                 } finally {
+                    // Reset button and spinner
                     if (spinner) spinner.style.display = 'none';
                     button.disabled = false;
                 }

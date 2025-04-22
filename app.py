@@ -4,139 +4,57 @@ import json
 import re
 import requests
 from flask import Flask, render_template, request, jsonify
-import logging # Usar logging para melhor controlo das mensagens
-from dotenv import load_dotenv # Import dotenv
+import logging
+from dotenv import load_dotenv
+import traceback # Para logging de exceções mais detalhado
 
-# Load environment variables from .env file (optional but recommended)
+# Load environment variables from .env file
 load_dotenv()
 
 # Configurar logging básico
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Adiciona o nome da função ao formato do log para melhor rastreamento
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - [%(funcName)s] %(message)s')
 
 # --- Configuração ---
 APP_HOST = os.environ.get('APP_HOST', '127.0.0.1')
 APP_PORT = int(os.environ.get('APP_PORT', 5001))
-GENERATION_TEMPERATURE = float(os.environ.get('GENERATION_TEMPERATURE', 0.7))
+GENERATION_TEMPERATURE = float(os.environ.get('GENERATION_TEMPERATURE', 0.8)) # Temperatura padrão para geração criativa
 DEBUG_MODE = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
 
 # --- Gemini Configuration ---
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
-# *** User confirmed this model version works for them ***
-GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-2.0-flash') # Using 1.5 Flash as per last successful run
+GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-2.0-flash')
 
-# Diretoria base da aplicação
+# Diretoria base da aplicação e ficheiro de personas
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PERSONAS_FILE = os.path.join(BASE_DIR, 'personas.json')
 
 # Inicializa a aplicação Flask
 app = Flask(__name__)
+# Configura o nível de log da aplicação Flask
 if DEBUG_MODE:
     app.logger.setLevel(logging.DEBUG)
+else:
+    app.logger.setLevel(logging.INFO)
 
-# --- Definições Detalhadas das Personas ---
-# (Persona definitions remain the same as provided by the user)
-PERSONAS = {
-    "rodrigo_novelo": {
-        "name": "Rodrigo Novelo", # <<< REMOVIDO (Eu) DAQUI
-        "role": "Aluno de Licenciatura em Engenharia Informática, ISEC/DEIS",
-        "area": "Inteligência Artificial",
-        "current_context": [
-            "Projeto: Desenvolvimento de assistente LLM para emails (IA Generativa)",
-            "Orientadores: Professor Rodrigo, Professor Jorge",
-            "Disciplinas: Sistemas Operativos II, Encaminhamento de Dados"
-        ],
-        "description": "Estilo q.b. formal mas adaptável. Prefere emails diretos e informativos, estruturando bem os de atualização para orientadores (tópicos/listas). Mantém profissionalismo 'leve' com orientadores. Casual e direto com colegas.",
-        "attributes": {
-            "tone": "Adaptável (definido pelas regras)",
-            "formality": "Variável (definido pelas regras)",
-            "verbosity": "DiretoInformativo",
-            "emoji_usage": "Nenhum",
-            "language": "pt-PT"
-        },
-        "recipient_adaptation_rules": {
-            # *** NOTA: Assinaturas aqui usam o nome da persona (agora sem "(Eu)") ***
-            "professor": {"tone": "Formal", "greeting": "Caro(a) Professor(a) [Apelido],", "farewell": "Com os melhores cumprimentos,\nRodrigo Novelo"},
-            "colleague_student": {"tone": "Casual", "greeting": "Olá [Nome],", "farewell": "Abraço,\nRodrigo"},
-            "admin_services": {"tone": "FormalFuncional", "greeting": "Exmos(as). Senhores(as),", "farewell": "Com os melhores cumprimentos,\nRodrigo Novelo"},
-            "external_formal": {"tone": "Formal", "greeting": "Boa tarde/noite,", "farewell": "Com os melhores cumprimentos,\nRodrigo Novelo"},
-            "research_collaborator_external": {"tone": "FormalColaborativo", "greeting": "Estimado(a) Professor(a)/Doutor(a) [Apelido],", "farewell": "Com os melhores cumprimentos,\nRodrigo Novelo"},
-            "conference_contact": {"tone": "SemiFormalProfissional", "greeting": "Caro(a) [Nome], (Referir conferência)", "farewell": "Atenciosamente,\nRodrigo Novelo"},
-            "support_technical": {"tone": "Funcional", "greeting": "Bom dia/tarde,", "farewell": "Obrigado(a),\nRodrigo Novelo"},
-            "group_mixed_formal": {"tone": "Formal", "greeting": "Bom dia a todos,", "farewell": "Com os melhores cumprimentos,\nRodrigo Novelo"},
-            "unknown": {"tone": "Formal", "greeting": "Bom dia/tarde/noite,", "farewell": "Com os melhores cumprimentos,\nRodrigo Novelo"}
-        },
-        "relationships": {
-            "Professor Rodrigo": {"type": "Orientador de Projeto", "tone": "ProfissionalLeveDescontraido", "greeting_individual": "Caro Professor Rodrigo,"},
-            "Professor Jorge": {"type": "Orientador de Projeto", "tone": "ProfissionalLeveDescontraido", "greeting_individual": "Caro Professor Jorge,"}
-        },
-        "dos": [
-            "Ser direto mas informativo.",
-            "Estruturar emails de atualização para orientadores com tópicos/listas.",
-            "Manter profissionalismo educado e 'leve' com orientadores.",
-            "Adaptar formalidade e saudação/despedida ao tipo de destinatário.",
-            "Ser formal com serviços administrativos e contactos externos formais.",
-            "Ser casual e direto com colegas próximos."
-        ],
-        "donts": [
-            "Ser vago.",
-            "Usar linguagem demasiado informal com professores ou contactos formais/desconhecidos.",
-            "Usar emojis."
-        ],
-        "writing_examples": [
-            # Exemplos mantêm-se iguais...
-             {"context": "Update formal para orientadores após reunião", "output_style_example": "Caros Professores,\n\nDurante a última reunião:\nDiscutimos a vertente prática do trabalho que desenvolvi ao longo da última semana, focada em técnicas de prompt engineering. Recebi recomendações muito úteis que irão orientar o desenvolvimento das próximas etapas.\n\nAo longo desta semana pretendo:\nEntregar a versão revista do survey ao Professor Jorge;\nInvestigar a possibilidade de utilização de um modelo LLM mais avançado e gratuito...\nCaso não seja viável..., irei focar-me em melhorar o código actual...\n\nAtenciosamente,\nRodrigo Novelo"},
-             {"context": "Update formal para orientadores sobre progresso semanal", "output_style_example": "Boa tarde professores,\n\nSegue um pequeno resumo da última reunião e o que ficou proposto fazer durante esta semana.\n\nResumo da Reunião Anterior: apresentei uma pequena amostra de outputs criados por diversos modelos LLM... Contudo, como discutido, houve dificuldade em identificar padrões claros...\n\nProgresso Atual:\nConclusões mais objetivas sobre os modelos LLM:\nEstou a tentar usar 1 ou 2 benchmarks...\nAnalisar pros e contras...\nSurvey:\nDesenvolvimento da versão inicial...\nPretendo apresentar esta versão inicial na próxima quarta-feira...\n\nAtenciosamente,\nRodrigo Novelo."},
-             {"context": "Pedido formal de estágio (Deloitte)", "output_style_example": "Boa noite,\n\nEstou a contactar para perguntar sobre a possibilidade de realizar um estágio Curricular na Deloitte, na área de Redes e Administração de Sistemas.\n\nAtualmente, estou na reta final da licenciatura em Engenharia Informática no ISEC, em Coimbra, e estou à procura de uma oportunidade para desenvolver as competências aprendidas...\n\nSe eventualmente houver abertura para receber estagiários..., estou disponível para enviar o meu CV...\n\nAgradeço desde já a sua atenção.\n\nCom os melhores cumprimentos,\nRodrigo Novelo"},
-             {"context": "Pedido formal de estágio (AIRC)", "output_style_example": "Boa noite,\n\nEstou a contactar para perguntar sobre a possibilidade de realizar um estágio Curricular na AIRC, na área de Redes e Administração de Sistemas.\n\nAtualmente, estou na reta final da licenciatura em Engenharia Informática no ISEC, em Coimbra, e estou à procura de uma oportunidade para desenvolver as competências aprendidas...\n\nSe eventualmente houver abertura para receber estagiários..., estou disponível para enviar o meu CV...\n\nAgradeço desde já a sua atenção.\n\nCom os melhores cumprimentos,\nRodrigo Novelo"},
-             {"context": "Casual - Partilhar descoberta tech com colega (João)", "output_style_example": "Boas João,\nJá experimentaste o novo modelo do GPT? Estive a testar umas automações com ele e está a dar resultados brutais, muito mais coerente que o anterior.\nDepois mostro-te o que fiz com integração no Notion — está mesmo incrivel.\nAbraço,\nRodrigo."},
-             {"context": "Casual - Pedir ajuda técnica a colega (Miguel)", "output_style_example": "Boas Miguel,\n\nEstou preso naquela parte do módulo “Web Requests” no HackTheBox — acho que estou a fazer bem o encoding mas não passo do check. Tu conseguiste à primeira?\n\nSe tiveres uma dica, agradecia bastante.\nAbraço,\nRodrigo."},
-             {"context": "Casual - Pedir sugestão técnica a colega (Rúben)", "output_style_example": "Boas Rúben,\n\nTiveste a experimentar o LLaMA 3 8B localmente? Consegui meter a correr com o Ollama, mas agora queria fazer uma ligação simples a uma página web que estou a montar (tipo fetch para mandar prompts e receber resposta).\n\nTens alguma sugestão rápida ou setup base que possa seguir? Não precisa de ser nada muito complexo, só quero começar a testar.\nAbraço,\nRodrigo."}
-        ]
-    },
-    "prof_rodrigo": {
-        "name": "Professor Rodrigo Rocha Silva",
-        "role": "Pesquisador Associado (CISUC/DEIS/UC), Professor (Fatec Mogi das Cruzes)",
-        "area": "Ciência da Computação (Arquitetura de Sistemas, Big Data, Data Mining, IA)",
-        "current_context": [ "Orientador de Projeto (Assistente LLM)", "Interesses: Big Data, Data Mining, DW, NoSQL, Sentiment Analysis, IA Aplicada, Arquitetura de Sistemas" ],
-        "description": "Professor e Investigador (UC & Fatec) com experiência em indústria e academia. Foco em Arquitetura de Sistemas, Big Data e IA. Estilo adaptável, usa Português do Brasil (pt-BR). ***(NECESSITA MAIS DETALHES E EXEMPLOS)***",
-        "attributes": { "tone": "Adaptável (a definir)", "formality": "Variável (a definir)", "verbosity": "InformativoProfissional", "emoji_usage": "Nenhum", "language": "pt-BR" },
-        "recipient_adaptation_rules": {
-             "orientando_uc": {"tone": "OrientadorDireto", "greeting": "Prezado Rodrigo,", "farewell": "Atenciosamente,\nProf. Rodrigo Rocha Silva"},
-             "professor_colega_uc": {"tone": "ProfissionalRespeitoso", "greeting": "Prezado Prof. [Apelido],", "farewell": "Atenciosamente,\nProf. Rodrigo Rocha Silva"},
-             "unknown": {"tone": "Formal", "greeting": "Prezados(as),", "farewell": "Atenciosamente,\nProf. Rodrigo Rocha Silva"}
-        },
-        "relationships": {
-             "Rodrigo Novelo": {"type": "Orientando (Licenciatura ISEC)", "tone": "OrientadorDireto"},
-             "Professor Jorge": {"type": "Colega Investigador / Co-orientador", "tone": "ProfissionalRespeitoso"}
-        },
-        "dos": [ "*** (A DEFINIR - Adicionar Do's específicos do Prof. Rodrigo) ***" ],
-        "donts": [ "*** (A DEFINIR - Adicionar Don'ts específicos do Prof. Rodrigo) ***" ],
-        "writing_examples": [
-            # <<< ADICIONAR EXEMPLOS DE ESCRITA REAIS DO PROF. RODRIGO AQUI >>>
-        ]
-    },
-    "prof_jorge": {
-        "name": "Professor Jorge Bernardino",
-        "role": "Professor Coordenador (ISEC/DEIS)",
-        "area": "Ciência da Computação (Big Data, Data Warehousing, BI, IoT, Eng. Software)",
-        "current_context": [ "Orientador de Projeto (Assistente LLM)", "Experiência anterior: Presidente ISEC, Presidente Conselho Científico ISEC, Diretor i2A, Visiting Prof CMU", "Membro ACM e IEEE", "Interesses de investigação: Big Data, DW, BI, IoT, Eng. Software" ],
-        "description": "Professor Coordenador no ISEC/DEIS com vasta experiência académica e de gestão. Investigação em Big Data, BI, IoT, Eng. Software. Utiliza Português de Portugal (pt-PT). ***(NECESSITA DETALHES DE ESTILO E EXEMPLOS)***",
-        "attributes": { "tone": "ProfissionalAcadémico", "formality": "Alta", "verbosity": "Estruturado", "emoji_usage": "Nenhum", "language": "pt-PT" },
-        "recipient_adaptation_rules": {
-             "orientando_licenciatura": {"tone": "OrientadorFormal", "greeting": "Caro Rodrigo,", "farewell": "Com os melhores cumprimentos,\nJorge Bernardino"},
-             "professor_colega_uc": {"tone": "ProfissionalRespeitoso", "greeting": "Caro Prof. [Apelido],", "farewell": "Com os melhores cumprimentos,\nJorge Bernardino"},
-             "unknown": {"tone": "Formal", "greeting": "Exmo(a). Sr(a). [Apelido],", "farewell": "Com os melhores cumprimentos,\nJorge Bernardino"}
-        },
-        "relationships": {
-             "Rodrigo Novelo": {"type": "Orientando (Licenciatura UC)", "tone": "OrientadorFormal"},
-             "Professor Rodrigo": {"type": "Colega Investigador / Co-orientador", "tone": "ProfissionalRespeitoso"}
-        },
-        "dos": [ "*** (A DEFINIR - Adicionar Do's específicos do Prof. Jorge) ***" ],
-        "donts": [ "*** (A DEFINIR - Adicionar Don'ts específicos do Prof. Jorge) ***" ],
-        "writing_examples": [
-            # <<< ADICIONAR EXEMPLOS DE ESCRITA REAIS DO PROF. JORGE AQUI >>>
-        ]
-    }
-}
+
+# --- Carregar Personas do Ficheiro JSON ---
+PERSONAS = {} # Inicializa vazio
+try:
+    # Abre e lê o ficheiro JSON com as definições das personas
+    with open(PERSONAS_FILE, 'r', encoding='utf-8') as f:
+        PERSONAS = json.load(f)
+    logging.info(f"Personas carregadas com sucesso de {PERSONAS_FILE}")
+except FileNotFoundError:
+    # Loga um erro crítico se o ficheiro não for encontrado
+    logging.error(f"ERRO CRÍTICO: Ficheiro de personas '{PERSONAS_FILE}' não encontrado.")
+    # A aplicação pode continuar, mas as funcionalidades de persona não funcionarão
+except json.JSONDecodeError as e:
+    # Loga um erro crítico se o JSON estiver mal formado
+    logging.error(f"ERRO CRÍTICO: Falha ao fazer parse do JSON em '{PERSONAS_FILE}': {e}")
+except Exception as e:
+    # Loga qualquer outro erro inesperado durante o carregamento
+    logging.error(f"ERRO CRÍTICO: Ocorreu um erro inesperado ao carregar personas: {e}\n{traceback.format_exc()}")
 
 
 # --- Funções Auxiliares ---
@@ -144,23 +62,33 @@ PERSONAS = {
 def call_gemini(prompt, model=GEMINI_MODEL, temperature=GENERATION_TEMPERATURE):
     """
     Envia um prompt para a Google Gemini API e retorna a resposta.
-    (Função call_gemini completa - sem alterações, reutilizada)
+
+    Args:
+        prompt (str): O texto do prompt a ser enviado.
+        model (str): O identificador do modelo Gemini a ser usado.
+        temperature (float): A temperatura para a geração (controla a criatividade/aleatoriedade).
+
+    Returns:
+        dict: Um dicionário contendo 'text' com a resposta do LLM em caso de sucesso,
+              ou 'error' com uma mensagem de erro em caso de falha.
     """
+    # Verifica se a API Key está configurada
     if not GEMINI_API_KEY:
         logging.error("Variável de ambiente GEMINI_API_KEY não definida!")
-        return "ERROR_CONFIG: Gemini API Key não configurada."
+        return {"error": "ERROR_CONFIG: Gemini API Key não configurada."}
 
-    # Updated API endpoint for v1beta
+    # Endpoint da API Gemini v1beta
     api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
 
+    # Payload da requisição para a API
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {
-            "temperature": temperature
-            # "maxOutputTokens": 8192,
-            # "topP": 0.95,
+            "temperature": temperature,
+            "responseMimeType": "text/plain", # Solicita resposta em texto plano
+            # Outros parâmetros de geração podem ser adicionados aqui (topP, topK, maxOutputTokens)
         },
-         "safetySettings": [ # Example safety settings
+         "safetySettings": [ # Configurações de segurança para bloquear conteúdo prejudicial
              {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
              {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
              {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
@@ -170,151 +98,195 @@ def call_gemini(prompt, model=GEMINI_MODEL, temperature=GENERATION_TEMPERATURE):
     headers = {'Content-Type': 'application/json'}
 
     logging.info(f"Enviando para Gemini API | Modelo: {model} | Temp: {temperature}")
+    # Loga apenas o início do payload para não expor dados sensíveis ou sobrecarregar logs
     app.logger.debug(f"Payload (primeiros 500): {str(payload)[:500]}...")
     response = None
     try:
-        response = requests.post(api_url, json=payload, headers=headers, timeout=180)
-        response.raise_for_status() # Raise HTTPError for bad responses
+        # Faz a requisição POST para a API
+        response = requests.post(api_url, json=payload, headers=headers, timeout=180) # Timeout de 3 minutos
+        response.raise_for_status() # Levanta um erro HTTP para respostas 4xx/5xx
 
+        # Processa a resposta JSON
         data = response.json()
         app.logger.debug(f"Resposta API (parcial): {str(data)[:500]}...")
 
-        # --- Careful response extraction ---
+        # --- Extração cuidadosa da resposta ---
         try:
+            # Verifica se o prompt foi bloqueado por segurança
             if 'promptFeedback' in data and 'blockReason' in data['promptFeedback']:
                 block_reason = data['promptFeedback']['blockReason']
                 safety_ratings_str = f" Safety Ratings: {data['promptFeedback'].get('safetyRatings', 'N/A')}"
                 error_msg = f"ERROR_GEMINI_BLOCKED_PROMPT: Prompt bloqueado. Reason: {block_reason}.{safety_ratings_str}"
                 logging.error(f"{error_msg}. Feedback: {data['promptFeedback']}")
-                return error_msg
+                return {"error": error_msg}
 
+            # Verifica se há candidatos (respostas geradas)
             if 'candidates' in data and data['candidates']:
-                candidate = data['candidates'][0]
+                candidate = data['candidates'][0] # Pega o primeiro candidato
                 finish_reason = candidate.get('finishReason', 'UNKNOWN')
                 safety_ratings_str = f" Safety Ratings: {candidate.get('safetyRatings', 'N/A')}"
 
+                # Loga um aviso se a geração não terminou normalmente (STOP ou MAX_TOKENS)
                 if finish_reason not in ['STOP', 'MAX_TOKENS']:
                     logging.warning(f"Gemini finishReason foi '{finish_reason}'. Resposta pode estar incompleta ou bloqueada.{safety_ratings_str}")
+                    # Se foi bloqueado por segurança durante a geração
                     if finish_reason in ['SAFETY', 'RECITATION', 'OTHER']:
                         error_msg = f"ERROR_GEMINI_BLOCKED_FINISH: Geração interrompida. Reason: {finish_reason}.{safety_ratings_str}"
                         logging.error(error_msg)
-                        return error_msg
+                        return {"error": error_msg}
 
+                # Extrai o texto gerado da estrutura da resposta
+                generated_text = None
                 if 'content' in candidate and 'parts' in candidate['content'] and candidate['content']['parts']:
                     text_part = candidate['content']['parts'][0]
                     if 'text' in text_part:
-                        generated_text = text_part['text']
-                        return generated_text.strip()
-                    else:
-                        error_msg = f"ERROR_GEMINI_PARSE: 'text' key missing in response part. Part: {text_part}"
-                        logging.error(error_msg)
-                        return error_msg
-                else:
-                     error_msg = f"ERROR_GEMINI_PARSE: Missing 'content' or 'parts' in candidate. Candidate: {candidate}"
-                     logging.error(error_msg)
-                     return error_msg
+                         generated_text = text_part['text']
 
-            error_msg = f"ERROR_GEMINI_PARSE: Resposta inesperada - sem 'candidates' ou 'promptFeedback' com bloqueio. Data: {str(data)[:500]}"
+                # Retorna o texto se encontrado
+                if generated_text is not None:
+                     return {"text": generated_text.strip()}
+                else:
+                    # Se não houve texto, mas também não foi bloqueado explicitamente, logar e retornar erro
+                    error_msg = f"ERROR_GEMINI_PARSE: Resposta válida mas sem texto gerado (finishReason: {finish_reason}). Candidate: {str(candidate)[:500]}"
+                    logging.error(error_msg)
+                    return {"error": error_msg}
+
+            # Caso de resposta válida mas estrutura inesperada
+            error_msg = f"ERROR_GEMINI_PARSE: Estrutura de resposta inesperada. Data: {str(data)[:500]}"
             logging.error(error_msg)
-            return error_msg
+            return {"error": error_msg}
 
         except (KeyError, IndexError, TypeError) as e:
-            error_msg = f"ERROR_GEMINI_PARSE: Exception accessing response data. Error: {e}. Data: {str(data)[:500]}"
-            logging.exception("Error parsing Gemini response:")
-            return error_msg
+            # Erro ao tentar aceder a chaves/índices na resposta JSON
+            error_msg = f"ERROR_GEMINI_PARSE: Exception parsing response data. Error: {e}. Data: {str(data)[:500]}"
+            logging.exception("Error parsing Gemini response structure:") # Loga o stack trace completo
+            return {"error": error_msg}
 
+    # --- Tratamento de erros de rede e HTTP ---
     except requests.exceptions.Timeout:
-        error_msg = f"ERROR_GEMINI_TIMEOUT: Timeout (180s) ao contactar Gemini API."
+        error_msg = "ERROR_GEMINI_TIMEOUT: Timeout (180s) ao contactar Gemini API."
         logging.error(error_msg)
-        return error_msg
+        return {"error": error_msg}
     except requests.exceptions.ConnectionError:
-        error_msg = f"ERROR_GEMINI_CONNECTION: Falha na conexão com Gemini API."
+        error_msg = "ERROR_GEMINI_CONNECTION: Falha na conexão com Gemini API."
         logging.error(error_msg)
-        return error_msg
+        return {"error": error_msg}
     except requests.exceptions.RequestException as e:
+        # Erro genérico da biblioteca requests (inclui HTTPError)
         error_details = ""
         status_code = "N/A"
         if response is not None:
             status_code = response.status_code
             try:
+                # Tenta obter detalhes do erro do JSON da resposta
                 error_content = response.json()
                 error_details = error_content.get('error', {}).get('message', response.text)
             except (json.JSONDecodeError, AttributeError):
+                 # Se não for JSON, pega o início do texto da resposta
                  if hasattr(response, 'text'):
-                     error_details = response.text[:200]
+                      error_details = response.text[:200] + "..."
         error_msg = f"ERROR_GEMINI_REQUEST: {e} (Status: {status_code}) - Detalhes: {error_details}"
-        logging.error(f"Erro ao chamar a API Gemini: {e}. Status: {status_code}. Detalhes: {error_details}")
+        logging.error(f"Erro na chamada API Gemini: {e}. Status: {status_code}. Detalhes: {error_details}")
         app.logger.debug(f"Payload que causou erro (parcial): {str(payload)[:500]}...")
-        return error_msg
+        return {"error": error_msg}
     except json.JSONDecodeError as e:
-        error_msg = f"ERROR_JSON_DECODE: {e} - Resposta (início): {response.text[:200] if response is not None else 'N/A'}..."
-        logging.error(f"Erro ao descodificar JSON da resposta Gemini: {e}")
+        # Erro se a resposta da API não for um JSON válido
+        error_msg = f"ERROR_JSON_DECODE: Falha ao descodificar JSON da resposta da API. Error: {e}. Resposta (início): {response.text[:200] if response is not None else 'N/A'}..."
+        logging.error(error_msg)
         if response is not None:
              logging.error(f"Resposta completa recebida (status {response.status_code}): {response.text}")
-        return error_msg
+        return {"error": error_msg}
     except Exception as e:
+        # Captura qualquer outro erro inesperado
         error_msg = f"ERROR_UNEXPECTED: {e.__class__.__name__} - {e}"
-        logging.exception("Erro inesperado na função call_gemini:")
-        return error_msg
+        logging.exception("Erro inesperado na função call_gemini:") # Loga o stack trace completo
+        return {"error": error_msg}
 
 
 def parse_analysis_output(llm_output):
     """
-    Faz o parsing da saída textual do LLM (Prompt 1) para extrair pontos e ações.
-    (Função parse_analysis_output completa - sem alterações aqui)
+    Faz o parsing da saída textual do LLM (Prompt 1 - Análise de Pontos/Ações)
+    para extrair listas de pontos a responder e ações a tomar.
+
+    Args:
+        llm_output (str | dict): A saída do LLM. Pode ser uma string ou um
+                                 dicionário de erro vindo de `call_gemini`.
+
+    Returns:
+        dict: Um dicionário com as chaves 'points' (list) e 'actions' (list).
+              Em caso de erro no input ou parsing, retorna um dicionário
+              com a chave 'error'.
     """
     points = []
     actions = []
-    if not llm_output or llm_output.startswith("ERROR_"):
-        # Retorna o erro se existir, ou uma mensagem genérica se a saída for vazia
-        return {"error": llm_output or "Empty or error response from LLM analysis"}
 
-    # Regex mais flexível para o cabeçalho "Pontos a Responder"
-    points_match = re.search(r"(?:points\s+to\s+address|pontos\s+a\s+responder)\s*:\s*\n*(.*?)(?:\n*\s*(?:\*\*|\_\_)(?:actions|ações)|$)", llm_output, re.IGNORECASE | re.DOTALL)
+    # Verifica se a entrada já é um erro
+    if isinstance(llm_output, dict) and "error" in llm_output:
+        return llm_output
+    if not llm_output:
+        return {"error": "Empty response from LLM analysis"}
+    if not isinstance(llm_output, str):
+        llm_output = str(llm_output) # Garante que é string para regex
+    if llm_output.startswith("ERROR_"):
+        return {"error": llm_output} # Propaga erros prefixados
+
+    # Regex para encontrar a secção "Pontos a Responder" e capturar o seu conteúdo
+    # Procura por "pontos a responder" ou "points to address" (case-insensitive),
+    # seguido por dois pontos, opcionalmente nova linha, e captura tudo (*)
+    # até encontrar a próxima secção "ações" ou "actions" (com ** ou __) ou o fim ($).
+    points_match = re.search(
+        r"(?:points\s+to\s+address|pontos\s+a\s+responder)\s*:\s*\n*(.*?)(?:\n*\s*(?:\*\*|\_\_)(?:actions|ações)|$)",
+        llm_output, re.IGNORECASE | re.DOTALL
+    )
     if points_match:
         points_text = points_match.group(1).strip()
-        # Verifica se o texto contém algo para além de "nenhum/none" (case-insensitive, opcional ponto final)
+        # Verifica se o texto não é apenas "nenhum" ou "none"
         if points_text and not re.search(r"^\s*(nenhum|none)\.?\s*$", points_text, re.IGNORECASE | re.MULTILINE):
-            # Tenta encontrar itens numerados ou com bullets
+            # Tenta extrair itens de lista (numerados ou com marcadores)
             raw_points = re.findall(r"^\s*(?:\d+[\.\)]?|\*|\-)\s+(.*?)(?=\n\s*(?:\d+[\.\)]?|\*|\-)|\Z)", points_text, re.MULTILINE | re.DOTALL)
+            # Limpa espaços extra e adiciona à lista se não estiver vazio
             points = [re.sub(r'\s+', ' ', p).strip() for p in raw_points if p.strip()]
-            # Fallback: Se não encontrou itens estruturados mas havia texto, considera tudo como um ponto? (Opcional, pode ser confuso)
-            # if not points and points_text:
-            #    points = [points_text]
     elif "pontos a responder" in llm_output.lower() or "points to address" in llm_output.lower():
+        # Loga aviso se o cabeçalho foi encontrado mas vazio ou não parseável
         logging.warning("Analysis parsing: Section 'Pontos a Responder' found but was empty or unparseable.")
-    # Se não encontrou o cabeçalho de pontos, `points` permanecerá vazio.
 
-    # Regex mais flexível para o cabeçalho "Ações para Rodrigo"
-    actions_match = re.search(r"(?:actions\s+for\s+rodrigo|ações\s+para\s+rodrigo)\s*(?:\(optional|opcional\))?\s*:\s*\n*(.*?)(?:\n*\s*(?:\*\*|\_\_)|$)", llm_output, re.IGNORECASE | re.DOTALL)
+    # Regex similar para encontrar a secção "Ações para Rodrigo"
+    actions_match = re.search(
+        r"(?:actions\s+for\s+rodrigo|ações\s+para\s+rodrigo)\s*(?:\(optional|opcional\))?\s*:\s*\n*(.*?)(?:\n*\s*(?:\*\*|\_\_)|$)",
+        llm_output, re.IGNORECASE | re.DOTALL
+    )
     if actions_match:
         actions_text = actions_match.group(1).strip()
+        # Verifica se não é apenas "nenhum", "none", "nenhuma"
         if actions_text and not re.search(r"^\s*(nenhum|none|nenhuma)\.?\s*$", actions_text, re.IGNORECASE | re.MULTILINE):
-            # Tenta encontrar itens com bullets
+            # Tenta extrair itens com marcadores (* ou -)
             raw_actions = re.findall(r"^\s*[\*\-]\s+(.*?)(?=\n\s*[\*\-]|\Z)", actions_text, re.MULTILINE | re.DOTALL)
             actions = [re.sub(r'\s+', ' ', a).strip() for a in raw_actions if a.strip()]
-            # Fallback? (Opcional)
-            # if not actions and actions_text:
-            #    actions = [actions_text]
 
-    # Se o parsing não encontrou nada estruturado, mas havia texto, loga aviso
+    # Loga aviso se a estrutura esperada não foi encontrada ou parseada
     if not points and not actions and not llm_output.startswith("ERROR_") and llm_output.strip():
         if not points_match and not actions_match:
              logging.warning(f"Analysis parsing: Could not find 'Pontos a Responder' or 'Ações' structure. LLM output (start): {llm_output[:200]}...")
         else:
              logging.warning(f"Analysis parsing: Found headers but failed to extract list items. LLM output (start): {llm_output[:200]}...")
 
-    # Normaliza o caso de "nenhum ponto" explicitamente retornado pelo LLM
+    # Se o LLM explicitamente disse "nenhum ponto", retorna lista vazia
     if not points and re.search(r"nenhum ponto a responder", llm_output, re.IGNORECASE):
-        points = ["Nenhum ponto a responder."] # Garante consistência
+        points = [] # Retorna lista vazia para consistência
 
     return {"points": points or [], "actions": actions or []}
 
 
 def build_prompt_1_analysis(email_text):
     """
-    Constrói o prompt para solicitar a análise do email ao LLM (Prompt 1).
-    *** VERSÃO REFINADA PARA SER MAIS CLARA ***
+    Constrói o prompt para solicitar a análise inicial do email ao LLM (Prompt 1),
+    focado em extrair pontos que necessitam de resposta e ações a tomar.
+
+    Args:
+        email_text (str): O conteúdo completo do email recebido.
+
+    Returns:
+        str: O prompt formatado para o LLM.
     """
     prompt = f"""System: És um assistente de análise de emails altamente eficiente e preciso. A tua função é ler o email fornecido e identificar claramente os elementos que requerem atenção por parte do destinatário (vamos assumir que se chama Rodrigo). Foca-te apenas no conteúdo do email. **Responde SEMPRE em Português de Portugal (pt-PT).**
 
@@ -340,12 +312,190 @@ Email Recebido:
 """
     return prompt
 
+# --- NOVA FUNÇÃO e PROMPT para Análise de Contexto (Pré-Análise) ---
+def build_prompt_0_context_analysis(original_email, persona):
+    """
+    Constrói o prompt para a Pré-Análise (Prompt 0): identificar tipo de destinatário,
+    tom do email recebido e nome do remetente, usando o LLM.
 
-def build_prompt_2_drafting(persona, original_email, user_inputs):
+    Args:
+        original_email (str): O conteúdo do email recebido.
+        persona (dict): O dicionário da persona que irá responder.
+
+    Returns:
+        str: O prompt formatado para o LLM solicitar a análise de contexto em JSON.
     """
-    Constrói o prompt complexo para solicitar a geração do rascunho da resposta (Prompt 2).
-    (Função build_prompt_2_drafting completa - sem alterações aqui)
+    # Limitar o tamanho do email para evitar prompts excessivamente longos e custos
+    max_email_length = 3000 # Ajustar conforme necessário (considerar tokens)
+    truncated_email = original_email[:max_email_length]
+    if len(original_email) > max_email_length:
+        truncated_email += "\n... (email truncado)"
+
+    # Extrair apenas as informações da persona relevantes para esta análise
+    # Evita incluir exemplos de escrita longos ou descrições detalhadas aqui.
+    persona_context = {
+        "name": persona.get("name", "N/A"),
+        "role": persona.get("role", "N/A"),
+        "language": persona.get("attributes", {}).get("language", "pt-PT"),
+        # Inclui apenas os nomes das relações e os seus tipos
+        "relationships": {k: v.get('type', 'N/A') for k, v in persona.get("relationships", {}).items()},
+        # Inclui as chaves das regras de adaptação (tipos de destinatários conhecidos)
+        "recipient_types": list(persona.get("recipient_adaptation_rules", {}).keys())
+    }
+
+    # O prompt instrui o LLM a analisar o email e a persona, e retornar um JSON específico.
+    prompt = f"""System: És um especialista em análise de contexto de emails. Dada a Persona que vai responder e o Email Recebido, analisa cuidadosamente o remetente (From:), destinatários (To:/Cc:), saudação, corpo e assinatura para determinar a relação mais provável, o tom do email e o nome do remetente principal. Responde **APENAS** em formato JSON válido.
+
+Persona Que Vai Responder (Contexto Relevante):
+```json
+{json.dumps(persona_context, indent=2, ensure_ascii=False)}
+```
+
+Email Recebido (Analisa o conteúdo e metadados como From/To/Cc se disponíveis):
+---
+{truncated_email}
+---
+
+Tarefa: Analisa o email recebido e o contexto da persona. Determina a categoria mais provável do remetente PRINCIPAL (a quem a resposta será dirigida) e o tom do email recebido. Devolve **APENAS** um objeto JSON com as seguintes chaves **OBRIGATÓRIAS**:
+
+1.  `recipient_category`: (string) A chave **exata** que melhor descreve o remetente principal. Deve ser UMA das seguintes opções, pela ordem de prioridade:
+    * A chave de uma das `relationships` da persona (ex: "Professor Jorge") se houver uma correspondência clara e direta entre o remetente do email e essa relação específica.
+    * A chave de um dos `recipient_types` da persona (ex: "professor", "colleague_student", "admin_services") se não for uma relação específica mas se encaixar numa categoria geral definida nas regras.
+    * "unknown" se nenhuma das opções acima se aplicar claramente ou se a informação for insuficiente.
+2.  `incoming_tone`: (string) O tom/formalidade percebido do **email recebido**. Escolhe UMA das seguintes opções que melhor descreva o email: "Muito Formal", "Formal", "Semi-Formal", "Casual", "Urgente", "InformativoNeutro", "Outro".
+3.  `sender_name_guess`: (string) A melhor estimativa do nome do remetente principal (ex: "Marta Silva", "João", "Dr. Carlos", "Equipa de Suporte"). Tenta extrair o nome do campo 'From:', da assinatura ou da saudação. Se impossível determinar com razoável certeza, retorna uma string vazia "".
+
+**IMPORTANTE:** A tua saída deve ser **APENAS** o objeto JSON, sem qualquer texto adicional antes ou depois (sem ```json ... ```, apenas o JSON puro). Exemplo de saída válida:
+{{
+  "recipient_category": "colleague_student",
+  "incoming_tone": "Casual",
+  "sender_name_guess": "Marta"
+}}
+
+JSON Result:
+"""
+    return prompt
+
+def analyze_sender_and_context(original_email, persona):
     """
+    Chama o LLM para realizar a Pré-Análise de Contexto (Prompt 0)
+    e retorna os resultados parseados do JSON.
+
+    Args:
+        original_email (str): O conteúdo do email recebido.
+        persona (dict): O dicionário da persona que irá responder.
+
+    Returns:
+        dict: Um dicionário contendo 'recipient_category', 'incoming_tone',
+              'sender_name_guess', e 'error' (None em caso de sucesso,
+              ou mensagem de erro se a análise falhar).
+              Em caso de erro de parsing, retorna valores default e a msg de erro.
+    """
+    logging.info(f"Iniciando Pré-Análise de Contexto para email e persona {persona.get('name', 'N/A')}")
+    if not persona: # Validação básica
+        logging.error("Pré-Análise falhou: Persona inválida.")
+        return {"error": "Persona inválida fornecida para análise de contexto."}
+
+    # Constrói o prompt específico para esta análise
+    analysis_prompt = build_prompt_0_context_analysis(original_email, persona)
+    # Loga o prompt se estiver em modo debug
+    app.logger.debug(f"Prompt Pré-Análise (Contexto):\n{analysis_prompt}")
+
+    # Chama o LLM com temperatura baixa para uma análise mais determinística e focada
+    llm_response_data = call_gemini(analysis_prompt, model=GEMINI_MODEL, temperature=0.2)
+
+    # Verifica se houve erro na chamada à API
+    if "error" in llm_response_data:
+        logging.error(f"Erro na chamada Gemini para Pré-Análise: {llm_response_data['error']}")
+        # Retorna o erro da API
+        return {"error": f"Falha na comunicação com LLM para pré-análise: {llm_response_data['error']}"}
+
+    llm_response_text = llm_response_data.get("text", "")
+    logging.info("Pré-Análise recebida do Gemini, a fazer parsing do JSON.")
+    app.logger.debug(f"Resposta Bruta Pré-Análise LLM: {llm_response_text}")
+
+    # Tenta fazer o parse do JSON da resposta
+    try:
+        # O LLM pode retornar o JSON dentro de ```json ... ``` ou diretamente.
+        # Esta regex tenta encontrar o JSON em ambos os casos.
+        json_match = re.search(r"```json\s*([\s\S]+?)\s*```|({[\s\S]+})", llm_response_text)
+        if not json_match:
+            # Se não encontrar um padrão JSON claro, tenta fazer parse da string inteira
+            logging.warning("JSON da pré-análise não encontrado com regex, tentando parse direto.")
+            json_str = llm_response_text
+            # Levanta erro se não conseguir fazer parse direto
+            if not json_str.strip().startswith("{") or not json_str.strip().endswith("}"):
+                 raise json.JSONDecodeError("Resposta não parece ser JSON válido.", llm_response_text, 0)
+
+        else:
+             # Pega o conteúdo do JSON encontrado pela regex
+             json_str = json_match.group(1) or json_match.group(2)
+
+        # Faz o parse da string JSON
+        parsed_json = json.loads(json_str)
+
+        # Validação da estrutura esperada do JSON
+        required_keys = ["recipient_category", "incoming_tone", "sender_name_guess"]
+        if not all(key in parsed_json for key in required_keys):
+            missing = [key for key in required_keys if key not in parsed_json]
+            raise ValueError(f"JSON da Pré-Análise inválido. Faltam chaves: {missing}")
+
+        # Validação dos tipos de dados (opcional mas recomendado)
+        if not isinstance(parsed_json["recipient_category"], str):
+            raise ValueError("Tipo inválido para 'recipient_category'. Esperado: string.")
+        if not isinstance(parsed_json["incoming_tone"], str):
+             raise ValueError("Tipo inválido para 'incoming_tone'. Esperado: string.")
+        if not isinstance(parsed_json["sender_name_guess"], str):
+             raise ValueError("Tipo inválido para 'sender_name_guess'. Esperado: string.")
+
+
+        logging.info("Pré-Análise JSON parseada com sucesso.")
+        app.logger.debug(f"Resultado Pré-Análise: {parsed_json}")
+        # Retorna o JSON parseado com 'error: None' para indicar sucesso
+        return {**parsed_json, "error": None}
+
+    except (json.JSONDecodeError, ValueError, TypeError) as e:
+        # Erro durante o parsing ou validação do JSON
+        error_msg = f"Falha ao fazer parse ou validar JSON da Pré-Análise: {e}. Resposta LLM: {llm_response_text}"
+        logging.error(error_msg)
+        logging.exception("Detalhes do erro de parsing da Pré-Análise:") # Loga stack trace
+        # Fallback: Se falhar, retorna 'unknown' e 'Neutro' para não bloquear o fluxo principal,
+        # mas inclui a mensagem de erro para debugging.
+        return {
+            "recipient_category": "unknown",
+            "incoming_tone": "Neutro",
+            "sender_name_guess": "",
+            "error": f"ERROR_PARSE_CONTEXT: {error_msg}"
+        }
+    except Exception as e:
+        # Captura qualquer outro erro inesperado
+        error_msg = f"Erro inesperado no processamento da Pré-Análise: {e}"
+        logging.exception("Erro inesperado em analyze_sender_and_context:")
+        return {
+            "recipient_category": "unknown",
+            "incoming_tone": "Neutro",
+            "sender_name_guess": "",
+            "error": f"ERROR_UNEXPECTED_CONTEXT: {error_msg}"
+        }
+
+
+# --- PROMPT 2 (Rascunho) REFACTORADO COM FOCO NA COESÃO ---
+def build_prompt_2_drafting(persona, original_email, user_inputs, context_analysis):
+    """
+    Constrói o prompt complexo para solicitar a geração do rascunho da resposta (Prompt 2),
+    UTILIZANDO os resultados da pré-análise de contexto e com instruções REFORÇADAS
+    para COESÃO e FLUXO NATURAL.
+
+    Args:
+        persona (dict): O dicionário da persona selecionada.
+        original_email (str): O conteúdo do email recebido.
+        user_inputs (list): Lista de dicionários com 'point' e 'guidance' do utilizador.
+        context_analysis (dict): O resultado da função `analyze_sender_and_context`.
+
+    Returns:
+        str: O prompt formatado para o LLM gerar o rascunho da resposta.
+    """
+    # Determina a instrução de linguagem (pt-PT vs pt-BR)
     persona_lang = persona.get("attributes", {}).get("language", "pt-PT")
     if persona_lang == "pt-BR":
         lang_instruction = "Escreve **exclusivamente** em **Português do Brasil (pt-BR)** de forma **natural e fluída**. Evita construções de Portugal."
@@ -354,57 +504,63 @@ def build_prompt_2_drafting(persona, original_email, user_inputs):
         lang_instruction = "Escreve **exclusivamente** em **Português de Portugal (pt-PT)** de forma **natural e fluída**. Evita construções do Brasil (ex: gerúndio excessivo)."
         lang_instruction_short = "LINGUAGEM pt-PT natural"
 
-    # --- Extrair Nome do Remetente (Tentativa Simples) ---
-    sender_name_guess = "Destinatário" # Default
-    match_from = re.search(r"^(?:De|From):\s*\"?([^\<\"(]+?)[\"\s]*[<(].*", original_email, re.MULTILINE | re.IGNORECASE)
-    match_plain = re.search(r"^\s*Ol[áa]\s+([^\s,;!]+)", original_email, re.MULTILINE | re.IGNORECASE) # Tenta saudações
-    match_farewell = re.search(r"\n(?:Abra[çc]o|Cumprimentos|Atenciosamente|Obrigad[oa])(?:,|:)?\s*([^\n]+)$", original_email, re.MULTILINE | re.IGNORECASE) # Tenta assinatura
+    # --- Obter resultados da Pré-Análise ---
+    recipient_category = context_analysis.get("recipient_category", "unknown")
+    incoming_tone = context_analysis.get("incoming_tone", "Neutro")
+    sender_name_guess = context_analysis.get("sender_name_guess") if context_analysis.get("sender_name_guess") else "Destinatário"
 
-    if match_from:
-        sender_name_guess = match_from.group(1).strip().title()
-    elif match_farewell:
-         sender_name_guess = match_farewell.group(1).strip().title()
-         # Avoid picking up titles like 'Prof.' if possible from farewell
-         sender_name_guess = re.sub(r'^(Prof\.?|Dr\.?|Eng\.?)\s+', '', sender_name_guess).strip()
-    elif match_plain:
-        sender_name_guess = match_plain.group(1).strip().title()
-
-    # --- Determinar tipo de destinatário e regras (Simplificado) ---
-    recipient_type = "unknown" # Default
-    # Basic keyword check in email or sender name (could be improved)
-    if "professor" in original_email.lower() or "prof." in sender_name_guess.lower():
-        recipient_type = "professor"
-    elif "joão" in sender_name_guess.lower() or "miguel" in sender_name_guess.lower() or "rúben" in sender_name_guess.lower():
-         # Assuming these are colleagues based on examples
-         recipient_type = "colleague_student"
-
+    # --- Determinar Saudação/Despedida/Tom com base na Pré-Análise ---
+    # (Lógica de determinação de saudação/despedida/tom base - sem alterações)
+    final_greeting = f"Bom dia/tarde {sender_name_guess},"
+    final_farewell = f"Com os melhores cumprimentos,\n{persona.get('name', '')}"
+    base_tone = persona.get("attributes", {}).get("tone", "Neutro")
     rules = persona.get("recipient_adaptation_rules", {})
-    adapt_rules = rules.get(recipient_type, rules.get("unknown", {})) # Fallback to unknown
+    relationships = persona.get("relationships", {})
 
-    # --- Obter Saudação/Despedida ---
-    # Use specific relationship greeting/farewell if available
-    if sender_name_guess in persona.get("relationships", {}):
-         relationship_data = persona["relationships"][sender_name_guess]
-         final_greeting = relationship_data.get("greeting_individual", adapt_rules.get("greeting", "Olá,"))
-         final_farewell = adapt_rules.get("farewell", persona.get('attributes', {}).get('farewell', f"Cumprimentos,\n{persona['name']}")) # Relationship specific farewell? Add if needed.
-    else:
-        # Use generic rule greeting/farewell, replacing placeholders
-         final_greeting = adapt_rules.get("greeting", "Olá [Nome],")
-         final_greeting = final_greeting.replace("[Apelido]", sender_name_guess).replace("[Nome]", sender_name_guess)
-         final_farewell = adapt_rules.get("farewell", persona.get('attributes', {}).get('farewell', f"Cumprimentos,\n{persona['name']}"))
+    if recipient_category in relationships:
+        relationship_data = relationships[recipient_category]
+        final_greeting = relationship_data.get("greeting_individual", rules.get(recipient_category, {}).get("greeting", final_greeting))
+        # Tenta obter despedida da regra associada à categoria da relação, senão usa 'unknown', senão fallback.
+        # Assume que a chave da relação pode ser usada como chave da regra, ou usa 'unknown'
+        final_farewell = rules.get(recipient_category, rules.get("unknown", {})).get("farewell", final_farewell)
+        base_tone = relationship_data.get("tone", rules.get(recipient_category, {}).get("tone", base_tone))
+    elif recipient_category in rules:
+        adapt_rules = rules[recipient_category]
+        final_greeting = adapt_rules.get("greeting", final_greeting)
+        final_farewell = adapt_rules.get("farewell", final_farewell)
+        base_tone = adapt_rules.get("tone", base_tone)
+    else: # Categoria 'unknown' ou não encontrada
+        adapt_rules = rules.get("unknown", {})
+        final_greeting = adapt_rules.get("greeting", final_greeting)
+        final_farewell = adapt_rules.get("farewell", final_farewell)
+        base_tone = adapt_rules.get("tone", base_tone)
 
-    # --- System Prompt ---
-    system_prompt = f"""System: **TU ÉS {persona['name']}**. A tua tarefa é gerar um email de resposta de ALTA QUALIDADE, escrito por ti ({persona['name']}) PARA {sender_name_guess}. Assume integralmente o teu papel ({persona.get('role', 'Assistente')}) e adota rigorosamente a seguinte Persona:
+    # Substitui placeholders na saudação
+    final_greeting = final_greeting.replace("[Apelido]", sender_name_guess).replace("[Nome]", sender_name_guess)
+
+    # Ajusta a assinatura na despedida se necessário (ex: nome curto vs completo)
+    persona_signature_name = persona.get("name", "")
+    # Exemplo: Se a regra diz "Abraço,\nRodrigo" mas a persona é "Rodrigo Novelo",
+    # e a categoria NÃO é 'colleague_student', ajusta para o nome completo.
+    if persona_signature_name and persona_signature_name != "Rodrigo" and "\nRodrigo" in final_farewell and recipient_category != "colleague_student":
+         final_farewell = final_farewell.replace("\nRodrigo", f"\n{persona_signature_name}")
+    # Considerar outros casos de ajuste se necessário
+
+
+    # --- Estrutura do Prompt Refatorada em Blocos ---
+
+    # --- Bloco 1: Definição da Persona e Regras Gerais ---
+    system_prompt = f"""### INSTRUÇÕES DE SISTEMA E PERSONA ###
+System: **TU ÉS {persona['name']}**. A tua tarefa é gerar um email de resposta de ALTA QUALIDADE, escrito por ti ({persona['name']}) para '{sender_name_guess}'. Assume integralmente o teu papel ({persona.get('role', 'Assistente')}) e adota rigorosamente a seguinte Persona:
 * **Nome da Persona:** {persona['name']}
+* **Papel:** {persona.get('role', 'N/A')}
 * **Descrição Geral:** {persona.get('description', 'Estilo padrão')}
-* **Tom & Formalidade:** (Adaptados para '{recipient_type}' conforme regras: Tom '{adapt_rules.get('tone', 'N/A')}', Formalidade '{adapt_rules.get('formality', persona.get('attributes', {}).get('formality', 'Média'))}')
-* **Verbosidade:** {persona.get('attributes', {}).get('verbosity', 'Média')}
-* **Uso de Emojis:** {persona.get('attributes', {}).get('emoji_usage', 'Nenhum')}
+* **Atributos Gerais:** (Tom Base: {persona.get('attributes', {}).get('tone', 'Neutro')}, Formalidade Base: {persona.get('attributes', {}).get('formality', 'Média')}, Verbosidade: {persona.get('attributes', {}).get('verbosity', 'Média')}, Uso de Emojis: {persona.get('attributes', {}).get('emoji_usage', 'Nenhum')})
+* **Linguagem OBRIGATÓRIA:** {lang_instruction}
 
 **Regras Essenciais de Escrita:**
 * **Qualidade:** Produz uma resposta bem escrita, humana, natural e profissional (ou adaptada à formalidade). O texto deve fluir bem.
-* **Linguagem:** {lang_instruction} Presta atenção ao vocabulário e tratamento específicos da variante e formalidade.
-* **Clareza e Concisão:** Vai direto ao ponto, mas mantém a cordialidade. **Evita repetições desnecessárias**. Garante leitura fácil.
+* **Clareza e Concisão:** Vai direto ao ponto, mas mantém a cordialidade. Evita repetições.
 * **Contexto:** Responde diretamente ao email original e às orientações dadas.
 
 **Regras OBRIGATÓRIAS "Faz" (Do's de {persona['name']}):**
@@ -412,36 +568,41 @@ def build_prompt_2_drafting(persona, original_email, user_inputs):
 
 **Regras OBRIGATÓRIAS "Não Faças" (Don'ts de {persona['name']}):**
 {chr(10).join([f'* {rule}' for rule in persona.get('donts', ['Ser vago.'])])}
+--- FIM PERSONA E REGRAS GERAIS ---
 
-**Formato OBRIGATÓRIO da Resposta:**
-* **Saudação:** Começa **DIRETAMENTE** com: `{final_greeting}`
-* **Despedida:** Termina **EXATAMENTE** com:
-{final_farewell}
-* **Corpo Apenas:** Gera **APENAS** o corpo do email (saudação, conteúdo, despedida/assinatura). Sem cabeçalhos nem texto extra.
-
---- FIM DAS INSTRUÇÕES DE SISTEMA ---
 """
-    # --- Few-Shot Examples ---
+
+    # --- Bloco 2: Exemplos de Estilo ---
     examples_prompt = ""
     writing_examples = persona.get("writing_examples")
     if writing_examples:
-        examples_prompt += f"\n**Exemplos de Estilo de Escrita para {persona['name']} (Usa apenas como Guia de Estilo):**\n"
-        limited_examples = writing_examples[:3] # Limit to save tokens
+        examples_prompt += f"\n### EXEMPLOS DE ESTILO DE ESCRITA (APENAS COMO GUIA DE ESTILO) ###\n"
+        examples_prompt += "**NÃO uses o conteúdo destes exemplos na resposta final. Usa-os APENAS para aprender o tom, vocabulário, estrutura e formalidade da persona.**\n"
+        limited_examples = writing_examples[:3] # Limita para poupar tokens
         for i, example in enumerate(limited_examples):
             context_desc = example.get("context", f"Exemplo {i+1}")
             output_example = example.get("output_style_example", "")
             if output_example:
                 examples_prompt += f"\n---\nContexto Exemplo {i+1}: {context_desc}\nTexto Exemplo:\n{output_example}\n"
-        examples_prompt += f"---\n\n--- FIM DOS EXEMPLOS DE ESTILO ---\n"
+        examples_prompt += f"---\n--- FIM DOS EXEMPLOS DE ESTILO ---\n"
 
-    # --- Contexto e Orientações ---
-    context_prompt = f"""\nContexto: Email Original Recebido de '{sender_name_guess}' (Estás a responder a este email/pessoa)
+    # --- Bloco 3: Contexto da Tarefa Atual ---
+    context_prompt = f"""\n### CONTEXTO DA TAREFA ATUAL ###
+**Email Original Recebido de '{sender_name_guess}'**
+*Tom do Email Recebido (detetado pela pré-análise):* '{incoming_tone}'
 ---
 {original_email}
 ---
 
+**Análise do Destinatário (feita pela pré-análise):**
+* Categoria do Destinatário: '{recipient_category}'
+* Tom Base Definido para este Destinatário: '{base_tone}'
+* Saudação Determinada: `{final_greeting}`
+* Despedida Determinada: (ver abaixo na Tarefa Final)
+
+**Itens a Abordar & Informação Chave/Pontos Essenciais Fornecidos por Ti ({persona['name']}) para Construir a Resposta:**
 """
-    items_prompt = f"Itens a Abordar & Informação Chave/Pontos Essenciais Fornecidos por Ti ({persona['name']}) para Construir a Resposta:\n"
+    # Processamento dos user_inputs (igual à versão anterior)
     if user_inputs:
         has_real_points = False
         guidance_provided = False
@@ -449,74 +610,92 @@ def build_prompt_2_drafting(persona, original_email, user_inputs):
             point = item.get('point', 'N/A')
             guidance = item.get('guidance', '')
             if guidance: guidance_provided = True
-
-            is_placeholder_point = point == 'N/A' or point == "null" or point.lower().startswith("nenhum ponto")
+            is_placeholder_point = point == 'N/A' or point == "null" or (isinstance(point, str) and point.lower().startswith("nenhum ponto"))
 
             if not is_placeholder_point:
-                items_prompt += f"* Ponto Original {i+1} a Abordar: \"{point}\"\n"
-                items_prompt += f"    * Informação/Ideias Chave para a Tua Resposta: \"{guidance if guidance else '(Nenhuma orientação específica dada - responde apropriadamente)'}\"\n"
+                context_prompt += f"* Ponto Original {i+1} a Abordar: \"{point}\"\n"
+                context_prompt += f"    * Informação/Ideias Chave para a Tua Resposta: \"{guidance if guidance else '(Nenhuma orientação específica dada - responde apropriadamente)'}\"\n"
                 has_real_points = True
-            elif guidance: # Guidance for general response
-                items_prompt += f"* Tua Orientação Geral (a incorporar na resposta): \"{guidance}\"\n"
+            elif guidance: # Orientação geral
+                context_prompt += f"* Tua Orientação Geral (a incorporar na resposta): \"{guidance}\"\n"
 
+        # Adiciona instruções se não houver pontos ou orientações específicas
         if not has_real_points and not guidance_provided:
-             items_prompt += "* Tarefa Adicional: Escrever uma resposta curta e apropriada (ex: agradecimento, confirmação simples) baseada apenas no email original e na tua persona.\n"
+             context_prompt += "* Tarefa Adicional: Escrever uma resposta curta e apropriada (ex: agradecimento, confirmação simples) baseada apenas no email original e na tua persona.\n"
         elif not has_real_points and guidance_provided:
-             items_prompt += "* Tarefa Adicional: Incorpora a(s) orientação(ões) geral(is) acima numa resposta apropriada ao email original, seguindo a tua persona.\n"
+             context_prompt += "* Tarefa Adicional: Incorpora a(s) orientação(ões) geral(is) acima numa resposta apropriada ao email original, seguindo a tua persona.\n"
+    else: # Nenhum user_input fornecido
+        context_prompt += "* Tarefa Adicional: Escrever uma resposta curta e apropriada baseada apenas no email original e na tua persona.\n"
+    context_prompt += "--- FIM CONTEXTO ---\n"
 
-    else: # No user_inputs array provided
-        items_prompt += "* Tarefa Adicional: Escrever uma resposta curta e apropriada baseada apenas no email original e na tua persona.\n"
-    items_prompt += "\n"
 
-    # --- Task Prompt ---
-    task_prompt = f"""Tarefa Final: Com base em TUDO o que foi dito acima (Instruções, Exemplos, Contexto, Informação Chave), redige agora o corpo COMPLETO e de ALTA QUALIDADE do email de resposta.
-* Integra TODA a 'Informação/Ideias Chave' tua de forma **natural, humana e coesa** no texto. **Adapta** o texto para fluir bem dentro do email.
-* **IMPORTANTE:** NÃO copies a 'Informação/Ideias Chave' literalmente. **Usa essa informação como BASE** para construir as tuas próprias frases, mantendo o fluxo da conversa e o teu estilo.
-* Garante que a resposta final é bem escrita, clara, relevante para o email original e aborda o necessário.
-* Mantém-te ESTRITAMENTE FIEL à Persona {persona['name']} ({lang_instruction_short}, tom, estilo, regras Do/Don't, saudação, despedida).
-* Lembra-te: Gera APENAS o corpo do email. Não adiciones comentários nem cabeçalhos.
+    # --- Bloco 4: Tarefa Final (COM INSTRUÇÕES DE COESÃO REFORÇADAS) ---
+    task_prompt = f"""\n### TAREFA FINAL ###
+Com base em TUDO o que foi dito acima (Instruções, Persona, Exemplos, Contexto, Informação Chave), redige agora o corpo COMPLETO e de ALTA QUALIDADE do email de resposta.
+
+**Instruções Específicas:**
+1.  **Coesão e Fluxo:** Integra TODA a 'Informação/Ideias Chave' tua de forma **natural, humana e coesa** no texto. **Agrupa tópicos relacionados em parágrafos lógicos** e utiliza **frases de transição** apropriadas para ligar as diferentes ideias. **EVITA responder a cada ponto isoladamente como uma lista; constrói uma resposta unificada e fluida**, como um humano faria.
+2.  **Adaptação Dinâmica ao Tom:** Considera o 'Tom do Email Recebido' ('{incoming_tone}'). O teu 'Tom Base Definido' para '{recipient_category}' é '{base_tone}'. **AJUSTA subtilmente** o teu tom na resposta para criar harmonia. Se o tom recebido for muito diferente do teu base (ex: recebeste email casual mas o teu base é formal), aproxima-te ligeiramente do tom recebido, mas sem quebrar completamente a tua persona. Se os tons já forem semelhantes, mantém o teu tom base.
+3.  **Integração do Conteúdo:** Relembrando: NÃO copies literalmente a 'Informação/Ideias Chave', **Usa-as como BASE** para construir as tuas próprias frases, mantendo o fluxo da conversa e o teu estilo. Responde a todos os pontos que foram identificados como necessitando de resposta.
+4.  **Fidelidade à Persona:** Mantém-te ESTRITAMENTE FIEL à Persona {persona['name']} ({lang_instruction_short}, regras Do/Don't, estilo geral aprendido dos exemplos).
+5.  **Formato OBRIGATÓRIO:**
+    * Começa **DIRETAMENTE** com a saudação: `{final_greeting}`
+    * Gera o corpo da resposta em **formato de parágrafo(s)**.
+    * Termina **EXATAMENTE** com a despedida:
+{final_farewell}
+    * **NÃO** adiciones cabeçalhos (Assunto:, De:, Para:), comentários extra, ou qualquer texto fora do corpo do email (saudação > conteúdo > despedida).
 
 Resposta Gerada:
 """
 
-    # --- Combinar e Retornar ---
-    full_prompt = system_prompt + examples_prompt + context_prompt + items_prompt + task_prompt
+    # --- Combinar todos os blocos e retornar ---
+    full_prompt = system_prompt + examples_prompt + context_prompt + task_prompt
+    # Logar o prompt completo em modo debug para análise
     if DEBUG_MODE:
-        prompt_hash = hash(full_prompt)
+        prompt_hash = hash(full_prompt) # Hash para identificar prompts únicos nos logs
         logging.debug(f"--- DEBUG: PROMPT 2 (Drafting) Persona: {persona['name']} / Hash: {prompt_hash} ---")
         logging.debug(f"Prompt 2 Length: {len(full_prompt)} chars")
-        log_limit = 4000
+        log_limit = 4000 # Limite para não sobrecarregar logs
         logging.debug(full_prompt[:log_limit] + "..." if len(full_prompt) > log_limit else full_prompt)
         logging.debug("--- FIM DEBUG PROMPT 2 ---")
     return full_prompt
 
 
-# <<< MODIFICAÇÃO AQUI >>>
+
 def build_prompt_3_suggestion(original_email, point_to_address, persona, direction=None):
     """
-    Constrói o prompt para solicitar uma SUGESTÃO DE TEXTO DE RESPOSTA
-    para um ponto específico, seguindo a persona (Prompt 3),
-    INCLUINDO A DIREÇÃO (Sim/Não/Outro) fornecida pelo utilizador.
+    Constrói o prompt para solicitar uma SUGESTÃO DE TEXTO DE RESPOSTA (Prompt 3)
+    para um ponto específico, seguindo a persona e opcionalmente uma direção (Sim/Não).
+
+    Args:
+        original_email (str): O conteúdo do email original (para contexto).
+        point_to_address (str): O ponto específico extraído da análise (Prompt 1).
+        persona (dict): O dicionário da persona selecionada.
+        direction (str, optional): A direção indicada pelo utilizador ("sim", "nao", ou None).
+
+    Returns:
+        str: O prompt formatado para o LLM gerar a sugestão.
     """
+    # Determina a instrução de linguagem
     persona_lang = persona.get("attributes", {}).get("language", "pt-PT")
     if persona_lang == "pt-BR":
         lang_instruction = "Escreve **exclusivamente** em **Português do Brasil (pt-BR)** e soa natural."
     else:
         lang_instruction = "Escreve **exclusivamente** em **Português de Portugal (pt-PT)** e soa natural."
 
-    # --- Construir a instrução de direção ---
+    # Constrói a instrução adicional com base na direção fornecida
     direction_instruction = ""
     if direction == "sim":
         direction_instruction = "\n**Instrução Adicional Importante:** O utilizador indicou que a resposta a este ponto deve ser **AFIRMATIVA / POSITIVA ('Sim')**. Baseia a tua sugestão nesta direção, mantendo a persona."
     elif direction == "nao":
         direction_instruction = "\n**Instrução Adicional Importante:** O utilizador indicou que a resposta a este ponto deve ser **NEGATIVA ('Não')**. Baseia a tua sugestão nesta direção, mantendo a persona."
-    # Se direction for "outro" ou None/vazio, nenhuma instrução é adicionada.
+    # Se direction for "outro" ou None/vazio, nenhuma instrução específica é adicionada.
 
-    # --- Construir o prompt completo ---
+    # Constrói o prompt completo
     system_prompt = f"""System: A tua tarefa é gerar uma sugestão CURTA (idealmente 1-2 frases concisas) de texto de resposta para um ponto específico de um email. Deves agir EXATAMENTE como {persona['name']}, adotando a seguinte Persona:
 * **Nome:** {persona['name']} ({persona.get('role', '')})
-* **Tom Geral:** {persona.get('attributes', {}).get('tone', 'Neutro')}
-* **Formalidade:** {persona.get('attributes', {}).get('formality', 'Média')}
+* **Tom Geral:** {persona.get('attributes', {}).get('tone', 'Neutro')} (Adapta ao contexto se necessário)
+* **Formalidade:** {persona.get('attributes', {}).get('formality', 'Média')} (Adapta ao contexto se necessário)
 * **Verbosidade:** {persona.get('attributes', {}).get('verbosity', 'Média')} (Aplica à sugestão - ser concisa!)
 * **Uso de Emojis:** {persona.get('attributes', {}).get('emoji_usage', 'Nenhum')}
 
@@ -535,9 +714,9 @@ def build_prompt_3_suggestion(original_email, point_to_address, persona, directi
 
 --- FIM DAS INSTRUÇÕES DE SISTEMA ---
 
-Contexto: Email Original Recebido
+Contexto: Email Original Recebido (apenas para referência de contexto)
 ---
-{original_email}
+{original_email[:1000]} ... (email truncado para contexto)
 ---
 
 Ponto Específico do Email Original a Abordar: "{point_to_address}"
@@ -548,22 +727,29 @@ Sugestão de Texto de Resposta para este Ponto:
 """
     return system_prompt
 
-
 # --- Rotas da Aplicação Flask ---
 
 @app.route('/')
-def index_route(): # Renamed function to avoid conflict with imported index
+def index_route():
     """Renderiza a página HTML inicial."""
     logging.info("A servir a página inicial (index.html)")
-    personas_display = {}
-    for key, data in PERSONAS.items():
-        personas_display[key] = data.copy()
-    return render_template('index.html', personas_dict=personas_display)
+    # Verifica se as personas foram carregadas corretamente
+    if not PERSONAS:
+         logging.warning("Renderizando index.html mas PERSONAS não foram carregadas.")
+         # Passa um indicador de erro para o template
+         return render_template('index.html', personas_dict={}, error_loading_personas=True)
+
+    # Passa um dicionário simplificado das personas para o template
+    # (ex: apenas nome e descrição para um seletor)
+    personas_display = {key: {"name": data.get("name", key), "description": data.get("description", "")}
+                        for key, data in PERSONAS.items()}
+    return render_template('index.html', personas_dict=personas_display, error_loading_personas=False)
 
 
 @app.route('/analyze', methods=['POST'])
-def analyze_email():
-    """Endpoint para analisar o email recebido usando Gemini."""
+def analyze_email_route(): # Renomeado para evitar conflito com a função analyze_email
+    """Endpoint para analisar o email recebido usando Gemini (Prompt 1)."""
+    # Validação básica do pedido
     if not request.json or 'email_text' not in request.json:
         logging.warning("Pedido /analyze inválido: Falta 'email_text'.")
         return jsonify({"error": "Pedido inválido. Falta 'email_text'."}), 400
@@ -574,46 +760,48 @@ def analyze_email():
         return jsonify({"error": "O texto do email não pode estar vazio."}), 400
 
     logging.info("Iniciando Análise do Email (Prompt 1 via Gemini)")
-    # *** USANDO PROMPT REFINADO ***
+    # Constrói o prompt de análise
     analysis_prompt = build_prompt_1_analysis(email_text)
 
-    # *** USANDO TEMPERATURA LIGEIRAMENTE MAIS ALTA PARA ANÁLISE ***
-    llm_response = call_gemini(analysis_prompt, model=GEMINI_MODEL, temperature=0.5) # Increased temp slightly
+    # Chama o LLM com temperatura mais baixa para análise focada
+    llm_response_data = call_gemini(analysis_prompt, model=GEMINI_MODEL, temperature=0.5)
 
     # Log da resposta bruta para depuração
-    logging.info(f"DEBUG - Resposta Bruta Análise LLM: --------\n{llm_response}\n--------")
+    logging.info(f"DEBUG - Resposta Bruta Análise LLM: --------\n{llm_response_data}\n--------")
 
-    if not llm_response or llm_response.startswith("ERROR_"):
-        status_code = 503 if "TIMEOUT" in llm_response or "CONNECTION" in llm_response else 500
-        if "CONFIG" in llm_response or "BLOCKED" in llm_response: status_code = 400
-        logging.error(f"Erro na chamada Gemini para /analyze: {llm_response}")
-        # Tenta retornar o erro específico se existir, caso contrário uma mensagem genérica
-        error_msg = llm_response if llm_response else "Resposta vazia ou erro desconhecido do LLM."
-        return jsonify({"error": f"Falha ao comunicar com o LLM para análise: {error_msg}"}), status_code
+    # Verifica se houve erro na chamada à API
+    if "error" in llm_response_data:
+        # Determina o código de status HTTP apropriado
+        status_code = 503 if "TIMEOUT" in llm_response_data["error"] or "CONNECTION" in llm_response_data["error"] else 500
+        if "CONFIG" in llm_response_data["error"] or "BLOCKED" in llm_response_data["error"]: status_code = 400
+        logging.error(f"Erro na chamada Gemini para /analyze: {llm_response_data['error']}")
+        return jsonify({"error": f"Falha ao comunicar com o LLM para análise: {llm_response_data['error']}"}), status_code
 
+    # Faz o parsing da resposta textual do LLM
+    llm_response_text = llm_response_data.get("text", "")
     logging.info("Análise recebida do Gemini, a fazer parsing.")
-    analysis_result = parse_analysis_output(llm_response)
+    analysis_result = parse_analysis_output(llm_response_text)
     app.logger.debug(f"Resultado Parseado (Análise): {analysis_result}")
 
-    # Verifica se o parsing em si retornou um erro ou se não encontrou pontos/ações mas deveria
+    # Verifica se o parsing retornou um erro
     if "error" in analysis_result:
         logging.error(f"Erro no parsing da análise: {analysis_result['error']}")
-        return jsonify({"error": f"Falha ao processar resposta da análise: {analysis_result['error']}", "raw_analysis": llm_response}), 500
-    # Adiciona uma verificação extra: se a resposta bruta não for "nenhum ponto..." mas o parsing não encontrou nada, indica problema
-    if not analysis_result.get("points") and "nenhum ponto a responder" not in llm_response.lower():
-         logging.warning("Parsing pode ter falhado. Resposta LLM não continha 'nenhum ponto', mas a lista de pontos está vazia.")
-         # Opcional: retornar um aviso ao frontend?
-         # return jsonify({**analysis_result, "warning": "LLM response structure might not match expected format."})
+        # Retorna o erro de parsing e a resposta bruta para debug
+        return jsonify({"error": f"Falha ao processar resposta da análise: {analysis_result['error']}", "raw_analysis": llm_response_text}), 500
 
+    # Verificação adicional de consistência (opcional)
+    if not analysis_result.get("points") and "nenhum ponto a responder" not in llm_response_text.lower():
+        logging.warning("Parsing pode ter falhado. Resposta LLM não continha 'nenhum ponto', mas a lista de pontos está vazia.")
 
     logging.info("Análise processada com sucesso.")
+    # Retorna os pontos e ações extraídos
     return jsonify(analysis_result)
 
 
-# <<< MODIFICAÇÃO AQUI >>>
 @app.route('/suggest_guidance', methods=['POST'])
-def suggest_guidance():
-    """Endpoint para gerar sugestão de texto para um ponto, usando Gemini, incluindo a direção."""
+def suggest_guidance_route(): # Renomeado
+    """Endpoint para gerar sugestão de texto para um ponto específico (Prompt 3)."""
+    # Validação dos campos obrigatórios no JSON do pedido
     required_fields = ['original_email', 'point_to_address', 'persona_name']
     if not request.json:
         logging.warning("Pedido /suggest_guidance inválido: Sem JSON.")
@@ -626,42 +814,55 @@ def suggest_guidance():
     original_email = request.json['original_email']
     point_to_address = request.json['point_to_address']
     persona_name = request.json['persona_name']
-    # Extrai a direção (pode ser None/null se não for enviado ou nenhum rádio selecionado)
-    direction = request.json.get('direction') # <<< OBTÉM A DIREÇÃO
+    # Obtém a direção (pode ser None se não for enviada)
+    direction = request.json.get('direction')
 
-    # Validações básicas
+    # Validações dos dados recebidos
     if not original_email.strip() or not point_to_address or point_to_address == 'N/A' or not persona_name.strip():
-        logging.warning("Pedido /suggest_guidance inválido: Campos obrigatórios vazios ou inválidos (point_to_address='N/A').")
+        logging.warning("Pedido /suggest_guidance inválido: Campos obrigatórios vazios ou inválidos.")
         return jsonify({"error": "Email original, ponto a abordar válido e nome da persona são obrigatórios."}), 400
+
+    # Verifica se as personas foram carregadas
+    if not PERSONAS:
+        logging.error("Erro crítico: PERSONAS não carregadas, impossível processar /suggest_guidance.")
+        return jsonify({"error": "Erro interno do servidor: Definições de persona não disponíveis."}), 500
+    # Verifica se a persona selecionada existe
     if persona_name not in PERSONAS:
         logging.error(f"Persona '{persona_name}' não encontrada em /suggest_guidance.")
         return jsonify({"error": f"Persona '{persona_name}' não encontrada."}), 400
 
     selected_persona = PERSONAS[persona_name]
-    logging.info(f"Solicitando sugestão de TEXTO via Gemini para ponto='{point_to_address[:50]}...' com Persona: {persona_name}, Direção: {direction}") # Log da direção
+    logging.info(f"Solicitando sugestão de TEXTO via Gemini para ponto='{point_to_address[:50]}...' com Persona: {persona_name}, Direção: {direction}")
 
-    # Passa a 'direction' para a função que constrói o prompt
-    suggestion_prompt = build_prompt_3_suggestion(original_email, point_to_address, selected_persona, direction) # <<< PASSA A DIREÇÃO
+    # Constrói o prompt de sugestão
+    suggestion_prompt = build_prompt_3_suggestion(original_email, point_to_address, selected_persona, direction)
 
-    # Usa a temperatura geral para sugestões (pode ser ajustada se necessário)
-    llm_response = call_gemini(suggestion_prompt, model=GEMINI_MODEL, temperature=GENERATION_TEMPERATURE)
+    # Chama o LLM (usando temperatura padrão para sugestões mais criativas)
+    llm_response_data = call_gemini(suggestion_prompt, model=GEMINI_MODEL, temperature=GENERATION_TEMPERATURE)
 
-    if not llm_response or llm_response.startswith("ERROR_"):
-        status_code = 503 if "TIMEOUT" in llm_response or "CONNECTION" in llm_response else 500
-        if "CONFIG" in llm_response or "BLOCKED" in llm_response: status_code = 400
-        logging.error(f"Erro na chamada Gemini para /suggest_guidance: {llm_response}")
-        error_msg = llm_response if llm_response else "Resposta vazia ou erro desconhecido do LLM."
-        return jsonify({"error": f"Falha ao obter sugestão do LLM: {error_msg}"}), status_code
+    # Verifica erros da API
+    if "error" in llm_response_data:
+        status_code = 503 if "TIMEOUT" in llm_response_data["error"] or "CONNECTION" in llm_response_data["error"] else 500
+        if "CONFIG" in llm_response_data["error"] or "BLOCKED" in llm_response_data["error"]: status_code = 400
+        logging.error(f"Erro na chamada Gemini para /suggest_guidance: {llm_response_data['error']}")
+        return jsonify({"error": f"Falha ao obter sugestão do LLM: {llm_response_data['error']}"}), status_code
 
+    # Extrai e limpa o texto da sugestão
+    llm_response_text = llm_response_data.get("text", "").strip()
     logging.info("Sugestão de texto gerada com sucesso.")
-    app.logger.debug(f"Sugestão gerada: {llm_response}")
-    return jsonify({"suggestion": llm_response.strip()})
+    app.logger.debug(f"Sugestão gerada: {llm_response_text}")
+    # Retorna a sugestão
+    return jsonify({"suggestion": llm_response_text})
 
 
+# --- ROTA /draft REFACTORADA para incluir Pré-Análise ---
 @app.route('/draft', methods=['POST'])
-def draft_response():
-    """Endpoint para gerar o rascunho da resposta final usando Gemini."""
-    # (Código da rota /draft permanece igual ao fornecido pelo utilizador)
+def draft_response_route(): # Renomeado
+    """
+    Endpoint para gerar o rascunho da resposta final (Prompt 2),
+    incluindo a pré-análise de contexto (Prompt 0).
+    """
+    # Validação do pedido JSON
     if not request.json:
         logging.warning("Pedido /draft inválido: Sem JSON.")
         return jsonify({"error": "Pedido inválido (JSON esperado)."}), 400
@@ -674,8 +875,13 @@ def draft_response():
 
     original_email = request.json['original_email']
     persona_name = request.json['persona_name']
-    user_inputs = request.json['user_inputs'] # Lista de {"point": "...", "guidance": "..."}
+    # user_inputs é a lista de {point: ..., guidance: ...}
+    user_inputs = request.json['user_inputs']
 
+    # Validações adicionais
+    if not PERSONAS:
+         logging.error("Erro crítico: PERSONAS não carregadas, impossível processar /draft.")
+         return jsonify({"error": "Erro interno do servidor: Definições de persona não disponíveis."}), 500
     if persona_name not in PERSONAS:
         logging.error(f"Persona '{persona_name}' não encontrada em /draft.")
         return jsonify({"error": f"Persona '{persona_name}' não encontrada."}), 400
@@ -684,38 +890,91 @@ def draft_response():
         return jsonify({"error": "Formato inválido para 'user_inputs'. Esperada uma lista de objetos."}), 400
 
     selected_persona = PERSONAS[persona_name]
+
+    # --- PASSO 1: Pré-Análise de Contexto ---
+    logging.info(f"Iniciando Pré-Análise de Contexto para /draft (Persona: {persona_name})")
+    # Chama a função que executa o Prompt 0
+    context_analysis_result = analyze_sender_and_context(original_email, selected_persona)
+
+    # Verifica se a pré-análise retornou um erro crítico (ex: erro de API)
+    # Erros de parsing retornam defaults e uma msg de erro, mas não bloqueiam.
+    if context_analysis_result.get("error") and \
+       "ERROR_PARSE_CONTEXT" not in context_analysis_result["error"] and \
+       "ERROR_UNEXPECTED_CONTEXT" not in context_analysis_result["error"]:
+         logging.error(f"Erro crítico durante a Pré-Análise de Contexto: {context_analysis_result['error']}")
+         # Determina o status code apropriado para o erro da API
+         status_code = 500
+         error_msg_prefix = "Falha na pré-análise de contexto:"
+         if "ERROR_GEMINI" in context_analysis_result["error"] or "ERROR_CONFIG" in context_analysis_result["error"]:
+              status_code = 503 # Default para erros Gemini (pode ser ajustado)
+              if "BLOCKED" in context_analysis_result["error"]: status_code = 400
+              error_msg_prefix = "Erro na comunicação com LLM durante pré-análise:"
+         # Retorna o erro que impediu a continuação
+         return jsonify({"error": f"{error_msg_prefix} {context_analysis_result['error']}"}), status_code
+    elif context_analysis_result.get("error"):
+         # Loga o erro não crítico (parsing/inesperado), mas continua com os defaults
+         logging.warning(f"Erro não crítico durante a Pré-Análise: {context_analysis_result['error']}. Continuando com defaults.")
+
+
+    # --- PASSO 2: Geração do Rascunho (Prompt 2) ---
     logging.info(f"Iniciando Geração de Rascunho (Prompt 2 via Gemini) para Persona: {persona_name}")
-    draft_prompt = build_prompt_2_drafting(selected_persona, original_email, user_inputs)
+    # Constrói o Prompt 2, passando o resultado da pré-análise
+    draft_prompt = build_prompt_2_drafting(selected_persona, original_email, user_inputs, context_analysis_result)
 
-    llm_response = call_gemini(draft_prompt, model=GEMINI_MODEL, temperature=GENERATION_TEMPERATURE)
+    # Chama o LLM para gerar o rascunho
+    llm_response_data = call_gemini(draft_prompt, model=GEMINI_MODEL, temperature=GENERATION_TEMPERATURE)
 
-    if not llm_response or llm_response.startswith("ERROR_"):
-        status_code = 503 if "TIMEOUT" in llm_response or "CONNECTION" in llm_response else 500
-        if "CONFIG" in llm_response or "BLOCKED" in llm_response: status_code = 400
-        logging.error(f"Erro na chamada Gemini para /draft: {llm_response}")
-        error_msg = llm_response if llm_response else "Resposta vazia ou erro desconhecido do LLM."
-        return jsonify({"error": f"Falha ao gerar rascunho com o LLM: {error_msg}"}), status_code
+    # Verifica erros na geração do rascunho
+    if "error" in llm_response_data:
+        status_code = 503 if "TIMEOUT" in llm_response_data["error"] or "CONNECTION" in llm_response_data["error"] else 500
+        if "CONFIG" in llm_response_data["error"] or "BLOCKED" in llm_response_data["error"]: status_code = 400
+        logging.error(f"Erro na chamada Gemini para /draft (Geração): {llm_response_data['error']}")
+        # Retorna o erro da geração e a análise de contexto usada (para debug)
+        return jsonify({
+            "error": f"Falha ao gerar rascunho com o LLM: {llm_response_data['error']}",
+            "context_analysis": context_analysis_result # Inclui a análise para debug
+            }), status_code
 
-    final_draft = llm_response
+    # Extrai o rascunho final
+    final_draft = llm_response_data.get("text", "").strip()
     logging.info(f"Rascunho Final Gerado com sucesso via Gemini para persona {persona_name}.")
+    # Loga a análise de contexto usada e o rascunho final em modo debug
+    app.logger.debug(f"Context Analysis Used: {context_analysis_result}")
     app.logger.debug(f"Rascunho Final:\n{final_draft}")
 
-    return jsonify({"draft": final_draft})
+    # Retorna o rascunho e também a análise de contexto usada (pode ser útil no frontend)
+    return jsonify({
+        "draft": final_draft,
+        "context_analysis": context_analysis_result
+        })
 
 
 # --- Ponto de Entrada da Aplicação ---
 if __name__ == '__main__':
+    # Logs iniciais ao arrancar a aplicação
     logging.info("--- Iniciando Flask App ---")
     logging.info(f"Host: {APP_HOST}")
     logging.info(f"Port: {APP_PORT}")
     logging.info(f"Debug Mode: {DEBUG_MODE}")
     logging.info(f"Gemini Model: {GEMINI_MODEL}")
+
+    # Verifica e loga o estado da API Key (mascarada)
     if not GEMINI_API_KEY:
         logging.warning("Variável de ambiente GEMINI_API_KEY não definida!")
     else:
-        logging.info(f"Gemini API Key: {'*' * (len(GEMINI_API_KEY) - 4)}{GEMINI_API_KEY[-4:]}") # Mask key
-    logging.info(f"Default Generation Temperature: {GENERATION_TEMPERATURE}")
-    logging.warning("Certifique-se de completar as Personas dos Professores (dos, donts, writing_examples) para melhores resultados.")
+        # Mostra apenas os últimos 4 caracteres da chave
+        logging.info(f"Gemini API Key: {'*' * (len(GEMINI_API_KEY) - 4)}{GEMINI_API_KEY[-4:]}")
 
-    # Renomeei a função da rota '/' para index_route para evitar conflito com 'import index' se existisse
+    # Verifica e loga o estado do carregamento das personas
+    if not PERSONAS:
+         logging.warning("PERSONAS não foram carregadas! Funcionalidades de persona podem não operar corretamente.")
+    else:
+         logging.info(f"{len(PERSONAS)} personas carregadas.")
+         # Lembra o utilizador de completar as definições no JSON
+         logging.warning("Certifique-se de completar as Personas dos Professores (dos, donts, writing_examples) em 'personas.json' para melhores resultados.")
+
+    logging.info(f"Default Generation Temperature: {GENERATION_TEMPERATURE}")
+
+    # Inicia o servidor Flask
+    # use_reloader=False é útil em debug para evitar que o código execute duas vezes ao iniciar
     app.run(host=APP_HOST, port=APP_PORT, debug=DEBUG_MODE)

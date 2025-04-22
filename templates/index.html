@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistente de Email Personalizado</title> <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <style>
+        body {
+            padding: 20px;
+            background-color: #f8f9fa;
+            font-family: sans-serif;
+        }
+        .container {
+            max-width: 900px;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin: 20px auto;
+        }
+        h1, h2, h3, h4 {
+            color: #343a40;
+            margin-bottom: 1.2rem;
+        }
+        .form-label {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        textarea.form-control {
+            min-height: 150px;
+            border-radius: 5px;
+        }
+        .analysis-section, .draft-section {
+            margin-top: 30px;
+            border-top: 1px solid #dee2e6;
+            padding-top: 25px;
+        }
+        .point-input-group {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #eef2f7;
+            border-radius: 5px;
+            border: 1px solid #d1d9e6;
+        }
+        .point-input-group .form-label {
+             font-weight: normal;
+             margin-bottom: 0.25rem;
+        }
+        .point-input-group p {
+             margin-bottom: 0.5rem;
+             font-size: 0.95rem;
+             color: #495057;
+        }
+        .point-input-group textarea {
+            min-height: 60px;
+        }
+        .loading-spinner {
+            display: none;
+            width: 1.2rem;
+            height: 1.2rem;
+            vertical-align: text-bottom;
+        }
+        .btn-sm .loading-spinner {
+             width: 0.8rem;
+             height: 0.8rem;
+        }
+        .error-message {
+            color: #dc3545;
+            font-weight: bold;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            display: none;
+        }
+        .is-invalid {
+            border-color: #dc3545 !important;
+        }
+        .btn {
+            margin-right: 5px;
+            border-radius: 5px;
+            padding: 0.5rem 1rem;
+        }
+        .btn-primary { background-color: #0d6efd; border-color: #0d6efd; }
+        .btn-success { background-color: #198754; border-color: #198754; }
+        .btn-secondary { background-color: #6c757d; border-color: #6c757d; }
+        .btn-outline-secondary { /* Estilos mantidos da versão anterior */
+             --bs-btn-color: #6c757d;
+             --bs-btn-border-color: #6c757d;
+             --bs-btn-hover-color: #fff;
+             --bs-btn-hover-bg: #6c757d;
+             --bs-btn-hover-border-color: #6c757d;
+             --bs-btn-focus-shadow-rgb: 108,117,125;
+             --bs-btn-active-color: #fff;
+             --bs-btn-active-bg: #6c757d;
+             --bs-btn-active-border-color: #6c757d;
+             --bs-btn-active-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+             --bs-btn-disabled-color: #6c757d;
+             --bs-btn-disabled-bg: transparent;
+             --bs-btn-disabled-border-color: #6c757d;
+             --bs-gradient: none;
+        }
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .container { padding: 20px; }
+            h1 { font-size: 1.8rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="text-center mb-4">
+            <h1>Assistente de Email Personalizado</h1> <p class="lead">Analise emails e gere rascunhos com Gemini2.0-flash usando personas definidas</p> </header>
+
+        <section id="emailInputSection" class="mb-4">
+            <label for="originalEmail" class="form-label">Cole aqui o Email Recebido:</label>
+            <textarea class="form-control" id="originalEmail" rows="8" placeholder="Ex: Assunto: Reunião de Projeto... Caro Professor..."></textarea>
+            <div class="mt-3">
+                <button id="analyzeBtn" class="btn btn-primary">
+                    Analisar Email
+                    <div class="spinner-border spinner-border-sm text-light ms-1 loading-spinner" role="status" id="analyzeSpinner"></div>
+                </button>
+            </div>
+            <div id="analyzeError" class="error-message"></div>
+        </section>
+
+        <section class="analysis-section" id="analysisSection" style="display: none;">
+            <h2>Análise do Email</h2>
+            <div id="analysisResult">
+                </div>
+
+            <div id="userInputsContainer" class="mt-4">
+                <h3>Sua Resposta / Orientações</h3>
+                <div id="userInputsSection">
+                    </div>
+            </div>
+
+            <div class="mt-4">
+                 <label for="personaSelect" class="form-label">Selecione a Persona (Voz) para Responder:</label> <select class="form-select" id="personaSelect">
+                     {% for key, persona in personas_dict.items() %}
+                         <option value="{{ key }}">{{ persona.name }}</option>
+                     {% endfor %}
+                 </select>
+            </div>
+
+            <div class="mt-3">
+                <button id="draftBtn" class="btn btn-success">
+                    Gerar Rascunho da Resposta
+                    <div class="spinner-border spinner-border-sm text-light ms-1 loading-spinner" role="status" id="draftSpinner"></div>
+                </button>
+            </div>
+            <div id="draftError" class="error-message"></div> </section>
+
+        <section class="draft-section" id="draftSection" style="display: none;">
+            <h2>Rascunho da Resposta Gerado (Editável)</h2> <textarea class="form-control" id="generatedDraft" rows="12" placeholder="O rascunho da resposta aparecerá aqui... Pode editar diretamente."></textarea> <div class="mt-2">
+                <button id="copyDraftBtn" class="btn btn-secondary" title="Copiar o texto atual da caixa acima">
+                    Copiar Texto Editado </button>
+            </div>
+        </section>
+
+    </div> <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+    <script>
+        // --- Seletores de Elementos do DOM (Inalterado) ---
+        const originalEmailEl = document.getElementById('originalEmail');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const analyzeSpinner = document.getElementById('analyzeSpinner');
+        const analyzeErrorEl = document.getElementById('analyzeError');
+        const analysisSection = document.getElementById('analysisSection');
+        const analysisResultEl = document.getElementById('analysisResult');
+        const userInputsContainer = document.getElementById('userInputsContainer');
+        const userInputsSection = document.getElementById('userInputsSection');
+        const personaSelect = document.getElementById('personaSelect');
+        const draftBtn = document.getElementById('draftBtn');
+        const draftSpinner = document.getElementById('draftSpinner');
+        const draftErrorEl = document.getElementById('draftError');
+        const draftSection = document.getElementById('draftSection');
+        const generatedDraftEl = document.getElementById('generatedDraft');
+        const copyDraftBtn = document.getElementById('copyDraftBtn');
+
+        // --- Estado da Aplicação (Inalterado) ---
+        let currentAnalysisPoints = [];
+
+        // --- Funções Auxiliares (Inalterado) ---
+        function showSpinner(spinner) { spinner.style.display = 'inline-block'; }
+        function hideSpinner(spinner) { spinner.style.display = 'none'; }
+        function showError(element, message) { element.textContent = message; element.style.display = 'block'; }
+        function hideError(element) { element.textContent = ''; element.style.display = 'none'; }
+        function escapeHtml(unsafe) {
+            if (typeof unsafe !== 'string') return '';
+            return unsafe
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+
+        // --- Lógica Principal ---
+
+        // 1. Event Listener para o Botão Analisar Email (Inalterado)
+        analyzeBtn.addEventListener('click', async () => {
+            const emailText = originalEmailEl.value.trim();
+            if (!emailText) {
+                showError(analyzeErrorEl, "Por favor, insira o texto do email recebido.");
+                originalEmailEl.focus();
+                originalEmailEl.classList.add('is-invalid');
+                return;
+            } else {
+                 originalEmailEl.classList.remove('is-invalid');
+            }
+
+            showSpinner(analyzeSpinner);
+            hideError(analyzeErrorEl);
+            hideError(draftErrorEl);
+            analysisSection.style.display = 'none';
+            draftSection.style.display = 'none';
+            analysisResultEl.innerHTML = '';
+            userInputsSection.innerHTML = '';
+            generatedDraftEl.value = '';
+            analyzeBtn.disabled = true;
+            draftBtn.disabled = true;
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email_text: emailText })
+                });
+                const data = await response.json();
+                if (!response.ok || data.error) {
+                    throw new Error(data.error || `Erro HTTP ${response.status}: ${response.statusText}`);
+                }
+                currentAnalysisPoints = data.points || [];
+                displayAnalysisResults(data);
+                createUserInputFields(currentAnalysisPoints);
+                analysisSection.style.display = 'block';
+            } catch (error) {
+                console.error("Erro durante a análise:", error);
+                showError(analyzeErrorEl, `Erro na análise: ${error.message}`);
+            } finally {
+                hideSpinner(analyzeSpinner);
+                analyzeBtn.disabled = false;
+                if (analysisSection.style.display === 'block') {
+                    draftBtn.disabled = false;
+                }
+            }
+        });
+
+        // Função para mostrar os resultados da análise (Inalterado)
+        function displayAnalysisResults(data) {
+            let html = '<h4>Pontos a Responder:</h4>';
+            if (data.points && data.points.length > 0 && data.points[0].toLowerCase() !== "nenhum ponto a responder.") {
+                html += '<ol class="list-group list-group-numbered list-group-flush">';
+                data.points.forEach(point => {
+                    html += `<li class="list-group-item">${escapeHtml(point)}</li>`;
+                });
+                html += '</ol>';
+            } else {
+                 html += '<p class="text-muted">Nenhum ponto específico identificado para resposta direta.</p>';
+            }
+            if (data.actions && data.actions.length > 0) {
+                html += '<h4 class="mt-3">Ações Sugeridas:</h4>'; // Texto ligeiramente alterado
+                html += '<ul class="list-group list-group-flush">';
+                data.actions.forEach(action => {
+                    html += `<li class="list-group-item">${escapeHtml(action)}</li>`;
+                });
+                html += '</ul>';
+            }
+             analysisResultEl.innerHTML = html;
+        }
+
+        // Função para criar dinamicamente os campos de input (Inalterado desde a adição do botão Sugerir)
+        function createUserInputFields(points) {
+            userInputsSection.innerHTML = '';
+            const createGroup = (point, index, isGeneral = false) => {
+                const div = document.createElement('div');
+                div.className = 'point-input-group';
+                const inputId = isGeneral ? 'userInput-general' : `userInput-${index}`;
+                const pointIdentifier = isGeneral ? (points && points.length > 0 ? points[0] : "N/A") : point;
+                const labelText = isGeneral
+                    ? '<strong>Orientação Geral para a Resposta:</strong> (Opcional)'
+                    : `<strong>Ponto ${index + 1}:</strong>`;
+                 const pointDisplay = !isGeneral ? `<p class="mb-1 text-muted fst-italic">"${escapeHtml(point)}"</p>` : '';
+                const requiredAttr = !isGeneral ? 'required' : '';
+                const requiredFeedback = !isGeneral ? '<div class="invalid-feedback">Por favor, forneça resposta/orientação para este ponto.</div>' : '';
+
+                div.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label for="${inputId}" class="form-label mb-0">${labelText}</label>
+                        <button class="btn btn-sm btn-outline-secondary suggest-btn"
+                                data-target-textarea="${inputId}"
+                                data-point="${escapeHtml(pointIdentifier)}"
+                                type="button"
+                                title="Gerar sugestão de texto com IA para este ponto">
+                            Sugerir Texto
+                            <div class="spinner-border spinner-border-sm text-secondary ms-1 loading-spinner" role="status" style="display: none;"></div>
+                        </button>
+                    </div>
+                    ${pointDisplay}
+                    <textarea class="form-control user-guidance" id="${inputId}" data-point="${escapeHtml(pointIdentifier)}" rows="3" ${requiredAttr} placeholder="Escreva aqui a sua resposta/orientação para este ponto..."></textarea>
+                    ${requiredFeedback}
+                `;
+                userInputsSection.appendChild(div);
+            };
+
+            if (!points || points.length === 0 || (points.length === 1 && points[0].toLowerCase() === "nenhum ponto a responder.")) {
+                 createGroup(null, 0, true);
+            } else {
+                points.forEach((point, index) => {
+                    createGroup(point, index, false);
+                });
+            }
+        }
+
+
+        // 2. Event Listener para o Botão Gerar Rascunho (Inalterado)
+        draftBtn.addEventListener('click', async () => {
+            const originalEmail = originalEmailEl.value.trim();
+            const selectedPersona = personaSelect.value; // Obtém a persona selecionada
+            const guidanceInputs = userInputsSection.querySelectorAll('.user-guidance');
+            let userInputsData = [];
+            let formIsValid = true;
+
+            hideError(draftErrorEl);
+
+            guidanceInputs.forEach(input => {
+                const pointText = input.getAttribute('data-point');
+                const guidanceText = input.value.trim();
+                if (input.required && !guidanceText) {
+                    input.classList.add('is-invalid');
+                    if (formIsValid) input.focus(); // Foca no primeiro inválido
+                    formIsValid = false;
+                } else {
+                    input.classList.remove('is-invalid');
+                }
+                userInputsData.push({ point: pointText, guidance: guidanceText });
+            });
+
+            if (!formIsValid) {
+                showError(draftErrorEl, "Por favor, forneça resposta/orientação para todos os pontos marcados como obrigatórios.");
+                return;
+            }
+
+            showSpinner(draftSpinner);
+            draftSection.style.display = 'none';
+            generatedDraftEl.value = '';
+            draftBtn.disabled = true;
+            analyzeBtn.disabled = true;
+
+            try {
+                 const response = await fetch('/draft', {
+                     method: 'POST',
+                     headers: { 'Content-Type': 'application/json' },
+                     body: JSON.stringify({
+                         original_email: originalEmail,
+                         persona_name: selectedPersona, // Envia a persona selecionada
+                         user_inputs: userInputsData
+                     })
+                 });
+                 const data = await response.json();
+                 if (!response.ok || data.error) {
+                     throw new Error(data.error || `Erro HTTP ${response.status}: ${response.statusText}`);
+                 }
+                 generatedDraftEl.value = data.draft;
+                 draftSection.style.display = 'block';
+            } catch (error) {
+                 console.error("Erro durante a geração do rascunho:", error);
+                 showError(draftErrorEl, `Erro na geração do rascunho: ${error.message}`);
+            } finally {
+                 hideSpinner(draftSpinner);
+                 draftBtn.disabled = false;
+                 analyzeBtn.disabled = false;
+            }
+        });
+
+        // 3. Event Listener para o Botão Copiar Rascunho (Inalterado)
+        copyDraftBtn.addEventListener('click', () => {
+            if (!generatedDraftEl.value) return;
+            // A lógica de cópia (navigator.clipboard com fallback) permanece a mesma
+            // ... (código da função de cópia e fallback omitido por brevidade, é o mesmo da versão anterior) ...
+             try {
+                navigator.clipboard.writeText(generatedDraftEl.value).then(() => {
+                    copyDraftBtn.textContent = 'Copiado!';
+                    copyDraftBtn.classList.add('btn-success');
+                    copyDraftBtn.classList.remove('btn-secondary');
+                    setTimeout(() => {
+                          copyDraftBtn.textContent = 'Copiar Texto Editado'; // Texto atualizado
+                          copyDraftBtn.classList.remove('btn-success');
+                          copyDraftBtn.classList.add('btn-secondary');
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Falha ao copiar com navigator.clipboard:', err);
+                    executeCopyFallback(); // Tenta o fallback
+                });
+            } catch (e) {
+                 console.error('navigator.clipboard não suportado/disponível:', e);
+                 executeCopyFallback(); // Tenta o fallback
+            }
+        });
+
+        // Função de fallback para copiar (Inalterada)
+        function executeCopyFallback() {
+             let success = false;
+             try {
+                 generatedDraftEl.select();
+                 generatedDraftEl.setSelectionRange(0, 99999); // Para mobile
+                 success = document.execCommand('copy');
+             } catch (err) {
+                  console.error('Fallback execCommand falhou:', err);
+                  success = false;
+             }
+             if (success) {
+                  copyDraftBtn.textContent = 'Copiado (fallback)!';
+                  copyDraftBtn.classList.add('btn-success');
+                  copyDraftBtn.classList.remove('btn-secondary');
+             } else {
+                  console.error('Fallback de cópia falhou.');
+                  alert('Não foi possível copiar o texto automaticamente. Por favor, copie manualmente.');
+                  return;
+             }
+             setTimeout(() => {
+                  copyDraftBtn.textContent = 'Copiar Texto Editado'; // Texto atualizado
+                  copyDraftBtn.classList.remove('btn-success');
+                  copyDraftBtn.classList.add('btn-secondary');
+             }, 2000);
+        }
+
+
+        // 4. Event Listener para os Botões "Sugerir Texto" (Inalterado desde que adicionámos envio de persona)
+        userInputsSection.addEventListener('click', async (event) => {
+            const button = event.target.closest('.suggest-btn');
+            if (button) {
+                const spinner = button.querySelector('.loading-spinner');
+                const targetTextareaId = button.dataset.targetTextarea;
+                const pointToAddress = button.dataset.point;
+                const targetTextarea = document.getElementById(targetTextareaId);
+                const originalEmail = originalEmailEl.value.trim();
+                const selectedPersonaName = personaSelect.value; // Obtém persona selecionada
+
+                if (!targetTextarea || !originalEmail || !pointToAddress || !selectedPersonaName) {
+                    console.error("Dados em falta para o pedido de sugestão (incluindo persona).");
+                    showError(draftErrorEl, "Erro interno: Não foi possível obter dados ou persona para a sugestão.");
+                    return;
+                }
+
+                if (spinner) spinner.style.display = 'inline-block';
+                button.disabled = true;
+                hideError(draftErrorEl);
+
+                try {
+                    const response = await fetch('/suggest_guidance', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            original_email: originalEmail,
+                            point_to_address: pointToAddress,
+                            persona_name: selectedPersonaName // Envia persona
+                        })
+                    });
+                    const data = await response.json();
+                    if (!response.ok || data.error) {
+                        throw new Error(data.error || `Erro HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    targetTextarea.value = data.suggestion || '';
+                    targetTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+                    targetTextarea.classList.remove('is-invalid');
+                } catch (error) {
+                    console.error("Erro ao obter sugestão de texto:", error);
+                    showError(draftErrorEl, `Erro na sugestão: ${error.message}`);
+                } finally {
+                    if (spinner) spinner.style.display = 'none';
+                    button.disabled = false;
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>

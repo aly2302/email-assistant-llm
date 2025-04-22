@@ -1,0 +1,10 @@
+{
+    "Exemplo Boas Vindas": {
+        "subject": "Bem-vindo(a) à Equipa!",
+        "body": "Caro(a) [Nome],\n\nÉ com grande prazer que lhe damos as boas-vindas à nossa equipa!\n\nEstamos muito entusiasmados por tê-lo(a) connosco.\n\nCom os melhores cumprimentos,\nA Equipa"
+    },
+    "exemplo Guardar": {
+        "subject": "Reunião para discutir técnicas de treino AI generativa",
+        "body": "Estimado Prof. X e Prof. Y,\n\nEspero que este email os encontre bem. Estou planeando uma reunião para discutir as técnicas de treino AI generativa no contexto do nosso trabalho e gostaria de saber qual a sua disponibilidade para se reunirem amanhã às 11 horas.\n\nSeria muito útil poder discutir essas técnicas e aprendermos uns com os outros sobre as nossas experiências. Espero que possamos encontrar um horário que seja conveniente para todos.\n\nSe possível, por favor, responda-me à este email para confirmar a sua disponibilidade.\n\nCom os melhores cumprimentos,\n[Seu nome]"
+    }
+}

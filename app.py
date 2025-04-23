@@ -317,7 +317,7 @@ Email Recebido:
 def build_prompt_0_context_analysis(original_email, persona):
     """
     Constrói o prompt para a Pré-Análise (Prompt 0): identificar tipo de destinatário,
-    tom do email recebido e nome do remetente, usando o LLM.
+    tom do email recebido, nome do remetente e a justificação (rationale), usando o LLM.
 
     Args:
         original_email (str): O conteúdo do email recebido.
@@ -333,15 +333,14 @@ def build_prompt_0_context_analysis(original_email, persona):
         truncated_email += "\n... (email truncado)"
 
     # Extrair apenas as informações da persona relevantes para esta análise
-    # Evita incluir exemplos de escrita longos ou descrições detalhadas aqui.
     persona_context = {
         "name": persona.get("name", "N/A"),
         "role": persona.get("role", "N/A"),
         "language": persona.get("attributes", {}).get("language", "pt-PT"),
-        # Inclui apenas os nomes das relações e os seus tipos
         "relationships": {k: v.get('type', 'N/A') for k, v in persona.get("relationships", {}).items()},
-        # Inclui as chaves das regras de adaptação (tipos de destinatários conhecidos)
-        "recipient_types": list(persona.get("recipient_adaptation_rules", {}).keys())
+        # Inclui as chaves das regras de adaptação E as chaves das relações específicas
+        # para ajudar o LLM a mapear corretamente
+        "recipient_types": list(persona.get("recipient_adaptation_rules", {}).keys()) + list(persona.get("relationships", {}).keys())
     }
 
     # O prompt instrui o LLM a analisar o email e a persona, e retornar um JSON específico.
@@ -361,26 +360,30 @@ Tarefa: Analisa o email recebido e o contexto da persona. Determina a categoria 
 
 1.  `recipient_category`: (string) A chave **exata** que melhor descreve o remetente principal. Deve ser UMA das seguintes opções, pela ordem de prioridade:
     * A chave de uma das `relationships` da persona (ex: "Professor Jorge") se houver uma correspondência clara e direta entre o remetente do email e essa relação específica.
-    * A chave de um dos `recipient_types` da persona (ex: "professor", "colleague_student", "admin_services") se não for uma relação específica mas se encaixar numa categoria geral definida nas regras.
+    * A chave de um dos `recipient_types` da persona (ex: "professor", "orientando", "admin_services_uc") se não for uma relação específica mas se encaixar numa categoria geral definida nas regras.
     * "unknown" se nenhuma das opções acima se aplicar claramente ou se a informação for insuficiente.
 2.  `incoming_tone`: (string) O tom/formalidade percebido do **email recebido**. Escolhe UMA das seguintes opções que melhor descreva o email: "Muito Formal", "Formal", "Semi-Formal", "Casual", "Urgente", "InformativoNeutro", "Outro".
 3.  `sender_name_guess`: (string) A melhor estimativa do nome do remetente principal (ex: "Marta Silva", "João", "Dr. Carlos", "Equipa de Suporte"). Tenta extrair o nome do campo 'From:', da assinatura ou da saudação. Se impossível determinar com razoável certeza, retorna uma string vazia "".
+4.  `rationale`: (string) Uma frase **curta e objetiva** justificando a escolha da `recipient_category` (ex: "Remetente identificado como 'Professor Jorge' na lista de relações", "Assinatura indica 'Serviços Académicos'", "Tom e conteúdo sugerem colega estudante", "Informação insuficiente para categorizar").
 
 **IMPORTANTE:** A tua saída deve ser **APENAS** o objeto JSON, sem qualquer texto adicional antes ou depois (sem ```json ... ```, apenas o JSON puro). Exemplo de saída válida:
 {{
-  "recipient_category": "colleague_student",
-  "incoming_tone": "Casual",
-  "sender_name_guess": "Marta"
+  "recipient_category": "orientando",
+  "incoming_tone": "Semi-Formal",
+  "sender_name_guess": "Ana Silva",
+  "rationale": "Conteúdo do email refere 'dúvidas sobre o projeto' e assinatura inclui número de aluno."
 }}
 
 JSON Result:
 """
     return prompt
 
+
+
 def analyze_sender_and_context(original_email, persona):
     """
     Chama o LLM para realizar a Pré-Análise de Contexto (Prompt 0)
-    e retorna os resultados parseados do JSON.
+    e retorna os resultados parseados do JSON, incluindo a 'rationale'.
 
     Args:
         original_email (str): O conteúdo do email recebido.
@@ -388,84 +391,117 @@ def analyze_sender_and_context(original_email, persona):
 
     Returns:
         dict: Um dicionário contendo 'recipient_category', 'incoming_tone',
-              'sender_name_guess', e 'error' (None em caso de sucesso,
+              'sender_name_guess', 'rationale', e 'error' (None em caso de sucesso,
               ou mensagem de erro se a análise falhar).
               Em caso de erro de parsing, retorna valores default e a msg de erro.
     """
-    logging.info(f"Iniciando Pré-Análise de Contexto para email e persona {persona.get('name', 'N/A')}")
+    logging.info(f"Iniciar Pré-Análise de Contexto para email e persona {persona.get('name', 'N/A')}")
     if not persona: # Validação básica
         logging.error("Pré-Análise falhou: Persona inválida.")
-        return {"error": "Persona inválida fornecida para análise de contexto."}
+        return {
+            "recipient_category": "unknown",
+            "incoming_tone": "Neutro",
+            "sender_name_guess": "",
+            "rationale": "",
+            "error": "Persona inválida fornecida para análise de contexto."
+        }
 
-    # Constrói o prompt específico para esta análise
+    # Constrói o prompt específico para esta análise (assume que build_prompt_0_context_analysis está atualizada)
     analysis_prompt = build_prompt_0_context_analysis(original_email, persona)
     # Loga o prompt se estiver em modo debug
-    app.logger.debug(f"Prompt Pré-Análise (Contexto):\n{analysis_prompt}")
+    # (Assume que 'app' é a instância Flask com logger configurado)
+    # app.logger.debug(f"Prompt Pré-Análise (Contexto):\n{analysis_prompt}")
 
     # Chama o LLM com temperatura baixa para uma análise mais determinística e focada
+    # (Assume que call_gemini e GEMINI_MODEL estão definidos)
     llm_response_data = call_gemini(analysis_prompt, model=GEMINI_MODEL, temperature=0.2)
 
     # Verifica se houve erro na chamada à API
     if "error" in llm_response_data:
         logging.error(f"Erro na chamada Gemini para Pré-Análise: {llm_response_data['error']}")
-        # Retorna o erro da API
-        return {"error": f"Falha na comunicação com LLM para pré-análise: {llm_response_data['error']}"}
-
-    llm_response_text = llm_response_data.get("text", "")
-    logging.info("Pré-Análise recebida do Gemini, a fazer parsing do JSON.")
-    app.logger.debug(f"Resposta Bruta Pré-Análise LLM: {llm_response_text}")
-
-    # Tenta fazer o parse do JSON da resposta
-    try:
-        # O LLM pode retornar o JSON dentro de ```json ... ``` ou diretamente.
-        # Esta regex tenta encontrar o JSON em ambos os casos.
-        json_match = re.search(r"```json\s*([\s\S]+?)\s*```|({[\s\S]+})", llm_response_text)
-        if not json_match:
-            # Se não encontrar um padrão JSON claro, tenta fazer parse da string inteira
-            logging.warning("JSON da pré-análise não encontrado com regex, tentando parse direto.")
-            json_str = llm_response_text
-            # Levanta erro se não conseguir fazer parse direto
-            if not json_str.strip().startswith("{") or not json_str.strip().endswith("}"):
-                 raise json.JSONDecodeError("Resposta não parece ser JSON válido.", llm_response_text, 0)
-
-        else:
-             # Pega o conteúdo do JSON encontrado pela regex
-             json_str = json_match.group(1) or json_match.group(2)
-
-        # Faz o parse da string JSON
-        parsed_json = json.loads(json_str)
-
-        # Validação da estrutura esperada do JSON
-        required_keys = ["recipient_category", "incoming_tone", "sender_name_guess"]
-        if not all(key in parsed_json for key in required_keys):
-            missing = [key for key in required_keys if key not in parsed_json]
-            raise ValueError(f"JSON da Pré-Análise inválido. Faltam chaves: {missing}")
-
-        # Validação dos tipos de dados (opcional mas recomendado)
-        if not isinstance(parsed_json["recipient_category"], str):
-            raise ValueError("Tipo inválido para 'recipient_category'. Esperado: string.")
-        if not isinstance(parsed_json["incoming_tone"], str):
-             raise ValueError("Tipo inválido para 'incoming_tone'. Esperado: string.")
-        if not isinstance(parsed_json["sender_name_guess"], str):
-             raise ValueError("Tipo inválido para 'sender_name_guess'. Esperado: string.")
-
-
-        logging.info("Pré-Análise JSON parseada com sucesso.")
-        app.logger.debug(f"Resultado Pré-Análise: {parsed_json}")
-        # Retorna o JSON parseado com 'error: None' para indicar sucesso
-        return {**parsed_json, "error": None}
-
-    except (json.JSONDecodeError, ValueError, TypeError) as e:
-        # Erro durante o parsing ou validação do JSON
-        error_msg = f"Falha ao fazer parse ou validar JSON da Pré-Análise: {e}. Resposta LLM: {llm_response_text}"
-        logging.error(error_msg)
-        logging.exception("Detalhes do erro de parsing da Pré-Análise:") # Loga stack trace
-        # Fallback: Se falhar, retorna 'unknown' e 'Neutro' para não bloquear o fluxo principal,
-        # mas inclui a mensagem de erro para debugging.
+        # Retorna o erro da API, mantendo defaults para outras chaves
         return {
             "recipient_category": "unknown",
             "incoming_tone": "Neutro",
             "sender_name_guess": "",
+            "rationale": "", # Retorna rationale vazia em caso de erro API
+            "error": f"Falha na comunicação com LLM para pré-análise: {llm_response_data['error']}"
+        }
+
+    llm_response_text = llm_response_data.get("text", "")
+    logging.info("Pré-Análise recebida do Gemini, a fazer parsing do JSON.")
+    # app.logger.debug(f"Resposta Bruta Pré-Análise LLM: {llm_response_text}")
+
+    # Tenta fazer o parse do JSON da resposta
+    try:
+        # Regex para encontrar o JSON (robusto a ```json ... ``` ou JSON direto)
+        json_match = re.search(r"```json\s*([\s\S]+?)\s*```|({[\s\S]+})", llm_response_text)
+        if not json_match:
+            logging.warning("JSON da pré-análise não encontrado com regex, tentando parse direto.")
+            json_str = llm_response_text
+            # Validação básica se parece JSON antes de tentar o parse direto
+            if not json_str.strip().startswith("{") or not json_str.strip().endswith("}"):
+                 raise json.JSONDecodeError("Resposta não parece ser JSON válido.", llm_response_text, 0)
+        else:
+            # Pega o grupo que correspondeu (ou o primeiro ou o segundo)
+            json_str = json_match.group(1) or json_match.group(2)
+
+        # Faz o parse da string JSON
+        parsed_json = json.loads(json_str)
+
+        # Validação da estrutura esperada do JSON (incluindo 'rationale')
+        required_keys = ["recipient_category", "incoming_tone", "sender_name_guess", "rationale"]
+        missing_keys = [key for key in required_keys if key not in parsed_json]
+
+        if missing_keys:
+            # Se faltar apenas a rationale, loga aviso mas continua
+            if missing_keys == ["rationale"]:
+                 logging.warning("JSON da Pré-Análise recebido sem a chave 'rationale'. Continuando com rationale vazia.")
+                 parsed_json["rationale"] = "" # Adiciona rationale vazia para consistência
+            else:
+                # Se faltarem outras chaves obrigatórias, levanta erro
+                raise ValueError(f"JSON da Pré-Análise inválido. Faltam chaves obrigatórias: {missing_keys}")
+
+        # Validação dos tipos de dados (mais robusta com .get())
+        if not isinstance(parsed_json.get("recipient_category"), str):
+            logging.warning(f"Tipo inesperado para 'recipient_category' (recebido: {type(parsed_json.get('recipient_category'))}). Usando 'unknown'.")
+            parsed_json["recipient_category"] = "unknown"
+        if not isinstance(parsed_json.get("incoming_tone"), str):
+             logging.warning(f"Tipo inesperado para 'incoming_tone' (recebido: {type(parsed_json.get('incoming_tone'))}). Usando 'Neutro'.")
+             parsed_json["incoming_tone"] = "Neutro"
+        if not isinstance(parsed_json.get("sender_name_guess"), str):
+             logging.warning(f"Tipo inesperado para 'sender_name_guess' (recebido: {type(parsed_json.get('sender_name_guess'))}). Usando string vazia.")
+             parsed_json["sender_name_guess"] = ""
+        if not isinstance(parsed_json.get("rationale"), str):
+             # Tolera se rationale não for string (ex: null), mas loga aviso e converte
+             logging.warning(f"Tipo inesperado para 'rationale' (recebido: {type(parsed_json.get('rationale'))}). Converter para string.")
+             parsed_json["rationale"] = str(parsed_json.get("rationale", ""))
+
+
+        logging.info("Pré-Análise JSON parsed com sucesso.")
+        # app.logger.debug(f"Resultado Pré-Análise: {parsed_json}")
+
+        # Retorna o JSON parseado com 'error: None' para indicar sucesso
+        # Garante que todas as chaves esperadas existem no retorno, usando .get() com defaults
+        return {
+            "recipient_category": parsed_json.get("recipient_category", "unknown"),
+            "incoming_tone": parsed_json.get("incoming_tone", "Neutro"),
+            "sender_name_guess": parsed_json.get("sender_name_guess", ""),
+            "rationale": parsed_json.get("rationale", ""), # Retorna rationale
+            "error": None
+        }
+
+    except (json.JSONDecodeError, ValueError, TypeError) as e:
+        # Erro durante o parsing ou validação do JSON
+        error_msg = f"Falha ao fazer parse ou validar JSON da Pré-Análise: {e}. Resposta LLM (início): {llm_response_text[:200]}..."
+        logging.error(error_msg)
+        logging.exception("Detalhes do erro de parsing da Pré-Análise:") # Loga stack trace
+        # Fallback: Retorna defaults mas inclui a mensagem de erro.
+        return {
+            "recipient_category": "unknown",
+            "incoming_tone": "Neutro",
+            "sender_name_guess": "",
+            "rationale": "", # Rationale vazia no fallback
             "error": f"ERROR_PARSE_CONTEXT: {error_msg}"
         }
     except Exception as e:
@@ -476,16 +512,18 @@ def analyze_sender_and_context(original_email, persona):
             "recipient_category": "unknown",
             "incoming_tone": "Neutro",
             "sender_name_guess": "",
+            "rationale": "", # Rationale vazia no fallback
             "error": f"ERROR_UNEXPECTED_CONTEXT: {error_msg}"
         }
+
 
 
 # --- PROMPT 2 (Rascunho) REFACTORADO COM FOCO NA COESÃO ---
 def build_prompt_2_drafting(persona, original_email, user_inputs, context_analysis):
     """
     Constrói o prompt complexo para solicitar a geração do rascunho da resposta (Prompt 2),
-    UTILIZANDO os resultados da pré-análise de contexto e com instruções REFORÇADAS
-    para COESÃO e FLUXO NATURAL.
+    UTILIZANDO os resultados da pré-análise de contexto (incluindo rationale),
+    regras gerais E específicas da persona, e SEM exemplos de escrita.
 
     Args:
         persona (dict): O dicionário da persona selecionada.
@@ -509,43 +547,73 @@ def build_prompt_2_drafting(persona, original_email, user_inputs, context_analys
     recipient_category = context_analysis.get("recipient_category", "unknown")
     incoming_tone = context_analysis.get("incoming_tone", "Neutro")
     sender_name_guess = context_analysis.get("sender_name_guess") if context_analysis.get("sender_name_guess") else "Destinatário"
+    rationale = context_analysis.get("rationale", "N/A") # Obter a rationale
 
-    # --- Determinar Saudação/Despedida/Tom com base na Pré-Análise ---
-    # (Lógica de determinação de saudação/despedida/tom base - sem alterações)
-    final_greeting = f"Bom dia/tarde {sender_name_guess},"
-    final_farewell = f"Com os melhores cumprimentos,\n{persona.get('name', '')}"
-    base_tone = persona.get("attributes", {}).get("tone", "Neutro")
+    # --- Determinar Saudação/Despedida/Tom e Regras Específicas ---
+    final_greeting = f"Bom dia/tarde {sender_name_guess}," # Fallback
+    final_farewell = f"Com os melhores cumprimentos,\n{persona.get('name', '')}" # Fallback
+    base_tone = persona.get("attributes", {}).get("tone", "Neutro") # Tom base geral
+    general_dos = persona.get("dos", [])
+    general_donts = persona.get("donts", [])
+    specific_dos = []
+    specific_donts = []
+
     rules = persona.get("recipient_adaptation_rules", {})
     relationships = persona.get("relationships", {})
 
+    # 1. Verificar se é uma relação específica
     if recipient_category in relationships:
         relationship_data = relationships[recipient_category]
-        final_greeting = relationship_data.get("greeting_individual", rules.get(recipient_category, {}).get("greeting", final_greeting))
-        # Tenta obter despedida da regra associada à categoria da relação, senão usa 'unknown', senão fallback.
-        # Assume que a chave da relação pode ser usada como chave da regra, ou usa 'unknown'
-        final_farewell = rules.get(recipient_category, rules.get("unknown", {})).get("farewell", final_farewell)
-        base_tone = relationship_data.get("tone", rules.get(recipient_category, {}).get("tone", base_tone))
-    elif recipient_category in rules:
-        adapt_rules = rules[recipient_category]
-        final_greeting = adapt_rules.get("greeting", final_greeting)
-        final_farewell = adapt_rules.get("farewell", final_farewell)
-        base_tone = adapt_rules.get("tone", base_tone)
-    else: # Categoria 'unknown' ou não encontrada
-        adapt_rules = rules.get("unknown", {})
-        final_greeting = adapt_rules.get("greeting", final_greeting)
-        final_farewell = adapt_rules.get("farewell", final_farewell)
-        base_tone = adapt_rules.get("tone", base_tone)
+        # O 'type' na relação aponta para a chave da regra a usar em recipient_adaptation_rules
+        rule_key_for_relationship = relationship_data.get("type", recipient_category) # Usa 'type' se existir, senão a própria chave da relação
+        specific_rules = rules.get(rule_key_for_relationship, rules.get("unknown", {})) # Obtém regras do 'type' ou fallback para 'unknown'
 
-    # Substitui placeholders na saudação
-    final_greeting = final_greeting.replace("[Apelido]", sender_name_guess).replace("[Nome]", sender_name_guess)
+        # Usa saudação individual se existir, senão a da regra, senão fallback
+        final_greeting = relationship_data.get("greeting_individual", specific_rules.get("greeting", final_greeting))
+        # Usa despedida da regra
+        final_farewell = specific_rules.get("farewell", final_farewell)
+        # Usa tom da relação se existir, senão da regra, senão base
+        base_tone = relationship_data.get("tone", specific_rules.get("tone", base_tone))
+        # Obtém Do's/Don'ts específicos da regra
+        specific_dos = specific_rules.get("dos", [])
+        specific_donts = specific_rules.get("donts", [])
+
+    # 2. Se não for relação específica, procurar a categoria diretamente nas regras
+    elif recipient_category in rules:
+        specific_rules = rules[recipient_category]
+        final_greeting = specific_rules.get("greeting", final_greeting)
+        final_farewell = specific_rules.get("farewell", final_farewell)
+        base_tone = specific_rules.get("tone", base_tone)
+        specific_dos = specific_rules.get("dos", [])
+        specific_donts = specific_rules.get("donts", [])
+
+    # 3. Se não encontrou nem relação nem regra específica, usar 'unknown'
+    else:
+        specific_rules = rules.get("unknown", {})
+        final_greeting = specific_rules.get("greeting", final_greeting)
+        final_farewell = specific_rules.get("farewell", final_farewell)
+        base_tone = specific_rules.get("tone", base_tone)
+        specific_dos = specific_rules.get("dos", [])
+        specific_donts = specific_rules.get("donts", [])
+        # Garante que a categoria usada para logs/debug é 'unknown' se caiu aqui
+        if recipient_category not in ["unknown"]:
+             logging.warning(f"Categoria '{recipient_category}' não encontrada em relationships ou rules, usando fallback 'unknown'.")
+             recipient_category = "unknown" # Atualiza para consistência interna
+
+
+    # Substitui placeholders na saudação (após ser definida)
+    # Tenta substituir [Apelido], [Nome], [NomeAluno] com o nome detetado.
+    # Pode precisar de melhorias se o nome for complexo.
+    final_greeting = final_greeting.replace("[Apelido]", sender_name_guess).replace("[Nome]", sender_name_guess).replace("[NomeAluno]", sender_name_guess)
 
     # Ajusta a assinatura na despedida se necessário (ex: nome curto vs completo)
+    # (Lógica de ajuste da assinatura mantida como estava antes)
     persona_signature_name = persona.get("name", "")
     # Exemplo: Se a regra diz "Abraço,\nRodrigo" mas a persona é "Rodrigo Novelo",
     # e a categoria NÃO é 'colleague_student', ajusta para o nome completo.
+    # (Esta lógica pode precisar de revisão consoante as novas personas/regras)
     if persona_signature_name and persona_signature_name != "Rodrigo" and "\nRodrigo" in final_farewell and recipient_category != "colleague_student":
          final_farewell = final_farewell.replace("\nRodrigo", f"\n{persona_signature_name}")
-    # Considerar outros casos de ajuste se necessário
 
 
     # --- Estrutura do Prompt Refatorada em Blocos ---
@@ -556,7 +624,7 @@ System: **TU ÉS {persona['name']}**. A tua tarefa é gerar um email de resposta
 * **Nome da Persona:** {persona['name']}
 * **Papel:** {persona.get('role', 'N/A')}
 * **Descrição Geral:** {persona.get('description', 'Estilo padrão')}
-* **Atributos Gerais:** (Tom Base: {persona.get('attributes', {}).get('tone', 'Neutro')}, Formalidade Base: {persona.get('attributes', {}).get('formality', 'Média')}, Verbosidade: {persona.get('attributes', {}).get('verbosity', 'Média')}, Uso de Emojis: {persona.get('attributes', {}).get('emoji_usage', 'Nenhum')})
+* **Atributos Gerais:** (Tom Base: {persona.get('attributes', {}).get('tone', 'N/A')}, Formalidade Base: {persona.get('attributes', {}).get('formality', 'N/A')}, Verbosidade: {persona.get('attributes', {}).get('verbosity', 'N/A')}, Estrutura Frase: {persona.get('attributes', {}).get('sentence_structure', 'N/A')}, Vocabulário: {persona.get('attributes', {}).get('vocabulary_preference', 'N/A')}, Uso Emojis: {persona.get('attributes', {}).get('emoji_usage', 'Nenhum')})
 * **Linguagem OBRIGATÓRIA:** {lang_instruction}
 
 **Regras Essenciais de Escrita:**
@@ -564,46 +632,47 @@ System: **TU ÉS {persona['name']}**. A tua tarefa é gerar um email de resposta
 * **Clareza e Concisão:** Vai direto ao ponto, mas mantém a cordialidade. Evita repetições.
 * **Contexto:** Responde diretamente ao email original e às orientações dadas.
 
-**Regras OBRIGATÓRIAS "Faz" (Do's de {persona['name']}):**
-{chr(10).join([f'* {rule}' for rule in persona.get('dos', ['Ser claro.'])])}
+**Regras Gerais "Faz" (Do's de {persona['name']} - Aplicam-se sempre):**
+{chr(10).join([f'* {rule}' for rule in general_dos]) if general_dos else '* Nenhuma regra geral Do definida.'}
 
-**Regras OBRIGATÓRIAS "Não Faças" (Don'ts de {persona['name']}):**
-{chr(10).join([f'* {rule}' for rule in persona.get('donts', ['Ser vago.'])])}
+**Regras Gerais "Não Faças" (Don'ts de {persona['name']} - Aplicam-se sempre):**
+{chr(10).join([f'* {rule}' for rule in general_donts]) if general_donts else '* Nenhuma regra geral Don\'t definida.'}
 --- FIM PERSONA E REGRAS GERAIS ---
 
 """
 
-    # --- Bloco 2: Exemplos de Estilo ---
-    examples_prompt = ""
-    writing_examples = persona.get("writing_examples")
-    if writing_examples:
-        examples_prompt += f"\n### EXEMPLOS DE ESTILO DE ESCRITA (APENAS COMO GUIA DE ESTILO) ###\n"
-        examples_prompt += "**NÃO uses o conteúdo destes exemplos na resposta final. Usa-os APENAS para aprender o tom, vocabulário, estrutura e formalidade da persona.**\n"
-        limited_examples = writing_examples[:3] # Limita para poupar tokens
-        for i, example in enumerate(limited_examples):
-            context_desc = example.get("context", f"Exemplo {i+1}")
-            output_example = example.get("output_style_example", "")
-            if output_example:
-                examples_prompt += f"\n---\nContexto Exemplo {i+1}: {context_desc}\nTexto Exemplo:\n{output_example}\n"
-        examples_prompt += f"---\n--- FIM DOS EXEMPLOS DE ESTILO ---\n"
-
-    # --- Bloco 3: Contexto da Tarefa Atual ---
+    # --- Bloco 2: Contexto da Tarefa Atual (REFORÇADO) ---
     context_prompt = f"""\n### CONTEXTO DA TAREFA ATUAL ###
-**Email Original Recebido de '{sender_name_guess}'**
-*Tom do Email Recebido (detetado pela pré-análise):* '{incoming_tone}'
+**Análise do Email Recebido (Feita pela Pré-Análise):**
+* Remetente (Estimado): '{sender_name_guess}'
+* Categoria do Destinatário: '{recipient_category}'
+* Justificação da Categoria (Rationale): '{rationale}'
+* Tom do Email Recebido: '{incoming_tone}'
+
+**Adaptação da Tua Resposta (Definida para este cenário):**
+* Tom Alvo para a Resposta: '{base_tone}'
+* Saudação a Usar: `{final_greeting}`
+* Despedida a Usar: (ver abaixo na Tarefa Final)
+"""
+    # Adiciona regras específicas se existirem
+    if specific_dos:
+        context_prompt += f"""* **Regras Específicas 'Faz' para '{recipient_category}' (Prioritárias):**
+{chr(10).join([f'  * {rule}' for rule in specific_dos])}
+"""
+    if specific_donts:
+        context_prompt += f"""* **Regras Específicas 'Não Faças' para '{recipient_category}' (Prioritárias):**
+{chr(10).join([f'  * {rule}' for rule in specific_donts])}
+"""
+
+    context_prompt += f"""
+**Email Original Recebido de '{sender_name_guess}' (Para teu contexto):**
 ---
 {original_email}
 ---
 
-**Análise do Destinatário (feita pela pré-análise):**
-* Categoria do Destinatário: '{recipient_category}'
-* Tom Base Definido para este Destinatário: '{base_tone}'
-* Saudação Determinada: `{final_greeting}`
-* Despedida Determinada: (ver abaixo na Tarefa Final)
-
 **Itens a Abordar & Informação Chave/Pontos Essenciais Fornecidos por Ti ({persona['name']}) para Construir a Resposta:**
 """
-    # Processamento dos user_inputs (igual à versão anterior)
+    # Processamento dos user_inputs (mantido igual)
     if user_inputs:
         has_real_points = False
         guidance_provided = False
@@ -611,35 +680,39 @@ System: **TU ÉS {persona['name']}**. A tua tarefa é gerar um email de resposta
             point = item.get('point', 'N/A')
             guidance = item.get('guidance', '')
             if guidance: guidance_provided = True
-            is_placeholder_point = point == 'N/A' or point == "null" or (isinstance(point, str) and point.lower().startswith("nenhum ponto"))
+            # Verifica se é um ponto placeholder (N/A, null, ou começa com "nenhum ponto")
+            is_placeholder_point = point == 'N/A' or point == "null" or (isinstance(point, str) and point.lower().strip().startswith("nenhum ponto"))
 
             if not is_placeholder_point:
                 context_prompt += f"* Ponto Original {i+1} a Abordar: \"{point}\"\n"
-                context_prompt += f"    * Informação/Ideias Chave para a Tua Resposta: \"{guidance if guidance else '(Nenhuma orientação específica dada - responde apropriadamente)'}\"\n"
+                context_prompt += f"    * Tua Informação/Ideias Chave para Responder: \"{guidance if guidance else '(Nenhuma orientação específica dada - responde apropriadamente com base na persona e contexto)'}\"\n"
                 has_real_points = True
-            elif guidance: # Orientação geral
+            elif guidance: # Orientação geral (mesmo que ponto seja placeholder)
                 context_prompt += f"* Tua Orientação Geral (a incorporar na resposta): \"{guidance}\"\n"
+                guidance_provided = True # Marca que houve orientação geral
 
-        # Adiciona instruções se não houver pontos ou orientações específicas
+        # Adiciona instruções se não houver pontos REAIS ou orientações específicas
         if not has_real_points and not guidance_provided:
-             context_prompt += "* Tarefa Adicional: Escrever uma resposta curta e apropriada (ex: agradecimento, confirmação simples) baseada apenas no email original e na tua persona.\n"
+             context_prompt += "* Tarefa Adicional: Escrever uma resposta curta e apropriada (ex: agradecimento, confirmação simples) baseada apenas no email original, na tua persona e nas regras definidas para este destinatário.\n"
         elif not has_real_points and guidance_provided:
-             context_prompt += "* Tarefa Adicional: Incorpora a(s) orientação(ões) geral(is) acima numa resposta apropriada ao email original, seguindo a tua persona.\n"
+             # Se só houve orientação geral, usa-a para construir a resposta
+             context_prompt += "* Tarefa Adicional: Incorpora a(s) orientação(ões) geral(is) acima numa resposta apropriada ao email original, seguindo a tua persona e as regras definidas para este destinatário.\n"
     else: # Nenhum user_input fornecido
-        context_prompt += "* Tarefa Adicional: Escrever uma resposta curta e apropriada baseada apenas no email original e na tua persona.\n"
+        context_prompt += "* Tarefa Adicional: Escrever uma resposta curta e apropriada baseada apenas no email original, na tua persona e nas regras definidas para este destinatário.\n"
     context_prompt += "--- FIM CONTEXTO ---\n"
 
 
-    # --- Bloco 4: Tarefa Final (COM INSTRUÇÕES DE COESÃO REFORÇADAS) ---
+    # --- Bloco 3: Tarefa Final (COM INSTRUÇÕES DE COESÃO REFORÇADAS E SEM EXEMPLOS) ---
     task_prompt = f"""\n### TAREFA FINAL ###
-Com base em TUDO o que foi dito acima (Instruções, Persona, Exemplos, Contexto, Informação Chave), redige agora o corpo COMPLETO e de ALTA QUALIDADE do email de resposta.
+Com base em TUDO o que foi dito acima (Instruções, Persona, Regras Gerais, Contexto da Tarefa, Regras Específicas para '{recipient_category}', Informação Chave tua), redige agora o corpo COMPLETO e de ALTA QUALIDADE do email de resposta.
 
 **Instruções Específicas:**
-1.  **Coesão e Fluxo:** Integra TODA a 'Informação/Ideias Chave' tua de forma **natural, humana e coesa** no texto. **Agrupa tópicos relacionados em parágrafos lógicos** e utiliza **frases de transição** apropriadas para ligar as diferentes ideias. **EVITA responder a cada ponto isoladamente como uma lista; constrói uma resposta unificada e fluida**, como um humano faria.
-2.  **Adaptação Dinâmica ao Tom:** Considera o 'Tom do Email Recebido' ('{incoming_tone}'). O teu 'Tom Base Definido' para '{recipient_category}' é '{base_tone}'. **AJUSTA subtilmente** o teu tom na resposta para criar harmonia. Se o tom recebido for muito diferente do teu base (ex: recebeste email casual mas o teu base é formal), aproxima-te ligeiramente do tom recebido, mas sem quebrar completamente a tua persona. Se os tons já forem semelhantes, mantém o teu tom base.
-3.  **Integração do Conteúdo:** Relembrando: NÃO copies literalmente a 'Informação/Ideias Chave', **Usa-as como BASE** para construir as tuas próprias frases, mantendo o fluxo da conversa e o teu estilo. Responde a todos os pontos que foram identificados como necessitando de resposta.
-4.  **Fidelidade à Persona:** Mantém-te ESTRITAMENTE FIEL à Persona {persona['name']} ({lang_instruction_short}, regras Do/Don't, estilo geral aprendido dos exemplos).
-5.  **Formato OBRIGATÓRIO:**
+1.  **Síntese da Persona e Contexto (IMPORTANTE):** Antes de escrever, mentalmente revê: Quem és ({persona['name']})? Qual o teu estilo geral? Quem é o destinatário ('{sender_name_guess}', categoria '{recipient_category}')? Qual o tom dele ('{incoming_tone}')? Qual o teu tom alvo ('{base_tone}')? Quais as regras GERAIS e ESPECÍFICAS mais importantes para esta resposta?
+2.  **Coesão e Fluxo:** Integra TODA a 'Informação/Ideias Chave' tua de forma **natural, humana e coesa** no texto. **Agrupa tópicos relacionados em parágrafos lógicos** e utiliza **frases de transição** apropriadas para ligar as diferentes ideias. **EVITA responder a cada ponto isoladamente como uma lista; constrói uma resposta unificada e fluida**, como um humano faria.
+3.  **Adaptação Dinâmica ao Tom:** Considera o 'Tom do Email Recebido' ('{incoming_tone}'). O teu 'Tom Alvo Definido' para '{recipient_category}' é '{base_tone}'. **AJUSTA subtilmente** o teu tom na resposta para criar harmonia, mas **sem quebrar a tua persona fundamental ou as regras de formalidade definidas**. Se os tons já forem semelhantes, mantém o teu tom alvo.
+4.  **Integração do Conteúdo:** Relembrando: NÃO copies literalmente a 'Informação/Ideias Chave', **Usa-as como BASE** para construir as tuas próprias frases, mantendo o fluxo da conversa e o teu estilo. Responde a todos os pontos que foram identificados como necessitando de resposta (se houver).
+5.  **Fidelidade à Persona e Regras:** Mantém-te ESTRITAMENTE FIEL à Persona {persona['name']} ({lang_instruction_short}, regras Gerais e Específicas Do/Don't). **As regras específicas para '{recipient_category}' têm prioridade se entrarem em conflito com as gerais.**
+6.  **Formato OBRIGATÓRIO:**
     * Começa **DIRETAMENTE** com a saudação: `{final_greeting}`
     * Gera o corpo da resposta em **formato de parágrafo(s)**.
     * Termina **EXATAMENTE** com a despedida:
@@ -650,11 +723,13 @@ Resposta Gerada:
 """
 
     # --- Combinar todos os blocos e retornar ---
-    full_prompt = system_prompt + examples_prompt + context_prompt + task_prompt
+    # REMOVIDO: examples_prompt
+    full_prompt = system_prompt + context_prompt + task_prompt
     # Logar o prompt completo em modo debug para análise
+    # (Assume que DEBUG_MODE e logging estão definidos)
     if DEBUG_MODE:
         prompt_hash = hash(full_prompt) # Hash para identificar prompts únicos nos logs
-        logging.debug(f"--- DEBUG: PROMPT 2 (Drafting) Persona: {persona['name']} / Hash: {prompt_hash} ---")
+        logging.debug(f"--- DEBUG: PROMPT 2 (Drafting) Persona: {persona['name']} / Dest: {recipient_category} / Hash: {prompt_hash} ---")
         logging.debug(f"Prompt 2 Length: {len(full_prompt)} chars")
         log_limit = 4000 # Limite para não sobrecarregar logs
         logging.debug(full_prompt[:log_limit] + "..." if len(full_prompt) > log_limit else full_prompt)

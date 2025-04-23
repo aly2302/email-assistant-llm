@@ -20,7 +20,7 @@
       "professor": {
         "tone": "Formal",
         "greeting": "Caro(a) Professor(a) [Apelido],",
-        "farewell": "Com os melhores cumprimentos,\nRodrigo Novelo"
+        "farewell": "Com os melhores cumprimentos,\nRodrigo"
       },
       "colleague_student": {
         "tone": "Casual",
@@ -30,37 +30,37 @@
       "admin_services": {
         "tone": "FormalFuncional",
         "greeting": "Exmos(as). Senhores(as),",
-        "farewell": "Com os melhores cumprimentos,\nRodrigo Novelo"
+        "farewell": "Com os melhores cumprimentos,\nRodrigo"
       },
       "external_formal": {
         "tone": "Formal",
         "greeting": "Exmo(a). Sr(a). [Nome/Apelido],",
-        "farewell": "Com os melhores cumprimentos,\nRodrigo Novelo"
+        "farewell": "Com os melhores cumprimentos,\nRodrigo"
       },
       "research_collaborator": {
         "tone": "FormalColaborativo",
         "greeting": "Estimado(a) Professor(a)/Doutor(a) [Apelido],",
-        "farewell": "Com os melhores cumprimentos,\nRodrigo Novelo"
+        "farewell": "Com os melhores cumprimentos,\nRodrigo"
       },
       "conference_contact": {
         "tone": "SemiFormalProfissional",
         "greeting": "Caro(a) [Nome], (Referir conferência)",
-        "farewell": "Atenciosamente,\nRodrigo Novelo"
+        "farewell": "Atenciosamente,\nRodrigo"
       },
       "support_technical": {
         "tone": "Funcional",
         "greeting": "Bom dia/tarde,",
-        "farewell": "Obrigado,\nRodrigo Novelo"
+        "farewell": "Obrigado,\nRodrigo"
       },
       "group_mixed_formal": {
         "tone": "Formal",
         "greeting": "Caros colegas / Bom dia a todos,",
-        "farewell": "Com os melhores cumprimentos,\nRodrigo Novelo"
+        "farewell": "Com os melhores cumprimentos,\nRodrigo"
       },
       "unknown": {
         "tone": "Formal",
         "greeting": "Exmo(a). Sr(a). [Apelido],",
-        "farewell": "Com os melhores cumprimentos,\nRodrigo Novelo"
+        "farewell": "Com os melhores cumprimentos,\nRodrigo"
       }
     },
     "relationships": {
@@ -145,7 +145,7 @@
       "orientando": {
         "tone": "OrientadorFormal",
         "greeting": "Caro(a) [NomeAluno],",
-        "farewell": "Com os melhores cumprimentos,\nJorge Bernardino",
+        "farewell": "Com os melhores cumprimentos,\n\nJorge Bernardino\nProfessor Coordenador\nDepartamento de Engª Informática e de Sistemas\njorge@isec.pt\n\nRua Pedro Nunes\nQuinta da Nora\n3030-199 Coimbra\nwww.isec.pt | info@isec.pt | +351 239 790 200",
         "dos": [
           "Fornecer feedback claro, específico e construtivo sobre o trabalho apresentado.",
           "Definir claramente as expectativas para os próximos passos ou tarefas.",
@@ -201,7 +201,9 @@
           "Ser claro sobre objetivos comuns, contribuições individuais e próximos passos.",
           "Partilhar resultados, dados ou ideias relevantes de forma estruturada.",
           "Agendar reuniões ou chamadas com antecedência e com propósito claro.",
-          "Ser transparente sobre eventuais desafios ou atrasos."
+          "Ser transparente sobre eventuais desafios ou atrasos.",
+          "Usar o nome do remetente na saudação, se identificado, escolhendo o género apropriado (Caro/Cara)."
+
         ],
         "donts": [
           "Ser vago sobre os termos ou objetivos da colaboração.",
@@ -211,8 +213,8 @@
       },
       "unknown": {
         "tone": "Formal",
-        "greeting": "Exmo(a). Sr(a).,",
-        "farewell": "Com os melhores cumprimentos,\nJorge Bernardino",
+        "greeting": "Caro(a) [nome]",
+        "farewell": "Com os melhores cumprimentos,\n\nJorge Bernardino\nProfessor Coordenador\nDepartamento de Engª Informática e de Sistemas\njorge@isec.pt\n\nRua Pedro Nunes\nQuinta da Nora\n3030-199 Coimbra\nwww.isec.pt | info@isec.pt | +351 239 790 200",
         "dos": [
           "Manter um nível elevado de formalidade e profissionalismo.",
           "Ser claro, conciso e educado na resposta.",
@@ -322,7 +324,7 @@
           "Agradecer a atenção."
         ],
         "donts": [
-          "Ser prolixo ou incluir detalhes irrelevantes.",
+          "Ser redudante ou incluir detalhes irrelevantes.",
           "Fazer reclamações de forma inadequada.",
           "Não fornecer informação essencial."
         ]

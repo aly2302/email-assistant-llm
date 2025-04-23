@@ -20,6 +20,8 @@ APP_HOST = os.environ.get('APP_HOST', '127.0.0.1')
 APP_PORT = int(os.environ.get('APP_PORT', 5001))
 GENERATION_TEMPERATURE = float(os.environ.get('GENERATION_TEMPERATURE', 0.8)) # Temperatura padrão para geração criativa
 REFINEMENT_TEMPERATURE = float(os.environ.get('REFINEMENT_TEMPERATURE', 0.6))
+POLISHING_TEMPERATURE = float(os.environ.get('POLISHING_TEMPERATURE', 0.7)) # Temp para polimento final
+
 DEBUG_MODE = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
 
 # --- Gemini Configuration ---
@@ -317,7 +319,7 @@ Email Recebido:
 def build_prompt_0_context_analysis(original_email, persona):
     """
     Constrói o prompt para a Pré-Análise (Prompt 0): identificar tipo de destinatário,
-    tom do email recebido, nome do remetente e a justificação (rationale), usando o LLM.
+    tom do email recebido, nome do remetente (SEM TÍTULOS) e a justificação (rationale), usando o LLM.
 
     Args:
         original_email (str): O conteúdo do email recebido.
@@ -363,7 +365,7 @@ Tarefa: Analisa o email recebido e o contexto da persona. Determina a categoria 
     * A chave de um dos `recipient_types` da persona (ex: "professor", "orientando", "admin_services_uc") se não for uma relação específica mas se encaixar numa categoria geral definida nas regras.
     * "unknown" se nenhuma das opções acima se aplicar claramente ou se a informação for insuficiente.
 2.  `incoming_tone`: (string) O tom/formalidade percebido do **email recebido**. Escolhe UMA das seguintes opções que melhor descreva o email: "Muito Formal", "Formal", "Semi-Formal", "Casual", "Urgente", "InformativoNeutro", "Outro".
-3.  `sender_name_guess`: (string) A melhor estimativa do nome do remetente principal (ex: "Marta Silva", "João", "Dr. Carlos", "Equipa de Suporte"). Tenta extrair o nome do campo 'From:', da assinatura ou da saudação. Se impossível determinar com razoável certeza, retorna uma string vazia "".
+3.  `sender_name_guess`: (string) A melhor estimativa do nome do remetente principal (ex: "Marta Silva", "João Carlos", "Ana", "Equipa de Suporte"). **IMPORTANTE: Extrai APENAS o nome próprio e/ou apelido, OMITINDO títulos como 'Prof.', 'Professor', 'Dr.', 'Eng.', 'Exmo.', etc.** Se o nome for de uma entidade (ex: 'Serviços Académicos', 'Suporte Técnico'), retorna esse nome. Se impossível determinar com razoável certeza, retorna uma string vazia "".
 4.  `rationale`: (string) Uma frase **curta e objetiva** justificando a escolha da `recipient_category` (ex: "Remetente identificado como 'Professor Jorge' na lista de relações", "Assinatura indica 'Serviços Académicos'", "Tom e conteúdo sugerem colega estudante", "Informação insuficiente para categorizar").
 
 **IMPORTANTE:** A tua saída deve ser **APENAS** o objeto JSON, sem qualquer texto adicional antes ou depois (sem ```json ... ```, apenas o JSON puro). Exemplo de saída válida:
@@ -377,6 +379,7 @@ Tarefa: Analisa o email recebido e o contexto da persona. Determina a categoria 
 JSON Result:
 """
     return prompt
+
 
 
 
@@ -522,8 +525,8 @@ def analyze_sender_and_context(original_email, persona):
 def build_prompt_2_drafting(persona, original_email, user_inputs, context_analysis):
     """
     Constrói o prompt complexo para solicitar a geração do rascunho da resposta (Prompt 2),
-    UTILIZANDO os resultados da pré-análise de contexto (incluindo rationale),
-    regras gerais E específicas da persona, e SEM exemplos de escrita.
+    UTILIZANDO os resultados da pré-análise de contexto (incluindo nome limpo),
+    regras gerais E específicas da persona, e instruindo o LLM a lidar com género.
 
     Args:
         persona (dict): O dicionário da persona selecionada.
@@ -534,25 +537,26 @@ def build_prompt_2_drafting(persona, original_email, user_inputs, context_analys
     Returns:
         str: O prompt formatado para o LLM gerar o rascunho da resposta.
     """
-    # Determina a instrução de linguagem (pt-PT vs pt-BR)
+    # Determina a instrução de linguagem
     persona_lang = persona.get("attributes", {}).get("language", "pt-PT")
-    if persona_lang == "pt-BR":
-        lang_instruction = "Escreve **exclusivamente** em **Português do Brasil (pt-BR)** de forma **natural e fluída**. Evita construções de Portugal."
-        lang_instruction_short = "LINGUAGEM pt-BR natural"
-    else:
-        lang_instruction = "Escreve **exclusivamente** em **Português de Portugal (pt-PT)** de forma **natural e fluída**. Evita construções do Brasil (ex: gerúndio excessivo)."
-        lang_instruction_short = "LINGUAGEM pt-PT natural"
+    lang_instruction = f"Escreve **exclusivamente** em **{persona_lang}** de forma **natural e fluída**."
+    lang_instruction_short = f"LINGUAGEM {persona_lang} natural"
 
-    # --- Obter resultados da Pré-Análise ---
+    # --- Obter resultados da Pré-Análise (incluindo nome limpo) ---
     recipient_category = context_analysis.get("recipient_category", "unknown")
     incoming_tone = context_analysis.get("incoming_tone", "Neutro")
+    # sender_name_guess DEVE vir limpo de títulos de Prompt 0
     sender_name_guess = context_analysis.get("sender_name_guess") if context_analysis.get("sender_name_guess") else "Destinatário"
-    rationale = context_analysis.get("rationale", "N/A") # Obter a rationale
+    rationale = context_analysis.get("rationale", "N/A")
 
-    # --- Determinar Saudação/Despedida/Tom e Regras Específicas ---
-    final_greeting = f"Bom dia/tarde {sender_name_guess}," # Fallback
-    final_farewell = f"Com os melhores cumprimentos,\n{persona.get('name', '')}" # Fallback
-    base_tone = persona.get("attributes", {}).get("tone", "Neutro") # Tom base geral
+    # --- Determinar Saudação BASE / Despedida / Tom e Regras Específicas ---
+    # Define fallbacks
+    default_greeting_pattern = "Caro(a) [Nome]," # Usar um padrão que indica necessidade de resolução de género
+    default_farewell = f"Com os melhores cumprimentos,\n{persona.get('name', '')}"
+
+    greeting_rule = default_greeting_pattern # Começa com o fallback/padrão
+    final_farewell = default_farewell
+    base_tone = persona.get("attributes", {}).get("tone", "Neutro")
     general_dos = persona.get("dos", [])
     general_donts = persona.get("donts", [])
     specific_dos = []
@@ -561,64 +565,80 @@ def build_prompt_2_drafting(persona, original_email, user_inputs, context_analys
     rules = persona.get("recipient_adaptation_rules", {})
     relationships = persona.get("relationships", {})
 
-    # 1. Verificar se é uma relação específica
+    # Lógica para encontrar a regra e os dados aplicáveis
+    rule_key_to_use = "unknown" # Assume unknown por defeito
     if recipient_category in relationships:
         relationship_data = relationships[recipient_category]
-        # O 'type' na relação aponta para a chave da regra a usar em recipient_adaptation_rules
-        rule_key_for_relationship = relationship_data.get("type", recipient_category) # Usa 'type' se existir, senão a própria chave da relação
-        specific_rules = rules.get(rule_key_for_relationship, rules.get("unknown", {})) # Obtém regras do 'type' ou fallback para 'unknown'
+        rule_key_to_use = relationship_data.get("type", recipient_category) # Usa 'type' se existir
+        specific_rules = rules.get(rule_key_to_use, rules.get("unknown", {}))
 
-        # Usa saudação individual se existir, senão a da regra, senão fallback
-        final_greeting = relationship_data.get("greeting_individual", specific_rules.get("greeting", final_greeting))
-        # Usa despedida da regra
+        # Usa saudação individual se existir, senão a da regra
+        greeting_rule = relationship_data.get("greeting_individual", specific_rules.get("greeting", greeting_rule))
         final_farewell = specific_rules.get("farewell", final_farewell)
-        # Usa tom da relação se existir, senão da regra, senão base
         base_tone = relationship_data.get("tone", specific_rules.get("tone", base_tone))
-        # Obtém Do's/Don'ts específicos da regra
         specific_dos = specific_rules.get("dos", [])
         specific_donts = specific_rules.get("donts", [])
 
-    # 2. Se não for relação específica, procurar a categoria diretamente nas regras
     elif recipient_category in rules:
-        specific_rules = rules[recipient_category]
-        final_greeting = specific_rules.get("greeting", final_greeting)
+        rule_key_to_use = recipient_category
+        specific_rules = rules[rule_key_to_use]
+        greeting_rule = specific_rules.get("greeting", greeting_rule)
         final_farewell = specific_rules.get("farewell", final_farewell)
         base_tone = specific_rules.get("tone", base_tone)
         specific_dos = specific_rules.get("dos", [])
         specific_donts = specific_rules.get("donts", [])
-
-    # 3. Se não encontrou nem relação nem regra específica, usar 'unknown'
     else:
+        # Já está como "unknown"
         specific_rules = rules.get("unknown", {})
-        final_greeting = specific_rules.get("greeting", final_greeting)
+        greeting_rule = specific_rules.get("greeting", greeting_rule) # Obtém a regra de 'unknown' (que alterámos no JSON)
         final_farewell = specific_rules.get("farewell", final_farewell)
         base_tone = specific_rules.get("tone", base_tone)
         specific_dos = specific_rules.get("dos", [])
         specific_donts = specific_rules.get("donts", [])
-        # Garante que a categoria usada para logs/debug é 'unknown' se caiu aqui
-        if recipient_category not in ["unknown"]:
+        if recipient_category != "unknown":
              logging.warning(f"Categoria '{recipient_category}' não encontrada em relationships ou rules, usando fallback 'unknown'.")
-             recipient_category = "unknown" # Atualiza para consistência interna
+             # rule_key_to_use já é 'unknown'
 
 
-    # Substitui placeholders na saudação (após ser definida)
-    # Tenta substituir [Apelido], [Nome], [NomeAluno] com o nome detetado.
-    # Pode precisar de melhorias se o nome for complexo.
-    final_greeting = final_greeting.replace("[Apelido]", sender_name_guess).replace("[Nome]", sender_name_guess).replace("[NomeAluno]", sender_name_guess)
+    # --- Construção da INSTRUÇÃO de Saudação para o LLM ---
+    # Substitui placeholders no *padrão* da saudação (não na saudação final ainda)
+    # Usa o sender_name_guess (que deve vir limpo de títulos)
+    greeting_instruction_base = greeting_rule.replace("[Apelido]", sender_name_guess)\
+                                             .replace("[Nome]", sender_name_guess)\
+                                             .replace("[NomeAluno]", sender_name_guess)
 
-    # Ajusta a assinatura na despedida se necessário (ex: nome curto vs completo)
-    # (Lógica de ajuste da assinatura mantida como estava antes)
+    # Verifica se a saudação base contém "(a)" para instruir sobre género
+    greeting_instruction_for_llm = ""
+    if "(a)" in greeting_instruction_base:
+        # Remove o "(a)" do padrão base antes de dar a instrução
+        cleaned_greeting_base = greeting_instruction_base.replace("(a)", "")
+        # Instrução explícita para o LLM resolver o género
+        greeting_instruction_for_llm = f"A saudação base para este destinatário é do tipo '{cleaned_greeting_base}'. **A TUA TAREFA é usar o nome '{sender_name_guess}' e escolher a forma de género correta (ex: Caro/Cara, Exmo./Exma.) com base nesse nome.** Se o género for ambíguo ou desconhecido, usa a forma masculina ou uma saudação neutra apropriada (ex: 'Bom dia/tarde {sender_name_guess},'). Começa a resposta diretamente com esta saudação formatada."
+    else:
+        # Se não tem (a), a saudação já está (supostamente) correta ou não depende de género.
+        # Ex: "Caro Prof. [Apelido]," -> "Caro Prof. Bernardino," (já não deve ter duplicação se sender_name_guess está limpo)
+        # Ex: "Olá [Nome]," -> "Olá João,"
+        # Garante que não há duplicação de títulos mesmo que o nome venha limpo (caso a regra ainda tenha o título)
+        # Ex: Se a regra é "Caro Prof. [Nome]" e o nome é "Silva", o resultado é "Caro Prof. Silva"
+        # Se a regra é "Caro Professor [Nome]" e o nome é "Silva", o resultado é "Caro Professor Silva"
+        # A remoção do título do nome é a principal defesa contra "Caro Prof. Professor Silva"
+        greeting_instruction_for_llm = f"Começa **DIRETAMENTE** com a saudação: `{greeting_instruction_base}`"
+
+
+    # Ajuste da assinatura (igual à anterior, pode precisar de revisão futura)
     persona_signature_name = persona.get("name", "")
-    # Exemplo: Se a regra diz "Abraço,\nRodrigo" mas a persona é "Rodrigo Novelo",
-    # e a categoria NÃO é 'colleague_student', ajusta para o nome completo.
-    # (Esta lógica pode precisar de revisão consoante as novas personas/regras)
-    if persona_signature_name and persona_signature_name != "Rodrigo" and "\nRodrigo" in final_farewell and recipient_category != "colleague_student":
-         final_farewell = final_farewell.replace("\nRodrigo", f"\n{persona_signature_name}")
+    if persona_signature_name and "\n" in final_farewell:
+        current_sig_name = final_farewell.split("\n")[-1]
+        # Só substitui se o nome na persona for diferente E mais completo que o da regra
+        # E não for uma regra específica que deva manter o nome curto (ex: colega)
+        is_colleague_rule = rule_key_to_use == "colleague_student" # Exemplo
+        if persona_signature_name != current_sig_name and len(persona_signature_name) > len(current_sig_name) and not is_colleague_rule:
+             final_farewell = final_farewell.replace(f"\n{current_sig_name}", f"\n{persona_signature_name}")
 
 
     # --- Estrutura do Prompt Refatorada em Blocos ---
 
-    # --- Bloco 1: Definição da Persona e Regras Gerais ---
+    # Bloco 1: Definição da Persona e Regras Gerais
     system_prompt = f"""### INSTRUÇÕES DE SISTEMA E PERSONA ###
 System: **TU ÉS {persona['name']}**. A tua tarefa é gerar um email de resposta de ALTA QUALIDADE, escrito por ti ({persona['name']}) para '{sender_name_guess}'. Assume integralmente o teu papel ({persona.get('role', 'Assistente')}) e adota rigorosamente a seguinte Persona:
 * **Nome da Persona:** {persona['name']}
@@ -641,26 +661,25 @@ System: **TU ÉS {persona['name']}**. A tua tarefa é gerar um email de resposta
 
 """
 
-    # --- Bloco 2: Contexto da Tarefa Atual (REFORÇADO) ---
+    # Bloco 2: Contexto da Tarefa Atual
     context_prompt = f"""\n### CONTEXTO DA TAREFA ATUAL ###
 **Análise do Email Recebido (Feita pela Pré-Análise):**
-* Remetente (Estimado): '{sender_name_guess}'
-* Categoria do Destinatário: '{recipient_category}'
+* Remetente (Nome Estimado, SEM TÍTULO): '{sender_name_guess}'
+* Categoria do Destinatário: '{recipient_category}' (Regra Usada: '{rule_key_to_use}')
 * Justificação da Categoria (Rationale): '{rationale}'
 * Tom do Email Recebido: '{incoming_tone}'
 
 **Adaptação da Tua Resposta (Definida para este cenário):**
 * Tom Alvo para a Resposta: '{base_tone}'
-* Saudação a Usar: `{final_greeting}`
+* **Instrução de Saudação:** {greeting_instruction_for_llm}
 * Despedida a Usar: (ver abaixo na Tarefa Final)
 """
-    # Adiciona regras específicas se existirem
     if specific_dos:
-        context_prompt += f"""* **Regras Específicas 'Faz' para '{recipient_category}' (Prioritárias):**
+        context_prompt += f"""* **Regras Específicas 'Faz' para '{rule_key_to_use}' (Prioritárias):**
 {chr(10).join([f'  * {rule}' for rule in specific_dos])}
 """
     if specific_donts:
-        context_prompt += f"""* **Regras Específicas 'Não Faças' para '{recipient_category}' (Prioritárias):**
+        context_prompt += f"""* **Regras Específicas 'Não Faças' para '{rule_key_to_use}' (Prioritárias):**
 {chr(10).join([f'  * {rule}' for rule in specific_donts])}
 """
 
@@ -672,7 +691,7 @@ System: **TU ÉS {persona['name']}**. A tua tarefa é gerar um email de resposta
 
 **Itens a Abordar & Informação Chave/Pontos Essenciais Fornecidos por Ti ({persona['name']}) para Construir a Resposta:**
 """
-    # Processamento dos user_inputs (mantido igual)
+    # Processamento dos user_inputs
     if user_inputs:
         has_real_points = False
         guidance_provided = False
@@ -680,40 +699,36 @@ System: **TU ÉS {persona['name']}**. A tua tarefa é gerar um email de resposta
             point = item.get('point', 'N/A')
             guidance = item.get('guidance', '')
             if guidance: guidance_provided = True
-            # Verifica se é um ponto placeholder (N/A, null, ou começa com "nenhum ponto")
             is_placeholder_point = point == 'N/A' or point == "null" or (isinstance(point, str) and point.lower().strip().startswith("nenhum ponto"))
 
             if not is_placeholder_point:
                 context_prompt += f"* Ponto Original {i+1} a Abordar: \"{point}\"\n"
-                context_prompt += f"    * Tua Informação/Ideias Chave para Responder: \"{guidance if guidance else '(Nenhuma orientação específica dada - responde apropriadamente com base na persona e contexto)'}\"\n"
+                context_prompt += f"   * Tua Informação/Ideias Chave para Responder: \"{guidance if guidance else '(Nenhuma orientação específica dada - responde apropriadamente com base na persona e contexto)'}\"\n"
                 has_real_points = True
-            elif guidance: # Orientação geral (mesmo que ponto seja placeholder)
+            elif guidance:
                 context_prompt += f"* Tua Orientação Geral (a incorporar na resposta): \"{guidance}\"\n"
-                guidance_provided = True # Marca que houve orientação geral
+                guidance_provided = True
 
-        # Adiciona instruções se não houver pontos REAIS ou orientações específicas
         if not has_real_points and not guidance_provided:
-             context_prompt += "* Tarefa Adicional: Escrever uma resposta curta e apropriada (ex: agradecimento, confirmação simples) baseada apenas no email original, na tua persona e nas regras definidas para este destinatário.\n"
+            context_prompt += "* Tarefa Adicional: Escrever uma resposta curta e apropriada (ex: agradecimento, confirmação simples) baseada apenas no email original, na tua persona e nas regras definidas para este destinatário.\n"
         elif not has_real_points and guidance_provided:
-             # Se só houve orientação geral, usa-a para construir a resposta
-             context_prompt += "* Tarefa Adicional: Incorpora a(s) orientação(ões) geral(is) acima numa resposta apropriada ao email original, seguindo a tua persona e as regras definidas para este destinatário.\n"
-    else: # Nenhum user_input fornecido
+            context_prompt += "* Tarefa Adicional: Incorpora a(s) orientação(ões) geral(is) acima numa resposta apropriada ao email original, seguindo a tua persona e as regras definidas para este destinatário.\n"
+    else:
         context_prompt += "* Tarefa Adicional: Escrever uma resposta curta e apropriada baseada apenas no email original, na tua persona e nas regras definidas para este destinatário.\n"
     context_prompt += "--- FIM CONTEXTO ---\n"
 
-
-    # --- Bloco 3: Tarefa Final (COM INSTRUÇÕES DE COESÃO REFORÇADAS E SEM EXEMPLOS) ---
+    # Bloco 3: Tarefa Final
     task_prompt = f"""\n### TAREFA FINAL ###
-Com base em TUDO o que foi dito acima (Instruções, Persona, Regras Gerais, Contexto da Tarefa, Regras Específicas para '{recipient_category}', Informação Chave tua), redige agora o corpo COMPLETO e de ALTA QUALIDADE do email de resposta.
+Com base em TUDO o que foi dito acima (Instruções, Persona, Regras Gerais, Contexto da Tarefa, Regras Específicas para '{rule_key_to_use}', Informação Chave tua), redige agora o corpo COMPLETO e de ALTA QUALIDADE do email de resposta.
 
 **Instruções Específicas:**
-1.  **Síntese da Persona e Contexto (IMPORTANTE):** Antes de escrever, mentalmente revê: Quem és ({persona['name']})? Qual o teu estilo geral? Quem é o destinatário ('{sender_name_guess}', categoria '{recipient_category}')? Qual o tom dele ('{incoming_tone}')? Qual o teu tom alvo ('{base_tone}')? Quais as regras GERAIS e ESPECÍFICAS mais importantes para esta resposta?
-2.  **Coesão e Fluxo:** Integra TODA a 'Informação/Ideias Chave' tua de forma **natural, humana e coesa** no texto. **Agrupa tópicos relacionados em parágrafos lógicos** e utiliza **frases de transição** apropriadas para ligar as diferentes ideias. **EVITA responder a cada ponto isoladamente como uma lista; constrói uma resposta unificada e fluida**, como um humano faria.
-3.  **Adaptação Dinâmica ao Tom:** Considera o 'Tom do Email Recebido' ('{incoming_tone}'). O teu 'Tom Alvo Definido' para '{recipient_category}' é '{base_tone}'. **AJUSTA subtilmente** o teu tom na resposta para criar harmonia, mas **sem quebrar a tua persona fundamental ou as regras de formalidade definidas**. Se os tons já forem semelhantes, mantém o teu tom alvo.
-4.  **Integração do Conteúdo:** Relembrando: NÃO copies literalmente a 'Informação/Ideias Chave', **Usa-as como BASE** para construir as tuas próprias frases, mantendo o fluxo da conversa e o teu estilo. Responde a todos os pontos que foram identificados como necessitando de resposta (se houver).
-5.  **Fidelidade à Persona e Regras:** Mantém-te ESTRITAMENTE FIEL à Persona {persona['name']} ({lang_instruction_short}, regras Gerais e Específicas Do/Don't). **As regras específicas para '{recipient_category}' têm prioridade se entrarem em conflito com as gerais.**
+1.  **Síntese e Saudação (IMPORTANTE):** Revê mentalmente: Quem és ({persona['name']})? Estilo? Quem é o destinatário ('{sender_name_guess}', categoria '{rule_key_to_use}')? Tom dele ('{incoming_tone}')? Teu tom alvo ('{base_tone}')? Regras? **Aplica a 'Instrução de Saudação' definida acima para iniciar o email.**
+2.  **Coesão e Fluxo:** Integra TODA a 'Informação/Ideias Chave' tua de forma **natural, humana e coesa**. Agrupa tópicos relacionados e usa transições. **EVITA responder a cada ponto isoladamente; constrói uma resposta unificada.**
+3.  **Adaptação Dinâmica ao Tom:** Considera o tom do email recebido ('{incoming_tone}') e o teu alvo ('{base_tone}'). Ajusta subtilmente se necessário, sem quebrar a persona ou regras.
+4.  **Integração do Conteúdo:** Usa a 'Informação/Ideias Chave' como BASE para construir as tuas frases. Responde a todos os pontos que necessitam de resposta.
+5.  **Fidelidade à Persona e Regras:** Mantém-te ESTRITAMENTE FIEL à Persona {persona['name']} ({lang_instruction_short}, regras Gerais e Específicas Do/Don't). **As regras específicas para '{rule_key_to_use}' têm prioridade.**
 6.  **Formato OBRIGATÓRIO:**
-    * Começa **DIRETAMENTE** com a saudação: `{final_greeting}`
+    * Começa **DIRETAMENTE** com a saudação (conforme a instrução dada no Contexto).
     * Gera o corpo da resposta em **formato de parágrafo(s)**.
     * Termina **EXATAMENTE** com a despedida:
 {final_farewell}
@@ -722,14 +737,14 @@ Com base em TUDO o que foi dito acima (Instruções, Persona, Regras Gerais, Con
 Resposta Gerada:
 """
 
-    # --- Combinar todos os blocos e retornar ---
-    # REMOVIDO: examples_prompt
+    # Combina todos os blocos
     full_prompt = system_prompt + context_prompt + task_prompt
-    # Logar o prompt completo em modo debug para análise
-    # (Assume que DEBUG_MODE e logging estão definidos)
+
+    # Log do prompt completo em modo debug
     if DEBUG_MODE:
-        prompt_hash = hash(full_prompt) # Hash para identificar prompts únicos nos logs
-        logging.debug(f"--- DEBUG: PROMPT 2 (Drafting) Persona: {persona['name']} / Dest: {recipient_category} / Hash: {prompt_hash} ---")
+        prompt_hash = hash(full_prompt)
+        # Usa logging.debug para não poluir logs normais
+        logging.debug(f"--- DEBUG: PROMPT 2 (Drafting) Persona: {persona['name']} / Dest: {recipient_category} ({rule_key_to_use}) / Hash: {prompt_hash} ---")
         logging.debug(f"Prompt 2 Length: {len(full_prompt)} chars")
         log_limit = 4000 # Limite para não sobrecarregar logs
         logging.debug(full_prompt[:log_limit] + "..." if len(full_prompt) > log_limit else full_prompt)

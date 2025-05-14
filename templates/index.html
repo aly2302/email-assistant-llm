@@ -21,6 +21,7 @@
             --body-bg-size: 400% 400%;
             --primary-accent: #00e5ff;
             --secondary-accent: #ff00e6;
+            --warning-accent: #ffc107; /* Amarelo para feedback/aviso */
             --text-primary: #e0e0e0;
             --text-secondary: #a0a0b0;
             --text-dark: #1a1a2e; /* Para texto em fundos claros */
@@ -33,7 +34,7 @@
             --focus-glow: 0 0 15px rgba(0, 229, 255, 0.5);
             --success-color: #00ff84;
             --error-color: #ff4d8e;
-            --warning-color: #ffc107; /* Cor de aviso para fallback de cópia */
+            --warning-color: var(--warning-accent); /* Cor de aviso para fallback de cópia e feedback */
             --list-item-bg: rgba(45, 45, 70, 0.5);
             --list-item-border: rgba(74, 74, 106, 0.8);
             --point-group-bg: rgba(45, 45, 70, 0.7);
@@ -65,6 +66,11 @@
             --btn-secondary-hover-text: var(--text-dark);
             --btn-secondary-glow: rgba(160, 160, 176, 0.3);
             --btn-secondary-hover-glow: rgba(160, 160, 176, 0.6);
+            --btn-warning-color: var(--warning-accent); /* Para botão de feedback */
+            --btn-warning-border: var(--warning-accent);
+            --btn-warning-hover-text: var(--text-dark);
+            --btn-warning-glow: rgba(255, 193, 7, 0.3);
+            --btn-warning-hover-glow: rgba(255, 193, 7, 0.6);
             --btn-refine-color: var(--secondary-accent);
             --btn-refine-border: var(--secondary-accent);
             --btn-refine-hover-text: #ffffff; /* Branco para magenta */
@@ -75,6 +81,9 @@
             --btn-copy-fallback-bg: rgba(255, 193, 7, 0.1);
             --scrollbar-thumb: #555;
             --scrollbar-track: rgba(0,0,0,0.1);
+            --modal-bg: #1e1e3f;
+            --modal-header-border: #302b63;
+            --modal-footer-border: #302b63;
 
             /* Variáveis Comuns */
             --border-radius: 6px;
@@ -85,25 +94,26 @@
 
         /* Tema Claro */
         body.light-mode {
-            --bg-gradient-start: #e0eafc; /* Azul muito claro */
-            --bg-gradient-mid: #ffffff;   /* Branco */
-            --bg-gradient-end: #f0f4f8;   /* Cinza claro */
+            --bg-gradient-start: #e0eafc; 
+            --bg-gradient-mid: #ffffff;   
+            --bg-gradient-end: #f0f4f8;   
             --body-bg: linear-gradient(-45deg, var(--bg-gradient-start), var(--bg-gradient-mid), var(--bg-gradient-end), var(--bg-gradient-mid));
-            --primary-accent: #007bff; /* Azul Bootstrap */
-            --secondary-accent: #dc3545; /* Vermelho Bootstrap */
-            --text-primary: #212529;   /* Texto escuro */
-            --text-secondary: #6c757d; /* Cinza médio */
-            --text-dark: #ffffff;      /* Branco para texto em botões */
-            --container-bg: rgba(255, 255, 255, 0.9);
+            --primary-accent: #007bff; 
+            --secondary-accent: #dc3545; 
+            --warning-accent: #ffc107; 
+            --text-primary: #212529;   
+            --text-secondary: #6c757d; 
+            --text-dark: #ffffff;      
+            --container-bg: rgba(255, 255, 255, 0.95);
             --container-border: rgba(0, 0, 0, 0.1);
             --container-grid: rgba(0,0,0,0.03);
             --input-bg: #f8f9fa;
             --input-border: #ced4da;
             --input-focus-border: var(--primary-accent);
             --focus-glow: 0 0 10px rgba(0, 123, 255, 0.3);
-            --success-color: #198754; /* Verde Bootstrap */
-            --error-color: #dc3545; /* Vermelho Bootstrap */
-            --warning-color: #ffc107; /* Amarelo Bootstrap */
+            --success-color: #198754; 
+            --error-color: #dc3545; 
+            --warning-color: var(--warning-accent);
             --list-item-bg: #ffffff;
             --list-item-border: #dee2e6;
             --point-group-bg: #f8f9fa;
@@ -135,16 +145,24 @@
             --btn-secondary-hover-text: #ffffff;
             --btn-secondary-glow: rgba(108, 117, 125, 0.3);
             --btn-secondary-hover-glow: rgba(108, 117, 125, 0.5);
+            --btn-warning-color: #664d03; 
+            --btn-warning-border: var(--warning-accent);
+            --btn-warning-hover-text: #000;
+            --btn-warning-glow: rgba(255,193,7,0.3);
+            --btn-warning-hover-glow: rgba(255,193,7,0.5);
             --btn-refine-color: var(--secondary-accent);
             --btn-refine-border: var(--secondary-accent);
             --btn-refine-hover-text: #ffffff;
             --btn-refine-glow: rgba(220, 53, 69, 0.3);
             --btn-refine-hover-glow: rgba(220, 53, 69, 0.5);
-            --btn-copy-fallback-color: #664d03; /* Cor texto aviso bootstrap */
+            --btn-copy-fallback-color: #664d03; 
             --btn-copy-fallback-border: #ffecb5;
             --btn-copy-fallback-bg: #fff3cd;
             --scrollbar-thumb: #ccc;
             --scrollbar-track: #f1f1f1;
+            --modal-bg: #ffffff;
+            --modal-header-border: #dee2e6;
+            --modal-footer-border: #dee2e6;
         }
 
         @keyframes gradientAnimation {
@@ -162,511 +180,210 @@
             color: var(--text-primary);
             line-height: 1.7;
             min-height: 100vh;
-            transition: background var(--transition-speed) ease; /* Transição suave do fundo */
+            transition: background var(--transition-speed) ease;
         }
 
-        /* Estilos para scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: var(--scrollbar-track);
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--scrollbar-thumb);
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #888; /* Cor ligeiramente mais escura no hover */
-        }
-        /* Para Firefox */
-        * {
-          scrollbar-width: thin;
-          scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
-        }
-
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--scrollbar-track); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #888; }
+        * { scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track); }
 
         .container {
-            max-width: 1000px;
-            background-color: var(--container-bg);
-            padding: 40px 50px;
-            border-radius: 10px;
-            box-shadow: var(--card-shadow);
-            margin: 40px auto;
-            border: 1px solid var(--container-border);
-            backdrop-filter: blur(10px);
-            position: relative;
-            overflow: hidden;
+            max-width: 1000px; background-color: var(--container-bg); padding: 40px 50px;
+            border-radius: 10px; box-shadow: var(--card-shadow); margin: 40px auto;
+            border: 1px solid var(--container-border); backdrop-filter: blur(10px);
+            position: relative; overflow: hidden;
             transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease;
         }
         .container::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             background-image: linear-gradient(var(--container-grid) 1px, transparent 1px),
                               linear-gradient(90deg, var(--container-grid) 1px, transparent 1px);
-            background-size: 30px 30px;
-            opacity: 0.5;
-            pointer-events: none;
-            z-index: -1;
+            background-size: 30px 30px; opacity: 0.5; pointer-events: none; z-index: -1;
             transition: background-image var(--transition-speed) ease;
         }
 
-        /* --- Theme Toggle Switch --- */
-        .theme-switch-wrapper {
-            display: flex;
-            align-items: center;
-            position: absolute;
-            top: 5px;
-            left: 20px;
-            z-index: 10; /* Garante que fica por cima */
-        }
-        .theme-switch {
-            display: inline-block;
-            height: 24px; /* Altura ligeiramente menor */
-            position: relative;
-            width: 50px; /* Largura ligeiramente menor */
-        }
-        .theme-switch input {
-            display: none;
-        }
-        .slider {
-            background-color: #555; /* Fundo do slider no modo escuro */
-            bottom: 0;
-            cursor: pointer;
-            left: 0;
-            position: absolute;
-            right: 0;
-            top: 0;
-            transition: var(--transition-speed);
-            border-radius: 24px; /* Totalmente arredondado */
-        }
-        .slider:before {
-            background-color: #fff; /* Cor da bola */
-            bottom: 3px; /* Ajuste posição da bola */
-            content: "";
-            height: 18px; /* Tamanho da bola */
-            left: 3px; /* Ajuste posição da bola */
-            position: absolute;
-            transition: var(--transition-speed);
-            width: 18px; /* Tamanho da bola */
-            border-radius: 50%;
-        }
-        input:checked + .slider {
-            background-color: var(--primary-accent); /* Cor do slider no modo claro */
-        }
-        input:checked + .slider:before {
-            transform: translateX(26px); /* Distância de movimento da bola */
-        }
-        /* Ícones opcionais para o switch */
-        .theme-switch-wrapper span {
-            margin: 0 5px;
-            font-size: 1rem;
-            color: var(--text-secondary);
-            cursor: default;
-        }
-        .theme-switch-wrapper .fa-sun { color: #f1c40f; } /* Amarelo sol */
-        .theme-switch-wrapper .fa-moon { color: #bdc3c7; } /* Cinza lua */
+        .theme-switch-wrapper { display: flex; align-items: center; position: absolute; top: 5px; left: 20px; z-index: 10; }
+        .theme-switch { display: inline-block; height: 24px; position: relative; width: 50px; }
+        .theme-switch input { display: none; }
+        .slider { background-color: #555; bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: var(--transition-speed); border-radius: 24px; }
+        .slider:before { background-color: #fff; bottom: 3px; content: ""; height: 18px; left: 3px; position: absolute; transition: var(--transition-speed); width: 18px; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary-accent); }
+        input:checked + .slider:before { transform: translateX(26px); }
+        .theme-switch-wrapper span { margin: 0 5px; font-size: 1rem; color: var(--text-secondary); cursor: default; }
+        .theme-switch-wrapper .fa-sun { color: #f1c40f; }
+        .theme-switch-wrapper .fa-moon { color: #bdc3c7; }
+        body.light-mode .slider { background-color: #ccc; }
+        body.light-mode input:checked + .slider { background-color: var(--primary-accent); }
+        body.light-mode .theme-switch-wrapper span { color: var(--text-secondary); }
 
-        /* Ajuste no modo claro para o switch */
-        body.light-mode .slider {
-            background-color: #ccc;
-        }
-        body.light-mode input:checked + .slider {
-             background-color: var(--primary-accent); /* Mantém azul no modo claro quando ativo (light mode) */
-        }
-        body.light-mode .theme-switch-wrapper span {
-            color: var(--text-secondary);
-        }
-
-        /* --- Indicador de Status da API --- */
-        .api-status {
-            padding: 12px 20px;
-            margin-bottom: 35px;
-            border-radius: var(--border-radius);
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border: 1px solid;
-            background-color: var(--api-status-bg);
-            transition: all var(--transition-speed) ease;
-        }
+        .api-status { padding: 12px 20px; margin-bottom: 35px; border-radius: var(--border-radius); font-weight: 500; display: flex; align-items: center; gap: 12px; border: 1px solid; background-color: var(--api-status-bg); transition: all var(--transition-speed) ease; }
         .api-status i { font-size: 1.2em; }
-        .api-status.status-ok {
-            color: var(--api-status-ok-color);
-            border-color: var(--api-status-ok-border);
-            box-shadow: var(--api-status-ok-glow);
-        }
-        .api-status.status-error {
-            color: var(--api-status-error-color);
-            border-color: var(--api-status-error-border);
-            box-shadow: var(--api-status-error-glow);
-        }
+        .api-status.status-ok { color: var(--api-status-ok-color); border-color: var(--api-status-ok-border); box-shadow: var(--api-status-ok-glow); }
+        .api-status.status-error { color: var(--api-status-error-color); border-color: var(--api-status-error-border); box-shadow: var(--api-status-error-glow); }
         #apiStatusIndicator { display: flex; }
 
-        /* --- Cabeçalho --- */
-        header {
-            margin-bottom: 45px;
-            padding-bottom: 25px;
-            border-bottom: 1px solid var(--container-border); /* Usa variável */
-            text-align: center;
-        }
-        header h1 {
-            font-weight: 700;
-            color: var(--primary-accent);
-            margin-bottom: 0.75rem;
-            font-size: 2.5rem;
-            letter-spacing: 1px;
-        }
-        header .lead {
-            color: var(--text-secondary);
-            font-size: 1.15rem;
-            font-weight: 300;
-        }
+        header { margin-bottom: 45px; padding-bottom: 25px; border-bottom: 1px solid var(--container-border); text-align: center; }
+        header h1 { font-weight: 700; color: var(--primary-accent); margin-bottom: 0.75rem; font-size: 2.5rem; letter-spacing: 1px; }
+        header .lead { color: var(--text-secondary); font-size: 1.15rem; font-weight: 300; }
 
-        /* --- Títulos das Secções (Sem Ícones) --- */
-        h2, h3 {
-            color: var(--text-primary);
-            margin-bottom: 1.8rem;
-            font-weight: 600;
-            padding-bottom: 0.8rem;
-            border-bottom: 1px solid var(--primary-accent);
-            display: inline-block;
-            letter-spacing: 0.5px;
-        }
+        h2, h3 { color: var(--text-primary); margin-bottom: 1.8rem; font-weight: 600; padding-bottom: 0.8rem; border-bottom: 1px solid var(--primary-accent); display: inline-block; letter-spacing: 0.5px; }
         h3 { font-size: 1.6rem; }
-        h4 {
-            font-size: 1.1rem;
-            margin-bottom: 1rem;
-            border-bottom: none;
-            padding-bottom: 0;
-            color: var(--text-secondary);
-            font-weight: 500;
-         }
+        h4 { font-size: 1.1rem; margin-bottom: 1rem; border-bottom: none; padding-bottom: 0; color: var(--text-secondary); font-weight: 500; }
 
-        /* --- Labels e Textos --- */
-        .form-label {
-            font-weight: 500;
-            margin-bottom: 0.8rem;
-            display: block;
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-        }
-        .form-label strong {
-            color: var(--text-primary);
-            font-weight: 600;
-        }
-        .form-label-sm {
-            font-size: 0.85em;
-            font-weight: 400;
-            color: var(--text-secondary);
-            opacity: 0.8;
-        }
-        .small.text-muted {
-            color: var(--text-secondary) !important;
-            opacity: 0.7;
-        }
+        .form-label { font-weight: 500; margin-bottom: 0.8rem; display: block; color: var(--text-secondary); font-size: 0.95rem; }
+        .form-label strong { color: var(--text-primary); font-weight: 600; }
+        .form-label-sm { font-size: 0.85em; font-weight: 400; color: var(--text-secondary); opacity: 0.8; }
+        .small.text-muted { color: var(--text-secondary) !important; opacity: 0.7; }
 
-        /* --- Textareas e Selects --- */
         textarea.form-control,
         select.form-select {
-            min-height: 100px;
-            border-radius: var(--border-radius);
-            border: 1px solid var(--input-border);
-            background-color: var(--input-bg);
-            padding: 14px 18px;
-            color: var(--text-primary);
+            min-height: 100px; border-radius: var(--border-radius); border: 1px solid var(--input-border);
+            background-color: var(--input-bg); padding: 14px 18px; color: var(--text-primary);
             transition: border-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease, background-color var(--transition-speed) ease;
-            box-shadow: inset 0 1px 3px rgba(0,0,0, 0.1); /* Sombra mais suave no modo claro */
+            box-shadow: inset 0 1px 3px rgba(0,0,0, 0.1);
         }
         body.dark-mode textarea.form-control,
-        body.dark-mode select.form-select {
-             box-shadow: inset 0 1px 3px rgba(0,0,0, 0.3); /* Sombra mais forte no modo escuro */
-        }
-
+        body.dark-mode select.form-select { box-shadow: inset 0 1px 3px rgba(0,0,0, 0.3); }
         textarea.form-control#originalEmail { min-height: 180px; }
         textarea.form-control#generatedDraft { min-height: 250px; }
+        /* Alturas para os textareas do modal de feedback */
+        textarea.form-control#feedbackOriginalResponse { min-height: 100px; }
+        textarea.form-control#feedbackUserCorrection { min-height: 120px; }
+        textarea.form-control#feedbackUserExplanation { min-height: 80px; }
+
 
         textarea.form-control:focus,
         select.form-select:focus {
             border-color: var(--input-focus-border);
             box-shadow: var(--focus-glow), inset 0 1px 3px rgba(0,0,0, 0.1);
-            background-color: var(--input-bg); /* Mantém a cor de fundo no foco */
-            outline: none;
+            background-color: var(--input-bg); outline: none;
         }
         body.dark-mode textarea.form-control:focus,
         body.dark-mode select.form-select:focus {
-            background-color: rgba(45, 45, 70, 0.95); /* Fundo específico para foco dark */
+            background-color: rgba(45, 45, 70, 0.95);
             box-shadow: var(--focus-glow), inset 0 1px 3px rgba(0,0,0, 0.3);
         }
 
         select.form-select {
-    min-height: auto;
-    height: calc(1.6em + 1.8rem + 2px);
-    appearance: none; /* Pode precisar de prefixos como -webkit-appearance e -moz-appearance para compatibilidade */
-    /* Seta SVG adaptável com cor #a0a0b0 */
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23a0a0b0' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 1rem center;
-    background-size: 16px 12px;
-}
-
-/* Atualiza cor da seta no modo claro para #6c757d */
-body.light-mode select.form-select {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%236c757d' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
-}
-
-
-        textarea::placeholder {
-            color: var(--text-secondary);
-            opacity: 0.6;
-            font-style: italic;
-            font-weight: 300;
+            min-height: auto; height: calc(1.6em + 1.8rem + 2px); appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23a0a0b0' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+            background-repeat: no-repeat; background-position: right 1rem center; background-size: 16px 12px;
         }
-
-        /* --- Secções Análise e Rascunho --- */
-        .analysis-section, .draft-section {
-            margin-top: 50px;
-            padding-top: 40px;
-            border-top: 1px solid var(--container-border); /* Usa variável */
+        body.light-mode select.form-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%236c757d' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
         }
+        textarea::placeholder { color: var(--text-secondary); opacity: 0.6; font-style: italic; font-weight: 300; }
 
-        /* --- Grupos de Input do Utilizador (Pontos) --- */
+        .analysis-section, .draft-section { margin-top: 50px; padding-top: 40px; border-top: 1px solid var(--container-border); }
+
         .point-input-group {
-            margin-bottom: 35px;
-            padding: 25px 30px;
-            background-color: var(--point-group-bg);
-            border-radius: 8px;
-            border: 1px solid var(--point-group-border);
-            transition: background-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
-            position: relative;
+            margin-bottom: 35px; padding: 25px 30px; background-color: var(--point-group-bg);
+            border-radius: 8px; border: 1px solid var(--point-group-border);
+            transition: background-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease; position: relative;
         }
-        .point-input-group:hover {
-             background-color: var(--point-group-hover-bg);
-             box-shadow: 0 0 15px rgba(0, 0, 0, 0.1); /* Sombra suave no hover */
-        }
-        body.dark-mode .point-input-group:hover {
-             box-shadow: 0 0 15px rgba(0, 0, 0, 0.2); /* Sombra mais pronunciada no dark */
-        }
-
-        .point-input-group .form-label strong {
-            color: var(--primary-accent);
-            font-weight: 600;
-        }
+        .point-input-group:hover { background-color: var(--point-group-hover-bg); box-shadow: 0 0 15px rgba(0, 0, 0, 0.1); }
+        body.dark-mode .point-input-group:hover { box-shadow: 0 0 15px rgba(0, 0, 0, 0.2); }
+        .point-input-group .form-label strong { color: var(--primary-accent); font-weight: 600; }
         .point-input-group p.point-text {
-            margin-bottom: 1.2rem;
-            font-size: 0.95rem;
-            color: var(--text-secondary);
-            background-color: var(--point-text-bg);
-            padding: 12px 18px;
-            border-radius: 4px;
-            border: 1px solid var(--input-border); /* Usa borda de input */
-            font-style: italic;
+            margin-bottom: 1.2rem; font-size: 0.95rem; color: var(--text-secondary);
+            background-color: var(--point-text-bg); padding: 12px 18px; border-radius: 4px;
+            border: 1px solid var(--input-border); font-style: italic;
         }
-        .point-input-group textarea.user-guidance {
-            min-height: 80px;
-            margin-top: 10px;
-        }
-        /* Botões de Rádio */
+        .point-input-group textarea.user-guidance { min-height: 80px; margin-top: 10px; }
         .guidance-direction-group {
-            margin-bottom: 1rem;
-            padding: 10px 0;
-            border-top: 1px dashed var(--input-border);
-            border-bottom: 1px dashed var(--input-border);
-            margin-top: 15px;
+            margin-bottom: 1rem; padding: 10px 0; border-top: 1px dashed var(--input-border);
+            border-bottom: 1px dashed var(--input-border); margin-top: 15px;
         }
-        .guidance-direction-group .form-label-sm {
-            margin-bottom: 0.6rem;
-            font-weight: 500;
-            color: var(--text-secondary);
-        }
-        .guidance-direction-group .form-check-label {
-            font-size: 0.9em;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: color var(--transition-speed) ease;
-        }
-         .guidance-direction-group .form-check-label:hover {
-            color: var(--text-primary);
-         }
-        .guidance-direction-group .form-check-input {
-            cursor: pointer;
-            background-color: var(--input-bg);
-            border: 1px solid var(--input-border);
-        }
-        .guidance-direction-group .form-check-input:checked {
-            background-color: var(--primary-accent);
-            border-color: var(--primary-accent);
-            box-shadow: 0 0 5px var(--btn-primary-glow); /* Usa glow do botão */
-        }
-        .guidance-direction-group .form-check-input:focus {
-            box-shadow: 0 0 0 3px var(--btn-primary-glow);
-            border-color: var(--primary-accent);
-        }
+        .guidance-direction-group .form-label-sm { margin-bottom: 0.6rem; font-weight: 500; color: var(--text-secondary); }
+        .guidance-direction-group .form-check-label { font-size: 0.9em; color: var(--text-secondary); cursor: pointer; transition: color var(--transition-speed) ease; }
+        .guidance-direction-group .form-check-label:hover { color: var(--text-primary); }
+        .guidance-direction-group .form-check-input { cursor: pointer; background-color: var(--input-bg); border: 1px solid var(--input-border); }
+        .guidance-direction-group .form-check-input:checked { background-color: var(--primary-accent); border-color: var(--primary-accent); box-shadow: 0 0 5px var(--btn-primary-glow); }
+        .guidance-direction-group .form-check-input:focus { box-shadow: 0 0 0 3px var(--btn-primary-glow); border-color: var(--primary-accent); }
 
-        /* --- Botões Gerais --- */
         .btn {
-            padding: 12px 25px;
-            font-weight: 600;
-            border-radius: var(--border-radius);
-            transition: all var(--transition-speed) ease;
-            border: 1px solid; /* Borda definida abaixo */
-            cursor: pointer;
-            letter-spacing: 0.5px;
-            position: relative;
-            overflow: hidden;
-            z-index: 1;
-            background-color: transparent;
-            /* Cores definidas por classe */
+            padding: 12px 25px; font-weight: 600; border-radius: var(--border-radius);
+            transition: all var(--transition-speed) ease; border: 1px solid;
+            cursor: pointer; letter-spacing: 0.5px; position: relative; overflow: hidden;
+            z-index: 1; background-color: transparent;
         }
-        /* Efeito de preenchimento no hover */
         .btn::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0;
-            width: 0; height: 100%;
-            /* Cor definida por classe */
-            transition: width var(--transition-speed) ease;
-            z-index: -1;
+            content: ''; position: absolute; top: 0; left: 0; width: 0; height: 100%;
+            transition: width var(--transition-speed) ease; z-index: -1;
         }
-        .btn:hover::before {
-            width: 100%;
-        }
-        .btn:hover {
-            /* Cor do texto definida por classe */
-            /* Sombra definida por classe */
-            transform: translateY(-2px);
-        }
-        .btn:focus {
-            /* Sombra definida por classe */
-            outline: none;
-        }
+        .btn:hover::before { width: 100%; }
+        .btn:hover { transform: translateY(-2px); }
+        .btn:focus { outline: none; }
         .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            color: var(--text-secondary) !important; /* Garante cor no disable */
-            border-color: var(--text-secondary) !important;
-            box-shadow: none !important;
-            transform: none !important;
+            opacity: 0.5; cursor: not-allowed; color: var(--text-secondary) !important;
+            border-color: var(--text-secondary) !important; box-shadow: none !important; transform: none !important;
         }
         .btn:disabled::before { width: 0; }
         .btn:disabled:hover { color: var(--text-secondary) !important; }
 
-        /* Botão Primário (Analisar) */
-        .btn-primary {
-            color: var(--btn-primary-color);
-            border-color: var(--btn-primary-border);
-            box-shadow: 0 0 5px var(--btn-primary-glow);
-        }
+        .btn-primary { color: var(--btn-primary-color); border-color: var(--btn-primary-border); box-shadow: 0 0 5px var(--btn-primary-glow); }
         .btn-primary::before { background-color: var(--btn-primary-color); }
         .btn-primary:hover { color: var(--btn-primary-hover-text); box-shadow: 0 0 15px var(--btn-primary-hover-glow); }
         .btn-primary:focus { box-shadow: 0 0 0 3px var(--btn-primary-glow), 0 0 15px var(--btn-primary-hover-glow); }
 
-        /* Botão Sucesso (Gerar Rascunho) */
-        .btn-success {
-             color: var(--btn-success-color);
-             border-color: var(--btn-success-border);
-             box-shadow: 0 0 5px var(--btn-success-glow);
-        }
+        .btn-success { color: var(--btn-success-color); border-color: var(--btn-success-border); box-shadow: 0 0 5px var(--btn-success-glow); }
         .btn-success::before { background-color: var(--btn-success-color); }
         .btn-success:hover { color: var(--btn-success-hover-text); box-shadow: 0 0 15px var(--btn-success-hover-glow); }
         .btn-success:focus { box-shadow: 0 0 0 3px var(--btn-success-glow), 0 0 15px var(--btn-success-hover-glow); }
 
-        /* Botão Secundário (Copiar) */
-        .btn-secondary {
-             color: var(--btn-secondary-color);
-             border-color: var(--btn-secondary-border);
-             box-shadow: 0 0 5px var(--btn-secondary-glow);
-        }
+        .btn-secondary { color: var(--btn-secondary-color); border-color: var(--btn-secondary-border); box-shadow: 0 0 5px var(--btn-secondary-glow); }
         .btn-secondary::before { background-color: var(--btn-secondary-color); }
         .btn-secondary:hover { color: var(--btn-secondary-hover-text); box-shadow: 0 0 15px var(--btn-secondary-hover-glow); }
         .btn-secondary:focus { box-shadow: 0 0 0 3px var(--btn-secondary-glow), 0 0 15px var(--btn-secondary-hover-glow); }
+        
+        /* Estilo para o botão de Feedback (baseado no warning) */
+        .btn-warning { color: var(--btn-warning-color); border-color: var(--btn-warning-border); box-shadow: 0 0 5px var(--btn-warning-glow); }
+        .btn-warning::before { background-color: var(--btn-warning-color); }
+        .btn-warning:hover { color: var(--btn-warning-hover-text); box-shadow: 0 0 15px var(--btn-warning-hover-glow); }
+        .btn-warning:focus { box-shadow: 0 0 0 3px var(--btn-warning-glow), 0 0 15px var(--btn-warning-hover-glow); }
 
-        /* Botão "Sugerir Texto" (Outline Secundário) */
+
         .btn-outline-secondary.suggest-btn {
-             color: var(--btn-secondary-color);
-             border-color: var(--btn-secondary-border);
-             background-color: transparent;
-             font-size: 0.8rem;
-             padding: 0.3rem 0.8rem;
-             box-shadow: none;
-             margin-left: auto;
-             letter-spacing: 0.2px;
-             font-weight: 500;
+            color: var(--btn-secondary-color); border-color: var(--btn-secondary-border); background-color: transparent;
+            font-size: 0.8rem; padding: 0.3rem 0.8rem; box-shadow: none; margin-left: auto;
+            letter-spacing: 0.2px; font-weight: 500;
         }
         .btn-outline-secondary.suggest-btn::before { background-color: var(--btn-secondary-color); }
-        .btn-outline-secondary.suggest-btn:hover {
-             color: var(--btn-secondary-hover-text);
-             transform: none;
-             box-shadow: 0 0 8px var(--btn-secondary-glow);
-        }
-        .btn-outline-secondary.suggest-btn:disabled {
-             color: var(--text-secondary); border-color: var(--text-secondary); opacity: 0.5;
-        }
+        .btn-outline-secondary.suggest-btn:hover { color: var(--btn-secondary-hover-text); transform: none; box-shadow: 0 0 8px var(--btn-secondary-glow); }
+        .btn-outline-secondary.suggest-btn:disabled { color: var(--text-secondary); border-color: var(--text-secondary); opacity: 0.5; }
 
-        /* Botão Copiar Texto - Estados Especiais */
-         #copyDraftBtn.btn-success { /* Sucesso */
-            color: var(--btn-success-color); border-color: var(--btn-success-border); background-color: rgba(0, 255, 132, 0.1);
-         }
-          #copyDraftBtn.btn-warning { /* Fallback */
-             color: var(--btn-copy-fallback-color); border-color: var(--btn-copy-fallback-border); background-color: var(--btn-copy-fallback-bg);
-         }
-         /* Remove efeito hover dos estados especiais */
-         #copyDraftBtn.btn-success::before,
-         #copyDraftBtn.btn-warning::before { width: 0; }
-         #copyDraftBtn.btn-success:hover,
-         #copyDraftBtn.btn-warning:hover { transform: none; box-shadow: none; }
+        #copyDraftBtn.btn-success { color: var(--btn-success-color); border-color: var(--btn-success-border); background-color: rgba(0, 255, 132, 0.1); }
+        #copyDraftBtn.btn-warning { color: var(--btn-copy-fallback-color); border-color: var(--btn-copy-fallback-border); background-color: var(--btn-copy-fallback-bg); }
+        #copyDraftBtn.btn-success::before,
+        #copyDraftBtn.btn-warning::before { width: 0; }
+        #copyDraftBtn.btn-success:hover,
+        #copyDraftBtn.btn-warning:hover { transform: none; box-shadow: none; }
 
-
-        /* --- Spinners --- */
         .loading-spinner { display: none; width: 1em; height: 1em; vertical-align: -0.125em; margin-left: 8px; color: inherit; }
         .btn-sm .loading-spinner, .refine-btn .loading-spinner { width: 0.8em; height: 0.8em; margin-left: 5px; }
         .btn-outline-secondary .loading-spinner { color: var(--btn-secondary-color); }
         .btn-outline-secondary:hover .loading-spinner { color: var(--btn-secondary-hover-text); }
 
-        /* --- Mensagens de Erro --- */
         .error-message {
-            color: var(--error-color);
-            font-weight: 500;
-            margin-top: 15px;
-            font-size: 0.9rem;
-            display: none;
-            background-color: rgba(255, 77, 142, 0.1); /* Usa cor de erro */
-            padding: 12px 18px;
-            border-radius: var(--border-radius);
-            border: 1px solid; /* Cor definida abaixo */
-            box-shadow: 0 0 10px; /* Cor definida abaixo */
-            border-color: var(--api-status-error-border); /* Reusa estilo do status */
-            box-shadow: var(--api-status-error-glow);
+            color: var(--error-color); font-weight: 500; margin-top: 15px; font-size: 0.9rem; display: none;
+            background-color: rgba(255, 77, 142, 0.1); padding: 12px 18px; border-radius: var(--border-radius);
+            border: 1px solid; box-shadow: 0 0 10px;
+            border-color: var(--api-status-error-border); box-shadow: var(--api-status-error-glow);
         }
-        body.light-mode .error-message {
-            background-color: #f8d7da; /* Fundo Bootstrap danger */
-            border-color: #f5c2c7;
-            box-shadow: none;
-        }
+        body.light-mode .error-message { background-color: #f8d7da; border-color: #f5c2c7; box-shadow: none; }
         .error-message i { margin-right: 8px; }
 
         .is-invalid { border-color: var(--error-color) !important; }
-        .is-invalid:focus {
-             box-shadow: 0 0 0 3px rgba(255, 77, 142, 0.3), 0 0 10px rgba(255, 77, 142, 0.2) !important; /* Usa cor de erro */
-        }
-        body.light-mode .is-invalid:focus {
-            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.25) !important; /* Foco Bootstrap danger */
-        }
+        .is-invalid:focus { box-shadow: 0 0 0 3px rgba(255, 77, 142, 0.3), 0 0 10px rgba(255, 77, 142, 0.2) !important; }
+        body.light-mode .is-invalid:focus { box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.25) !important; }
         .invalid-feedback { color: var(--error-color); font-weight: 500; }
 
-        /* --- Controlos de Refinamento --- */
         #refinementControls {
-            margin-top: 25px;
-            padding: 18px 20px;
-            background-color: var(--refine-controls-bg);
-            border-radius: var(--border-radius);
-            border: 1px solid var(--input-border);
-            display: none;
-            flex-wrap: wrap;
-            gap: 10px;
+            margin-top: 25px; padding: 18px 20px; background-color: var(--refine-controls-bg);
+            border-radius: var(--border-radius); border: 1px solid var(--input-border);
+            display: none; flex-wrap: wrap; gap: 10px;
         }
         #refinementControls .text-muted {
             width: 100%; margin-bottom: 8px; font-size: 0.85rem; font-weight: 500;
@@ -681,11 +398,10 @@ body.light-mode select.form-select {
             background-color: var(--btn-refine-color); color: var(--btn-refine-hover-text); border-color: var(--btn-refine-border);
             transform: none; box-shadow: 0 0 10px var(--btn-refine-hover-glow);
         }
-         .refine-btn .loading-spinner { color: inherit; }
-         .refine-btn:disabled { color: var(--text-secondary); border-color: var(--text-secondary); opacity: 0.5; box-shadow: none; }
-         .refine-btn:disabled:hover { background-color: transparent; color: var(--text-secondary); }
+        .refine-btn .loading-spinner { color: inherit; }
+        .refine-btn:disabled { color: var(--text-secondary); border-color: var(--text-secondary); opacity: 0.5; box-shadow: none; }
+        .refine-btn:disabled:hover { background-color: transparent; color: var(--text-secondary); }
 
-        /* --- Informação de Contexto --- */
         #contextInfo {
             text-align: right; padding: 10px 15px; background-color: var(--context-info-bg);
             border-radius: 4px; border: 1px solid var(--context-info-border);
@@ -693,7 +409,6 @@ body.light-mode select.form-select {
         }
         #contextInfo strong { font-weight: 600; color: var(--text-primary); }
 
-        /* --- Listas (Análise) --- */
         .list-group { border-radius: var(--border-radius); overflow: hidden; }
         .list-group-item {
             background-color: var(--list-item-bg); border-color: var(--list-item-border);
@@ -701,10 +416,46 @@ body.light-mode select.form-select {
         }
         .list-group-numbered > .list-group-item::before { color: var(--primary-accent); font-weight: bold; }
 
-        /* --- Ajustes Responsivos --- */
+        /* Estilos para o Modal de Feedback */
+        .modal-content {
+            background-color: var(--modal-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--container-border);
+        }
+        .modal-header {
+            border-bottom: 1px solid var(--modal-header-border);
+        }
+        .modal-header .btn-close {
+            filter: invert(1) grayscale(100%) brightness(200%); /* Torna o X branco no tema escuro */
+        }
+        body.light-mode .modal-header .btn-close {
+            filter: none; /* Reset para o X padrão no modo claro */
+        }
+        .modal-footer {
+            border-top: 1px solid var(--modal-footer-border);
+        }
+        .modal-body .form-label {
+            color: var(--text-secondary); 
+        }
+        .modal-body textarea, .modal-body select {
+            background-color: var(--input-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--input-border);
+        }
+         .modal-body textarea:focus, .modal-body select:focus {
+            border-color: var(--input-focus-border);
+            box-shadow: var(--focus-glow);
+            background-color: var(--input-bg); 
+        }
+        body.dark-mode .modal-body textarea:focus,
+        body.dark-mode .modal-body select:focus {
+            background-color: rgba(45, 45, 70, 0.95);
+        }
+
+
         @media (max-width: 992px) {
             .container { padding: 30px 40px; }
-            .theme-switch-wrapper { top: 15px; right: 15px; } /* Ajusta posição do toggle */
+            .theme-switch-wrapper { top: 15px; right: 15px; }
         }
         @media (max-width: 768px) {
             body { padding: 25px 10px; }
@@ -717,24 +468,32 @@ body.light-mode select.form-select {
             .btn { padding: 10px 20px; font-size: 0.9rem; }
             #refinementControls { padding: 15px; gap: 8px; }
             .refine-btn { font-size: 0.75rem; padding: 5px 10px; }
-            .draft-section .d-flex { flex-direction: column; align-items: flex-start !important; gap: 15px; }
+            .draft-section .d-flex.justify-content-between { flex-direction: column; align-items: flex-start !important; gap: 15px; }
             #contextInfo { text-align: left; width: 100%; }
         }
-         @media (max-width: 576px) {
+        @media (max-width: 576px) {
             .container { padding: 20px 15px; }
             header h1 { font-size: 1.8rem; }
             .point-input-group .d-flex { flex-direction: column; align-items: flex-start !important; gap: 8px; }
             .btn-outline-secondary.suggest-btn { margin-left: 0; }
             .btn { width: 100%; }
-            #copyDraftBtn { width: auto; }
-            .draft-section .d-flex { gap: 10px; }
-            .theme-switch-wrapper { top: 10px; right: 10px; } /* Ajusta mais o toggle */
-            .theme-switch-wrapper span { display: none; } /* Esconde ícones em telas muito pequenas */
-         }
+            /* Ajuste para botões de ação do rascunho não ocuparem largura total em mobile, mas estarem em grupo */
+            .draft-section .d-flex.justify-content-between > .btn-group {
+                width: 100%; /* O grupo ocupa a largura */
+            }
+            .draft-section .d-flex.justify-content-between > .btn-group > .btn {
+                width: auto; /* Botões dentro do grupo têm largura automática */
+                flex-grow: 1; /* Permite que cresçam para preencher o espaço do grupo */
+            }
+            #contextInfo { margin-left: 0 !important; } /* Remove margem esquerda no mobile */
 
+            .theme-switch-wrapper { top: 10px; right: 10px; }
+            .theme-switch-wrapper span { display: none; }
+        }
     </style>
 </head>
-<body class="dark-mode"> <div class="container">
+<body class="dark-mode">
+    <div class="container">
         <div class="theme-switch-wrapper">
             <span title="Modo Claro"><i class="fas fa-sun"></i></span>
             <label class="theme-switch" for="theme-checkbox">
@@ -746,7 +505,7 @@ body.light-mode select.form-select {
 
         <div id="apiStatusIndicator" class="api-status status-ok">
             <i class="fas fa-satellite-dish"></i>
-            <span>Status - gemini-2.0-flash: <strong>Online</strong></span>
+            <span>Status - Gemini API: <strong>Online</strong></span>
         </div>
 
         <header>
@@ -785,9 +544,9 @@ body.light-mode select.form-select {
                         <option value="">Nenhum protocolo de persona carregado</option>
                     {% endif %}
                 </select>
-                 {% if error_loading_personas %}
+                {% if error_loading_personas %}
                     <div class="text-danger small mt-1">Falha ao carregar 'personas.json'. Verifique a integridade dos dados.</div>
-                 {% endif %}
+                {% endif %}
             </div>
             <div class="mt-3">
                 <button id="draftBtn" class="btn btn-success" {% if error_loading_personas or not personas_dict %}disabled{% endif %}>
@@ -801,6 +560,7 @@ body.light-mode select.form-select {
         <section class="draft-section" id="draftSection" style="display: none;">
             <h2>Composição Gerada (Editável)</h2>
             <textarea class="form-control" id="generatedDraft" rows="12" placeholder="A composição neural será exibida aqui... Edite conforme necessário."></textarea>
+            
             <div id="refinementControls" style="display: none;">
                 <small class="text-muted w-100 mb-1 d-block">Otimizar Seleção:</small>
                 <button class="btn btn-sm refine-btn" data-action="make_formal" title="Aumentar formalidade do texto selecionado">Formalizar <span class="loading-spinner spinner-border spinner-border-sm" role="status"></span></button>
@@ -812,15 +572,64 @@ body.light-mode select.form-select {
                 <button class="btn btn-sm refine-btn" data-action="rephrase" title="Reescrever texto selecionado (alternativo)">Rephrase <span class="loading-spinner spinner-border spinner-border-sm" role="status"></span></button>
                 <button class="btn btn-sm refine-btn" data-action="translate_en" title="Traduzir seleção para Inglês">Traduzir EN <span class="loading-spinner spinner-border spinner-border-sm" role="status"></span></button>
             </div>
-            <div class="mt-3 d-flex justify-content-between align-items-center">
-                 <button id="copyDraftBtn" class="btn btn-secondary" title="Copiar composição atual para a área de transferência">Copiar Composição</button>
-                 <div id="contextInfo" class="small ms-3" style="display: none;">
-                    <strong>Metadados de Contexto:</strong> <span id="contextDetails"></span>
-                 </div>
-            </div>
-        </section>
 
-    </div> <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+            <div class="mt-3 d-flex justify-content-between align-items-center flex-wrap"> <div class="btn-group mb-2 mb-md-0" role="group" aria-label="Ações do Rascunho"> <button id="copyDraftBtn" class="btn btn-secondary" title="Copiar composição atual para a área de transferência">
+                        <i class="fas fa-copy"></i> Copiar
+                    </button>
+                    <button id="feedbackBtn" class="btn btn-warning ms-2" title="A IA errou? Ajude-a a aprender para o futuro." disabled>
+                        <i class="fas fa-lightbulb"></i> Ensinar IA
+                    </button>
+                </div>
+                <div id="contextInfo" class="small ms-md-3" style="display: none;"> <strong>Metadados de Contexto:</strong> <span id="contextDetails"></span>
+                </div>
+            </div>
+             <div id="feedbackSuccessMessage" class="alert alert-success mt-3" style="display: none;"></div>
+        </section>
+    </div>
+
+    <div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="feedbackModalLabel"><i class="fas fa-lightbulb me-2"></i>Fornecer Feedback para a IA</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="feedbackErrorModal" class="error-message mb-3" style="display: none;"></div>
+                    
+                    <div class="mb-3">
+                        <label for="feedbackOriginalResponse" class="form-label">Resposta Original da IA (ou trecho):</label>
+                        <textarea class="form-control" id="feedbackOriginalResponse" rows="4" readonly style="background-color: var(--point-text-bg); opacity: 0.8;"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="feedbackUserCorrection" class="form-label">Minha Versão Correta / O que eu queria:</label>
+                        <textarea class="form-control" id="feedbackUserCorrection" rows="5" placeholder="Descreva ou cole aqui a resposta/comportamento que esperava..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="feedbackTypeSelect" class="form-label">Tipo de Correção/Feedback:</label>
+                        <select class="form-select" id="feedbackTypeSelect">
+                            </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="feedbackUserExplanation" class="form-label">Explicação Adicional (Opcional):</label>
+                        <textarea class="form-control" id="feedbackUserExplanation" rows="3" placeholder="Porquê esta correção é melhor? Que princípio a IA deve aprender?"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="submitFeedbackBtn">
+                        Submeter Feedback
+                        <div class="spinner-border spinner-border-sm loading-spinner" role="status" id="feedbackSubmitSpinner"></div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
     <script>
         // --- Seletores de Elementos DOM ---
@@ -843,26 +652,49 @@ body.light-mode select.form-select {
         const contextDetailsEl = document.getElementById('contextDetails');
         const refinementControlsEl = document.getElementById('refinementControls');
         const apiStatusIndicatorEl = document.getElementById('apiStatusIndicator');
-        // NOVO: Seletor para o Theme Toggle
         const themeToggle = document.getElementById('theme-checkbox');
-        const bodyEl = document.body; // Seletor para o body
+        const bodyEl = document.body;
+
+        // --- Seletores para Elementos de Feedback ---
+        const feedbackBtn = document.getElementById('feedbackBtn');
+        const feedbackModalEl = document.getElementById('feedbackModal');
+        const feedbackOriginalResponseEl = document.getElementById('feedbackOriginalResponse');
+        const feedbackUserCorrectionEl = document.getElementById('feedbackUserCorrection');
+        const feedbackTypeSelectEl = document.getElementById('feedbackTypeSelect');
+        const feedbackUserExplanationEl = document.getElementById('feedbackUserExplanation');
+        const submitFeedbackBtn = document.getElementById('submitFeedbackBtn');
+        const feedbackErrorModalEl = document.getElementById('feedbackErrorModal');
+        const feedbackSubmitSpinner = document.getElementById('feedbackSubmitSpinner');
+        const feedbackSuccessMessageEl = document.getElementById('feedbackSuccessMessage');
+        let feedbackModalInstance = null; 
 
         // --- Estado da Aplicação ---
         let currentAnalysisPoints = [];
         let isRefining = false;
+        let currentDraftContext = {}; 
+        let lastGeneratedDraftForFeedback = ""; 
 
         // --- Funções Auxiliares ---
         function showSpinner(spinner) { if(spinner) spinner.style.display = 'inline-block'; }
         function hideSpinner(spinner) { if(spinner) spinner.style.display = 'none'; }
         function showError(element, message) {
+            if (!element) return;
             const iconHTML = element.querySelector('i') ? '' : '<i class="fas fa-exclamation-circle me-2"></i>';
             element.innerHTML = `${iconHTML} ${message}`;
             element.style.display = 'block';
-         }
-        function hideError(element) { element.textContent = ''; element.style.display = 'none'; }
+        }
+        function hideError(element) { if (element) { element.textContent = ''; element.style.display = 'none';} }
         function escapeHtml(unsafe) {
             if (typeof unsafe !== 'string') return '';
             return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+        function showSuccessMessage(element, message, duration = 4000) { // Aumentado para 4s
+            if (!element) return;
+            element.innerHTML = `<i class="fas fa-check-circle me-2"></i> ${message}`;
+            element.style.display = 'block';
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, duration);
         }
 
         // --- Lógica de Tema (Dark/Light Mode) ---
@@ -870,229 +702,404 @@ body.light-mode select.form-select {
             if (theme === 'light') {
                 bodyEl.classList.add('light-mode');
                 bodyEl.classList.remove('dark-mode');
-                themeToggle.checked = false; // Slider para a esquerda (sol)
+                themeToggle.checked = false;
             } else {
                 bodyEl.classList.add('dark-mode');
                 bodyEl.classList.remove('light-mode');
-                themeToggle.checked = true; // Slider para a direita (lua)
+                themeToggle.checked = true;
             }
         }
-
-        // Event Listener para o Toggle de Tema
         themeToggle.addEventListener('change', () => {
             const newTheme = themeToggle.checked ? 'dark' : 'light';
             applyTheme(newTheme);
-            // Salva a preferência no localStorage
             localStorage.setItem('themePreference', newTheme);
         });
-
-        // Verifica preferência guardada ao carregar a página
+        
+        // --- Lógica Principal da Aplicação ---
         document.addEventListener('DOMContentLoaded', () => {
-            const savedTheme = localStorage.getItem('themePreference') || 'dark'; // Padrão é dark
-            // Define o estado inicial do checkbox baseado no tema salvo ANTES de aplicar
-             themeToggle.checked = (savedTheme === 'dark');
-            // Aplica o tema salvo
+            const savedTheme = localStorage.getItem('themePreference') || 'dark';
+            themeToggle.checked = (savedTheme === 'dark');
             applyTheme(savedTheme);
 
-            // (Opcional) Adiciona um pequeno delay para evitar FOUC (Flash of Unstyled Content) se necessário
-             // setTimeout(() => {
-             //    document.body.style.visibility = 'visible';
-             // }, 50); // Ajuste o tempo conforme necessário
+            if (feedbackModalEl) {
+                feedbackModalInstance = new bootstrap.Modal(feedbackModalEl);
+            }
+            populateFeedbackTypes(); // Popula o dropdown de tipos de feedback
         });
-        // (Opcional) Esconder body inicialmente para evitar FOUC
-        // document.body.style.visibility = 'hidden';
-
-
-        // --- Lógica Principal da Aplicação (INALTERADA) ---
 
         // 1. Event Listener: Botão "Analisar Email"
         analyzeBtn.addEventListener('click', async () => {
-             const emailText = originalEmailEl.value.trim();
-             if (!emailText) {
-                 showError(analyzeErrorEl, "Por favor, insira o texto do email recebido.");
-                 originalEmailEl.focus();
-                 originalEmailEl.classList.add('is-invalid');
-                 return;
-             } else {
-                  originalEmailEl.classList.remove('is-invalid');
-             }
-             showSpinner(analyzeSpinner);
-             hideError(analyzeErrorEl);
-             hideError(draftErrorEl);
-             analysisSection.style.display = 'none';
-             draftSection.style.display = 'none';
-             refinementControlsEl.style.display = 'none';
-             analysisResultEl.innerHTML = '';
-             userInputsSection.innerHTML = '';
-             generatedDraftEl.value = '';
-             contextInfoEl.style.display = 'none';
-             analyzeBtn.disabled = true;
-             draftBtn.disabled = true;
-             try {
-                 const response = await fetch('/analyze', {
-                     method: 'POST',
-                     headers: { 'Content-Type': 'application/json' },
-                     body: JSON.stringify({ email_text: emailText })
-                 });
-                 const data = await response.json();
-                 if (!response.ok || data.error) {
-                     let errorMsg = data.error || `Erro HTTP ${response.status}: ${response.statusText}`;
-                     if (data.raw_analysis) { errorMsg += ` | Resposta LLM (RAW): ${data.raw_analysis.substring(0, 100)}...`; }
-                     throw new Error(errorMsg);
-                 }
-                 currentAnalysisPoints = data.points || [];
-                 displayAnalysisResults(data);
-                 createUserInputFields(currentAnalysisPoints);
-                 analysisSection.style.display = 'block';
-             } catch (error) {
-                 console.error("Erro durante a análise:", error);
-                 showError(analyzeErrorEl, `Erro na análise: ${error.message}`);
-             } finally {
-                 hideSpinner(analyzeSpinner);
-                 analyzeBtn.disabled = false;
-                 if (analysisSection.style.display === 'block' && personaSelect.value && !personaSelect.disabled) {
-                     draftBtn.disabled = false;
-                 }
-             }
-         });
+            const emailText = originalEmailEl.value.trim();
+            if (!emailText) {
+                showError(analyzeErrorEl, "Por favor, insira o texto do email recebido.");
+                originalEmailEl.focus(); originalEmailEl.classList.add('is-invalid'); return;
+            } else {
+                originalEmailEl.classList.remove('is-invalid');
+            }
+            showSpinner(analyzeSpinner);
+            hideError(analyzeErrorEl); hideError(draftErrorEl); hideError(feedbackErrorModalEl);
+            if(feedbackSuccessMessageEl) feedbackSuccessMessageEl.style.display = 'none';
+            analysisSection.style.display = 'none'; draftSection.style.display = 'none';
+            refinementControlsEl.style.display = 'none'; analysisResultEl.innerHTML = '';
+            userInputsSection.innerHTML = ''; generatedDraftEl.value = '';
+            contextInfoEl.style.display = 'none';
+            analyzeBtn.disabled = true; draftBtn.disabled = true; 
+            if(feedbackBtn) feedbackBtn.disabled = true;
+            currentDraftContext = {}; 
+            lastGeneratedDraftForFeedback = "";
 
-         // Função: Mostra os resultados da análise (pontos e ações)
-         function displayAnalysisResults(data) {
-             let html = '<h4>Pontos de Ação Identificados:</h4>';
-             const hasRealPoints = data.points && data.points.length > 0 && !(data.points.length === 1 && data.points[0].toLowerCase().includes("nenhum ponto"));
-             if (hasRealPoints) {
-                 html += '<ol class="list-group list-group-numbered list-group-flush mb-3">';
-                 data.points.forEach(point => { html += `<li class="list-group-item">${escapeHtml(point)}</li>`; });
-                 html += '</ol>';
-             } else {
-                  html += '<p class="text-secondary fst-italic">Nenhum ponto específico identificado para resposta direta.</p>';
-             }
-             if (data.actions && data.actions.length > 0) {
-                 html += '<h4 class="mt-4">Ações Sugeridas:</h4>';
-                 html += '<ul class="list-group list-group-flush">';
-                 data.actions.forEach(action => { html += `<li class="list-group-item">${escapeHtml(action)}</li>`; });
-                 html += '</ul>';
-             }
-             analysisResultEl.innerHTML = html;
-         }
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email_text: emailText })
+                });
+                const data = await response.json();
+                if (!response.ok || data.error) {
+                    let errorMsg = data.error || `Erro HTTP ${response.status}: ${response.statusText}`;
+                    if (data.raw_analysis) { errorMsg += ` | Resposta LLM (RAW): ${escapeHtml(data.raw_analysis.substring(0, 100))}...`; }
+                    throw new Error(errorMsg);
+                }
+                currentAnalysisPoints = data.points || [];
+                displayAnalysisResults(data);
+                createUserInputFields(currentAnalysisPoints);
+                analysisSection.style.display = 'block';
+            } catch (error) {
+                console.error("Erro durante a análise:", error);
+                showError(analyzeErrorEl, `Erro na análise: ${error.message}`);
+            } finally {
+                hideSpinner(analyzeSpinner);
+                analyzeBtn.disabled = false;
+                if (analysisSection.style.display === 'block' && personaSelect.value && !personaSelect.disabled) {
+                    draftBtn.disabled = false;
+                }
+            }
+        });
 
-         // Função: Cria dinamicamente os campos de input para orientação do utilizador
-         function createUserInputFields(points) {
-             userInputsSection.innerHTML = '';
-             const createGroup = (point, index, isGeneral = false) => {
-                 const div = document.createElement('div');
-                 div.className = 'point-input-group';
-                 const inputId = isGeneral ? 'userInput-general' : `userInput-${index}`;
-                 const pointIdentifier = isGeneral ? "N/A" : (point || "N/A");
-                 const labelText = isGeneral ? '<strong>Diretriz Geral:</strong> <span class="form-label-sm">(Opcional - instrução global)</span>' : `<strong>Ponto ${index + 1}:</strong>`;
-                 const pointDisplay = !isGeneral ? `<p class="point-text">"${escapeHtml(point)}"</p>` : '';
-                 const requiredAttr = !isGeneral ? 'required' : '';
-                 const requiredFeedback = !isGeneral ? '<div class="invalid-feedback">Por favor, forneça uma diretriz para este ponto.</div>' : '';
-                 const directionRadiosHTML = !isGeneral ? `<div class="mb-2 guidance-direction-group"><span class="form-label-sm d-block mb-1">Vetor de Resposta Rápida:</span><div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="direction-${index}" id="direction-${index}-sim" value="sim"><label class="form-check-label" for="direction-${index}-sim">Afirmativo</label></div><div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="direction-${index}" id="direction-${index}-nao" value="nao"><label class="form-check-label" for="direction-${index}-nao">Negativo</label></div><div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="direction-${index}" id="direction-${index}-outro" value="outro" checked><label class="form-check-label" for="direction-${index}-outro">Neutro/Detalhado</label></div></div>` : '';
-                 const suggestButtonHTML = !isGeneral ? `<button class="btn btn-sm btn-outline-secondary suggest-btn" data-target-textarea="${inputId}" data-point-index="${index}" type="button" title="Gerar sugestão de diretriz via IA, usando o Vetor de Resposta">Sugerir Diretriz<div class="spinner-border spinner-border-sm loading-spinner" role="status" style="display: none;"></div></button>` : '';
-                 div.innerHTML = `<div class="d-flex justify-content-between align-items-start mb-1 flex-wrap"><label for="${inputId}" class="form-label mb-0 me-2">${labelText}</label>${suggestButtonHTML}</div>${pointDisplay}${directionRadiosHTML}<textarea class="form-control user-guidance" id="${inputId}" data-point="${escapeHtml(pointIdentifier)}" rows="3" ${requiredAttr} placeholder="Insira a sua diretriz para este ponto..."></textarea>${requiredFeedback}`;
-                 userInputsSection.appendChild(div);
-             };
-             const hasRealPoints = points && points.length > 0 && !(points.length === 1 && points[0].toLowerCase().includes("nenhum ponto"));
-             if (hasRealPoints) { points.forEach((point, index) => { createGroup(point, index, false); }); }
-             createGroup(null, 'general', true);
-         }
+        function displayAnalysisResults(data) {
+            let html = '<h4>Pontos de Ação Identificados:</h4>';
+            const hasRealPoints = data.points && data.points.length > 0 && !(data.points.length === 1 && data.points[0].toLowerCase().includes("nenhum ponto"));
+            if (hasRealPoints) {
+                html += '<ol class="list-group list-group-numbered list-group-flush mb-3">';
+                data.points.forEach(point => { html += `<li class="list-group-item">${escapeHtml(point)}</li>`; });
+                html += '</ol>';
+            } else {
+                 html += '<p class="text-secondary fst-italic">Nenhum ponto específico identificado para resposta direta.</p>';
+            }
+            if (data.actions && data.actions.length > 0) {
+                html += '<h4 class="mt-4">Ações Sugeridas:</h4>';
+                html += '<ul class="list-group list-group-flush">';
+                data.actions.forEach(action => { html += `<li class="list-group-item">${escapeHtml(action)}</li>`; });
+                html += '</ul>';
+            }
+            analysisResultEl.innerHTML = html;
+        }
 
-         // 2. Event Listener: Botão "Gerar Rascunho"
-         draftBtn.addEventListener('click', async () => {
-             const originalEmail = originalEmailEl.value.trim();
-             const selectedPersona = personaSelect.value;
-             const guidanceInputs = userInputsSection.querySelectorAll('.user-guidance');
-             let userInputsData = [];
-             let formIsValid = true;
-             hideError(draftErrorEl); contextInfoEl.style.display = 'none'; refinementControlsEl.style.display = 'none';
-             guidanceInputs.forEach(input => {
-                 const pointText = input.getAttribute('data-point');
-                 const guidanceText = input.value.trim();
-                 if (input.required && !guidanceText) { input.classList.add('is-invalid'); if (formIsValid) input.focus(); formIsValid = false; }
-                 else { input.classList.remove('is-invalid'); }
-                 if (guidanceText || input.required) { userInputsData.push({ point: pointText, guidance: guidanceText }); }
-             });
-             if (!formIsValid) { showError(draftErrorEl, "Por favor, forneça diretrizes para todos os pontos de ação obrigatórios."); return; }
-             if (!selectedPersona) { showError(draftErrorEl, "Por favor, selecione um protocolo de persona."); personaSelect.focus(); return; }
-             showSpinner(draftSpinner); draftSection.style.display = 'none'; generatedDraftEl.value = ''; draftBtn.disabled = true; analyzeBtn.disabled = true;
-             try {
-                  const response = await fetch('/draft', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ original_email: originalEmail, persona_name: selectedPersona, user_inputs: userInputsData }) });
-                  const data = await response.json();
-                  if (!response.ok || data.error) { let errorMsg = data.error || `Erro HTTP ${response.status}: ${response.statusText}`; if(data.context_analysis && data.context_analysis.error) { errorMsg += ` (Erro na pré-análise de contexto: ${data.context_analysis.error})`; } throw new Error(errorMsg); }
-                  generatedDraftEl.value = data.draft; draftSection.style.display = 'block';
-                  if (data.context_analysis) { contextDetailsEl.textContent = `Cat: ${data.context_analysis.recipient_category || 'N/D'}, Tom Rx: ${data.context_analysis.incoming_tone || 'N/D'}, Remet: ${data.context_analysis.sender_name_guess || 'N/D'}`; contextInfoEl.style.display = 'block'; }
-             } catch (error) { console.error("Erro durante a geração da composição:", error); showError(draftErrorEl, `Erro na geração da composição: ${error.message}`); }
-             finally { hideSpinner(draftSpinner); if (personaSelect.value && !personaSelect.disabled) { draftBtn.disabled = false; } analyzeBtn.disabled = false; }
-         });
+        function createUserInputFields(points) {
+            userInputsSection.innerHTML = '';
+            const createGroup = (point, index, isGeneral = false) => {
+                const div = document.createElement('div');
+                div.className = 'point-input-group';
+                const inputId = isGeneral ? 'userInput-general' : `userInput-${index}`;
+                const pointIdentifier = isGeneral ? "N/A" : (point || "N/A"); // Usado em data-point
+                const labelText = isGeneral ? '<strong>Diretriz Geral:</strong> <span class="form-label-sm">(Opcional - instrução global para este rascunho)</span>' : `<strong>Ponto ${index + 1}:</strong>`;
+                const pointDisplay = !isGeneral ? `<p class="point-text">"${escapeHtml(point)}"</p>` : '';
+                // Apenas pontos específicos são "required" se não houver diretriz geral.
+                // Esta lógica de 'required' pode ser complexa de gerir apenas no frontend.
+                // Por agora, vamos simplificar e não tornar os campos de ponto 'required' dinamicamente.
+                // A validação no backend ou no JS antes de submeter o draft pode ser mais robusta.
+                // const requiredAttr = !isGeneral ? 'required' : ''; 
+                const requiredAttr = ''; // Simplificado por agora
+                const requiredFeedback = !isGeneral ? '<div class="invalid-feedback">Por favor, forneça uma diretriz para este ponto.</div>' : '';
+                const directionRadiosHTML = !isGeneral ? `<div class="mb-2 guidance-direction-group"><span class="form-label-sm d-block mb-1">Vetor de Resposta Rápida:</span><div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="direction-${index}" id="direction-${index}-sim" value="sim"><label class="form-check-label" for="direction-${index}-sim">Afirmativo</label></div><div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="direction-${index}" id="direction-${index}-nao" value="nao"><label class="form-check-label" for="direction-${index}-nao">Negativo</label></div><div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="direction-${index}" id="direction-${index}-outro" value="outro" checked><label class="form-check-label" for="direction-${index}-outro">Neutro/Detalhado</label></div></div>` : '';
+                const suggestButtonHTML = !isGeneral ? `<button class="btn btn-sm btn-outline-secondary suggest-btn" data-target-textarea="${inputId}" data-point-index="${index}" type="button" title="Gerar sugestão de diretriz via IA, usando o Vetor de Resposta">Sugerir Diretriz<div class="spinner-border spinner-border-sm loading-spinner" role="status" style="display: none;"></div></button>` : '';
+                div.innerHTML = `<div class="d-flex justify-content-between align-items-start mb-1 flex-wrap"><label for="${inputId}" class="form-label mb-0 me-2">${labelText}</label>${suggestButtonHTML}</div>${pointDisplay}${directionRadiosHTML}<textarea class="form-control user-guidance" id="${inputId}" data-point="${escapeHtml(pointIdentifier)}" rows="3" ${requiredAttr} placeholder="Insira a sua diretriz para este ponto..."></textarea>${requiredFeedback}`;
+                userInputsSection.appendChild(div);
+            };
+            const hasRealPoints = points && points.length > 0 && !(points.length === 1 && points[0].toLowerCase().includes("nenhum ponto"));
+            if (hasRealPoints) { points.forEach((point, index) => { createGroup(point, index, false); }); }
+            createGroup(null, 'general', true); 
+        }
 
-         // 3. Event Listener: Botão "Copiar Texto"
-         copyDraftBtn.addEventListener('click', () => {
-             if (!generatedDraftEl.value) return;
-             const textToCopy = generatedDraftEl.value;
-             navigator.clipboard.writeText(textToCopy).then(() => {
-                 const originalHTML = copyDraftBtn.innerHTML; copyDraftBtn.innerHTML = 'Copiado!'; copyDraftBtn.classList.add('btn-success'); copyDraftBtn.classList.remove('btn-secondary', 'btn-warning');
-                 setTimeout(() => { copyDraftBtn.innerHTML = originalHTML; copyDraftBtn.classList.remove('btn-success'); copyDraftBtn.classList.add('btn-secondary'); }, 2000);
-             }).catch(err => {
-                 console.warn('Falha ao copiar com navigator.clipboard, tentando fallback:', err);
-                 try {
-                     generatedDraftEl.select(); document.execCommand('copy');
-                     const originalHTML = copyDraftBtn.innerHTML; copyDraftBtn.innerHTML = 'Copiado (Fallback)'; copyDraftBtn.classList.add('btn-warning'); copyDraftBtn.classList.remove('btn-secondary', 'btn-success');
-                     setTimeout(() => { copyDraftBtn.innerHTML = originalHTML; copyDraftBtn.classList.remove('btn-warning'); copyDraftBtn.classList.add('btn-secondary'); }, 2000);
-                 } catch (execErr) { console.error('Fallback execCommand também falhou:', execErr); showError(draftErrorEl, 'Falha ao copiar automaticamente. Use Ctrl+C.'); }
-             });
-         });
+        // 2. Event Listener: Botão "Gerar Rascunho"
+        draftBtn.addEventListener('click', async () => {
+            const originalEmail = originalEmailEl.value.trim();
+            const selectedPersona = personaSelect.value;
+            const guidanceInputs = userInputsSection.querySelectorAll('.user-guidance');
+            let userInputsData = [];
+            // let formIsValid = true; // Validação de required foi simplificada/removida dos campos de ponto
+            hideError(draftErrorEl); hideError(feedbackErrorModalEl);
+            if(feedbackSuccessMessageEl) feedbackSuccessMessageEl.style.display = 'none';
+            contextInfoEl.style.display = 'none'; refinementControlsEl.style.display = 'none';
+            if(feedbackBtn) feedbackBtn.disabled = true; 
+            currentDraftContext = {}; 
+            lastGeneratedDraftForFeedback = "";
 
-         // 4. Event Listener (Delegado): Botões "Sugerir Texto"
-         userInputsSection.addEventListener('click', async (event) => {
-             const button = event.target.closest('.suggest-btn');
-             if (button && !button.disabled) {
-                 const spinner = button.querySelector('.loading-spinner'); const targetTextareaId = button.dataset.targetTextarea; const pointIndex = parseInt(button.dataset.pointIndex, 10); const targetTextarea = document.getElementById(targetTextareaId); const originalEmail = originalEmailEl.value.trim(); const selectedPersonaName = personaSelect.value;
-                 const radioGroupName = `direction-${pointIndex}`; const checkedRadio = userInputsSection.querySelector(`input[name="${radioGroupName}"]:checked`); const selectedDirection = checkedRadio ? checkedRadio.value : "outro";
-                 const pointToAddress = (currentAnalysisPoints && pointIndex >= 0 && pointIndex < currentAnalysisPoints.length) ? currentAnalysisPoints[pointIndex] : null;
-                 if (!targetTextarea || !originalEmail || !pointToAddress || !selectedPersonaName || pointToAddress === 'N/A') { console.error("Dados em falta para sugestão de diretriz (email, ponto, persona). Ponto:", pointToAddress); showError(draftErrorEl, "Erro interno: Dados insuficientes para sugestão."); return; }
-                 if (!selectedPersonaName) { showError(draftErrorEl, "Por favor, selecione um protocolo de persona."); personaSelect.focus(); return; }
-                 if (spinner) showSpinner(spinner); button.disabled = true; hideError(draftErrorEl);
-                 try {
-                     const response = await fetch('/suggest_guidance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ original_email: originalEmail, point_to_address: pointToAddress, persona_name: selectedPersonaName, direction: selectedDirection }) });
-                     const data = await response.json();
-                     if (!response.ok || data.error) { throw new Error(data.error || `Erro HTTP ${response.status}: ${response.statusText}`); }
-                     targetTextarea.value = data.suggestion || ''; targetTextarea.dispatchEvent(new Event('input', { bubbles: true })); targetTextarea.classList.remove('is-invalid');
-                 } catch (error) { console.error("Erro ao obter sugestão de diretriz:", error); showError(draftErrorEl, `Erro na sugestão: ${error.message}`); }
-                 finally { if (spinner) hideSpinner(spinner); button.disabled = false; }
-             }
-         });
+            guidanceInputs.forEach(input => {
+                const pointText = input.getAttribute('data-point');
+                const guidanceText = input.value.trim();
+                // Adiciona à lista se tiver texto ou se for o campo geral (mesmo vazio)
+                if (guidanceText || input.id === 'userInput-general') {
+                     userInputsData.push({ point: pointText, guidance: guidanceText });
+                }
+            });
 
-         // 5. Mostrar/Esconder Botões de Refinamento baseado na seleção de texto
-         generatedDraftEl.addEventListener('select', handleTextSelection);
-         generatedDraftEl.addEventListener('mouseup', handleTextSelection);
-         generatedDraftEl.addEventListener('keyup', handleTextSelection);
-         document.addEventListener('click', (event) => { if (!generatedDraftEl.contains(event.target) && !refinementControlsEl.contains(event.target)) { refinementControlsEl.style.display = 'none'; } });
-         function handleTextSelection() { setTimeout(() => { if (draftSection.style.display === 'block' && generatedDraftEl.selectionStart !== generatedDraftEl.selectionEnd) { refinementControlsEl.style.display = 'flex'; } else { refinementControlsEl.style.display = 'none'; } }, 0); }
+            // if (!formIsValid) { showError(draftErrorEl, "Por favor, forneça diretrizes para todos os pontos de ação obrigatórios."); return; }
+            if (!selectedPersona) { showError(draftErrorEl, "Por favor, selecione um protocolo de persona."); personaSelect.focus(); return; }
+            
+            showSpinner(draftSpinner); draftSection.style.display = 'none'; generatedDraftEl.value = '';
+            draftBtn.disabled = true; analyzeBtn.disabled = true;
 
-         // 6. Event Listener (Delegado): Botões de Refinamento
-         refinementControlsEl.addEventListener('click', async (event) => {
-             const button = event.target.closest('.refine-btn');
-             if (button && !isRefining) {
-                 const action = button.dataset.action; const spinner = button.querySelector('.loading-spinner');
-                 const selectedText = generatedDraftEl.value.substring(generatedDraftEl.selectionStart, generatedDraftEl.selectionEnd); const fullContext = generatedDraftEl.value; const selectedPersonaName = personaSelect.value; const start = generatedDraftEl.selectionStart; const end = generatedDraftEl.selectionEnd;
-                 if (!selectedText) { refinementControlsEl.style.display = 'none'; return; }
-                 if (!selectedPersonaName) { showError(draftErrorEl, "Selecione um protocolo de persona para otimização."); personaSelect.focus(); return; }
-                 isRefining = true; if(spinner) showSpinner(spinner); refinementControlsEl.querySelectorAll('.refine-btn').forEach(btn => btn.disabled = true); hideError(draftErrorEl);
-                 try {
-                     const response = await fetch('/refine_text', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ selected_text: selectedText, full_context: fullContext, action: action, persona_name: selectedPersonaName }) });
-                     const data = await response.json();
-                     if (!response.ok || data.error) { throw new Error(data.error || `Erro HTTP ${response.status}: ${response.statusText}`); }
-                     const before = fullContext.substring(0, start); const after = fullContext.substring(end); const refinedText = data.refined_text || "";
-                     generatedDraftEl.value = before + refinedText + after;
-                     generatedDraftEl.focus(); const newCursorPos = start + refinedText.length; generatedDraftEl.setSelectionRange(newCursorPos, newCursorPos);
-                 } catch (error) { console.error(`Erro ao otimizar texto (Ação: ${action}):`, error); showError(draftErrorEl, `Erro na otimização (${action}): ${error.message}`); }
-                 finally { if(spinner) hideSpinner(spinner); refinementControlsEl.querySelectorAll('.refine-btn').forEach(btn => btn.disabled = false); isRefining = false; refinementControlsEl.style.display = 'none'; }
-             }
-         });
+            try {
+                const response = await fetch('/draft', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ original_email: originalEmail, persona_name: selectedPersona, user_inputs: userInputsData })
+                });
+                const data = await response.json();
+                if (!response.ok || data.error) {
+                    let errorMsg = data.error || `Erro HTTP ${response.status}: ${response.statusText}`;
+                    if(data.context_analysis && data.context_analysis.error) { errorMsg += ` (Erro na pré-análise de contexto: ${escapeHtml(data.context_analysis.error)})`; }
+                    throw new Error(errorMsg);
+                }
+                generatedDraftEl.value = data.draft || "";
+                lastGeneratedDraftForFeedback = data.draft || ""; 
+                draftSection.style.display = 'block';
+                if(feedbackBtn) feedbackBtn.disabled = !lastGeneratedDraftForFeedback.trim(); 
 
+                if (data.context_analysis) {
+                    contextDetailsEl.textContent = `Cat: ${data.context_analysis.recipient_category || 'N/D'}, Tom Rx: ${data.context_analysis.incoming_tone || 'N/D'}, Remet: ${data.context_analysis.sender_name_guess || 'N/D'}`;
+                    contextInfoEl.style.display = 'block';
+                    currentDraftContext = {
+                        original_email_text: originalEmail,
+                        user_guidance_inputs_snapshot: userInputsData,
+                        llm_pre_analysis_snapshot: data.context_analysis,
+                        persona_used: selectedPersona,
+                        ia_action_type: '/draft' // Indica que este contexto é de uma ação de draft
+                    };
+                } else {
+                     currentDraftContext = { 
+                        original_email_text: originalEmail,
+                        user_guidance_inputs_snapshot: userInputsData,
+                        llm_pre_analysis_snapshot: { error: "Pré-análise não disponível ou falhou."},
+                        persona_used: selectedPersona,
+                        ia_action_type: '/draft'
+                    };
+                }
+            } catch (error) {
+                console.error("Erro durante a geração da composição:", error);
+                showError(draftErrorEl, `Erro na geração da composição: ${error.message}`);
+            } finally {
+                hideSpinner(draftSpinner);
+                if (personaSelect.value && !personaSelect.disabled) { draftBtn.disabled = false; }
+                analyzeBtn.disabled = false;
+            }
+        });
+
+        // 3. Event Listener: Botão "Copiar Texto" 
+        copyDraftBtn.addEventListener('click', () => {
+            if (!generatedDraftEl.value) return;
+            const textToCopy = generatedDraftEl.value;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const originalHTML = copyDraftBtn.innerHTML; copyDraftBtn.innerHTML = '<i class="fas fa-check"></i> Copiado!'; copyDraftBtn.classList.add('btn-success'); copyDraftBtn.classList.remove('btn-secondary', 'btn-warning');
+                setTimeout(() => { copyDraftBtn.innerHTML = '<i class="fas fa-copy"></i> Copiar'; copyDraftBtn.classList.remove('btn-success'); copyDraftBtn.classList.add('btn-secondary'); }, 2000);
+            }).catch(err => {
+                console.warn('Falha ao copiar com navigator.clipboard, tentando fallback:', err);
+                try {
+                    generatedDraftEl.select(); document.execCommand('copy');
+                    const originalHTML = copyDraftBtn.innerHTML; copyDraftBtn.innerHTML = '<i class="fas fa-check"></i> Copiado (Fallback)'; copyDraftBtn.classList.add('btn-warning'); copyDraftBtn.classList.remove('btn-secondary', 'btn-success');
+                    setTimeout(() => { copyDraftBtn.innerHTML = '<i class="fas fa-copy"></i> Copiar'; copyDraftBtn.classList.remove('btn-warning'); copyDraftBtn.classList.add('btn-secondary'); }, 2000);
+                } catch (execErr) { console.error('Fallback execCommand também falhou:', execErr); showError(draftErrorEl, 'Falha ao copiar automaticamente. Use Ctrl+C.'); }
+            });
+        });
+
+        // 4. Event Listener (Delegado): Botões "Sugerir Texto"
+        userInputsSection.addEventListener('click', async (event) => {
+            const button = event.target.closest('.suggest-btn');
+            if (button && !button.disabled) {
+                const spinner = button.querySelector('.loading-spinner'); const targetTextareaId = button.dataset.targetTextarea; const pointIndex = parseInt(button.dataset.pointIndex, 10); const targetTextarea = document.getElementById(targetTextareaId); const originalEmail = originalEmailEl.value.trim(); const selectedPersonaName = personaSelect.value;
+                const radioGroupName = `direction-${pointIndex}`; const checkedRadio = userInputsSection.querySelector(`input[name="${radioGroupName}"]:checked`); const selectedDirection = checkedRadio ? checkedRadio.value : "outro";
+                const pointToAddress = (currentAnalysisPoints && pointIndex >= 0 && pointIndex < currentAnalysisPoints.length) ? currentAnalysisPoints[pointIndex] : null;
+                if (!targetTextarea || !originalEmail || !pointToAddress || !selectedPersonaName || pointToAddress === 'N/A') { console.error("Dados em falta para sugestão de diretriz. Ponto:", pointToAddress); showError(draftErrorEl, "Erro interno: Dados insuficientes para sugestão."); return; }
+                if (!selectedPersonaName) { showError(draftErrorEl, "Por favor, selecione um protocolo de persona."); personaSelect.focus(); return; }
+                if (spinner) showSpinner(spinner); button.disabled = true; hideError(draftErrorEl);
+                try {
+                    const response = await fetch('/suggest_guidance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ original_email: originalEmail, point_to_address: pointToAddress, persona_name: selectedPersonaName, direction: selectedDirection }) });
+                    const data = await response.json();
+                    if (!response.ok || data.error) { throw new Error(data.error || `Erro HTTP ${response.status}: ${response.statusText}`); }
+                    targetTextarea.value = data.suggestion || ''; targetTextarea.dispatchEvent(new Event('input', { bubbles: true })); targetTextarea.classList.remove('is-invalid');
+                } catch (error) { console.error("Erro ao obter sugestão de diretriz:", error); showError(draftErrorEl, `Erro na sugestão: ${error.message}`); }
+                finally { if (spinner) hideSpinner(spinner); button.disabled = false; }
+            }
+        });
+
+        // 5. Mostrar/Esconder Botões de Refinamento 
+        function handleTextSelection() { 
+            setTimeout(() => { 
+                const hasSelection = draftSection.style.display === 'block' && generatedDraftEl.selectionStart !== generatedDraftEl.selectionEnd;
+                refinementControlsEl.style.display = hasSelection ? 'flex' : 'none';
+                // Se houver seleção, o botão de feedback deve ser para o trecho.
+                // Se não houver seleção, o botão de feedback é para o rascunho completo.
+                // Esta lógica pode ser expandida se quiser um botão de feedback específico para trechos.
+                // Por agora, o botão 'feedbackBtn' principal refere-se sempre ao rascunho completo.
+            }, 0); 
+        }
+        generatedDraftEl.addEventListener('select', handleTextSelection);
+        generatedDraftEl.addEventListener('mouseup', handleTextSelection);
+        generatedDraftEl.addEventListener('keyup', handleTextSelection);
+        document.addEventListener('click', (event) => { 
+            if (!generatedDraftEl.contains(event.target) && !refinementControlsEl.contains(event.target)) { 
+                refinementControlsEl.style.display = 'none'; 
+            } 
+        });
+
+        // 6. Event Listener (Delegado): Botões de Refinamento
+        refinementControlsEl.addEventListener('click', async (event) => {
+            const button = event.target.closest('.refine-btn');
+            if (button && !isRefining) {
+                const action = button.dataset.action; const spinner = button.querySelector('.loading-spinner');
+                const selectedText = generatedDraftEl.value.substring(generatedDraftEl.selectionStart, generatedDraftEl.selectionEnd); 
+                const fullContext = generatedDraftEl.value; 
+                const selectedPersonaName = personaSelect.value; 
+                const start = generatedDraftEl.selectionStart; 
+                const end = generatedDraftEl.selectionEnd;
+                if (!selectedText) { refinementControlsEl.style.display = 'none'; return; }
+                if (!selectedPersonaName) { showError(draftErrorEl, "Selecione um protocolo de persona para otimização."); personaSelect.focus(); return; }
+                isRefining = true; if(spinner) showSpinner(spinner); 
+                refinementControlsEl.querySelectorAll('.refine-btn').forEach(btn => btn.disabled = true); 
+                hideError(draftErrorEl);
+                try {
+                    const response = await fetch('/refine_text', { 
+                        method: 'POST', 
+                        headers: { 'Content-Type': 'application/json' }, 
+                        body: JSON.stringify({ selected_text: selectedText, full_context: fullContext, action: action, persona_name: selectedPersonaName }) 
+                    });
+                    const data = await response.json();
+                    if (!response.ok || data.error) { throw new Error(data.error || `Erro HTTP ${response.status}: ${response.statusText}`); }
+                    const before = fullContext.substring(0, start); 
+                    const after = fullContext.substring(end); 
+                    const refinedText = data.refined_text || "";
+                    generatedDraftEl.value = before + refinedText + after;
+                    lastGeneratedDraftForFeedback = generatedDraftEl.value; // Atualiza o rascunho para feedback
+                    generatedDraftEl.focus(); 
+                    const newCursorPos = start + refinedText.length; 
+                    generatedDraftEl.setSelectionRange(newCursorPos, newCursorPos);
+                } catch (error) { 
+                    console.error(`Erro ao otimizar texto (Ação: ${action}):`, error); 
+                    showError(draftErrorEl, `Erro na otimização (${action}): ${error.message}`); 
+                }
+                finally { 
+                    if(spinner) hideSpinner(spinner); 
+                    refinementControlsEl.querySelectorAll('.refine-btn').forEach(btn => btn.disabled = false); 
+                    isRefining = false; 
+                    refinementControlsEl.style.display = 'none'; // Esconde após a ação
+                }
+            }
+        });
+
+        // --- Lógica para o Feedback ---
+        function populateFeedbackTypes() {
+            const feedbackTypes = [
+                { value: "", text: "Selecione o tipo de feedback..." },
+                { value: "ERRO_FACTUAL", text: "Erro Factual na Resposta" },
+                { value: "TOM_ESTILO_INADEQUADO", text: "Tom/Estilo Inadequado para o Contexto" },
+                { value: "INFORMACAO_IMPORTANTE_OMITIDA", text: "Informação Importante Foi Omitida" },
+                { value: "INFORMACAO_EXCESSIVA_IRRELEVANTE", text: "Informação Excessiva ou Irrelevante" },
+                { value: "MA_INTERPRETACAO_PEDIDO_ORIGINAL", text: "Má Interpretação do Pedido do Remetente" },
+                { value: "PREFERENCIA_FORMATO_RESPOSTA", text: "Preferência de Formato da Resposta" },
+                { value: "FALHA_NA_APLICACAO_DIRETRIZ", text: "Não Seguiu Bem Minhas Diretrizes" },
+                { value: "COMPORTAMENTO_IA_INESPERADO", text: "Comportamento da IA Inesperado/Não Ideal" },
+                { value: "SUGESTAO_MELHORIA_PROCESSO_IA", text: "Sugestão para Melhorar Processo Geral da IA" },
+                { value: "OUTRO", text: "Outro (detalhar na explicação)" }
+            ];
+            if (feedbackTypeSelectEl) {
+                feedbackTypeSelectEl.innerHTML = ''; 
+                feedbackTypes.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type.value;
+                    option.textContent = type.text;
+                    feedbackTypeSelectEl.appendChild(option);
+                });
+            }
+        }
+
+        if (feedbackBtn) {
+            feedbackBtn.addEventListener('click', () => {
+                if (!lastGeneratedDraftForFeedback.trim()) {
+                    showError(draftErrorEl, "Não há rascunho gerado para fornecer feedback.");
+                    return;
+                }
+                hideError(feedbackErrorModalEl); 
+                if(feedbackSuccessMessageEl) feedbackSuccessMessageEl.style.display = 'none';
+
+                feedbackOriginalResponseEl.value = lastGeneratedDraftForFeedback; 
+                feedbackUserCorrectionEl.value = '';
+                feedbackTypeSelectEl.value = '';
+                feedbackUserExplanationEl.value = '';
+                
+                if (feedbackModalInstance) {
+                    feedbackModalInstance.show();
+                }
+            });
+        }
+
+        if (submitFeedbackBtn) {
+            submitFeedbackBtn.addEventListener('click', async () => {
+                const selectedPersona = personaSelect.value;
+                const userCorrection = feedbackUserCorrectionEl.value.trim();
+                const feedbackCategory = feedbackTypeSelectEl.value;
+
+                if (!selectedPersona) {
+                    showError(feedbackErrorModalEl, "Nenhuma persona selecionada. Não é possível submeter feedback.");
+                    return;
+                }
+                if (!userCorrection) {
+                    showError(feedbackErrorModalEl, "Por favor, forneça a sua versão correta ou o que esperava.");
+                    feedbackUserCorrectionEl.focus();
+                    return;
+                }
+                if (!feedbackCategory) {
+                    showError(feedbackErrorModalEl, "Por favor, selecione um tipo de feedback.");
+                    feedbackTypeSelectEl.focus();
+                    return;
+                }
+                hideError(feedbackErrorModalEl);
+                showSpinner(feedbackSubmitSpinner);
+                submitFeedbackBtn.disabled = true;
+
+                const payload = {
+                    persona_name: selectedPersona,
+                    ai_original_response: feedbackOriginalResponseEl.value, 
+                    user_corrected_output: userCorrection,
+                    feedback_category: feedbackCategory,
+                    user_explanation: feedbackUserExplanationEl.value.trim(),
+                    interaction_context: currentDraftContext 
+                };
+                
+                try {
+                    const response = await fetch('/submit_feedback', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await response.json();
+
+                    if (!response.ok || data.error) {
+                        throw new Error(data.error || `Erro HTTP ${response.status}`);
+                    }
+                    
+                    if(feedbackModalInstance) feedbackModalInstance.hide();
+                    showSuccessMessage(feedbackSuccessMessageEl, "Feedback submetido com sucesso! A IA agradece a sua ajuda para aprender.");
+
+                } catch (error) {
+                    console.error("Erro ao submeter feedback:", error);
+                    showError(feedbackErrorModalEl, `Erro ao submeter feedback: ${error.message}`);
+                } finally {
+                    hideSpinner(feedbackSubmitSpinner);
+                    submitFeedbackBtn.disabled = false;
+                }
+            });
+        }
     </script>
-    </body>
+</body>
 </html>
-
-

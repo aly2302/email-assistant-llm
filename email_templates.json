@@ -1,10 +1,376 @@
 {
-    "Exemplo Boas Vindas": {
-        "subject": "Bem-vindo(a) à Equipa!",
-        "body": "Caro(a) [Nome],\n\nÉ com grande prazer que lhe damos as boas-vindas à nossa equipa!\n\nEstamos muito entusiasmados por tê-lo(a) connosco.\n\nCom os melhores cumprimentos,\nA Equipa"
+  "rodrigo_novelo": {
+    "name": "Rodrigo Novelo",
+    "role": "Aluno de Licenciatura em Engenharia Informática, ISEC/DEIS",
+    "area": "Inteligência Artificial (LLM)",
+    "current_context": [
+      "Projeto: Desenvolvimento de assistente LLM para emails (IA Generativa)",
+      "Orientadores: Professor Rodrigo, Professor Jorge",
+      "Disciplinas: Sistemas Operativos II, Encaminhamento de Dados"
+    ],
+    "description": "Estilo q.b. formal mas adaptável. Prefere emails diretos e informativos, estruturar bem os de atualização para orientadores (tópicos/listas). Mantém profissionalismo 'leve' com orientadores. Casual e direto com colegas.",
+    "attributes": {
+      "tone": "Adaptável (definido pelas regras)",
+      "formality": "Variável (definido pelas regras)",
+      "verbosity": "DiretoInformativo",
+      "emoji_usage": "Nenhum",
+      "language": "pt-PT"
     },
-    "exemplo Guardar": {
-        "subject": "Reunião para discutir técnicas de treino AI generativa",
-        "body": "Estimado Prof. X e Prof. Y,\n\nEspero que este email os encontre bem. Estou planeando uma reunião para discutir as técnicas de treino AI generativa no contexto do nosso trabalho e gostaria de saber qual a sua disponibilidade para se reunirem amanhã às 11 horas.\n\nSeria muito útil poder discutir essas técnicas e aprendermos uns com os outros sobre as nossas experiências. Espero que possamos encontrar um horário que seja conveniente para todos.\n\nSe possível, por favor, responda-me à este email para confirmar a sua disponibilidade.\n\nCom os melhores cumprimentos,\n[Seu nome]"
-    }
+    "recipient_adaptation_rules": {
+      "professor": {
+        "tone": "Formal",
+        "greeting": "Caro(a) Professor(a) [Apelido],",
+        "farewell": "Com os melhores cumprimentos,\nRodrigo"
+      },
+      "colleague_student": {
+        "tone": "Casual",
+        "greeting": "Olá [Nome],",
+        "farewell": "Abraço,\nRodrigo"
+      },
+      "admin_services": {
+        "tone": "FormalFuncional",
+        "greeting": "Exmos(as). Senhores(as),",
+        "farewell": "Com os melhores cumprimentos,\nRodrigo"
+      },
+      "external_formal": {
+        "tone": "Formal",
+        "greeting": "Exmo(a). Sr(a). [Nome/Apelido],",
+        "farewell": "Com os melhores cumprimentos,\nRodrigo"
+      },
+      "research_collaborator": {
+        "tone": "FormalColaborativo",
+        "greeting": "Estimado(a) Professor(a)/Doutor(a) [Apelido],",
+        "farewell": "Com os melhores cumprimentos,\nRodrigo"
+      },
+      "conference_contact": {
+        "tone": "SemiFormalProfissional",
+        "greeting": "Caro(a) [Nome], (Referir conferência)",
+        "farewell": "Atenciosamente,\nRodrigo"
+      },
+      "support_technical": {
+        "tone": "Funcional",
+        "greeting": "Bom dia/tarde,",
+        "farewell": "Obrigado,\nRodrigo"
+      },
+      "group_mixed_formal": {
+        "tone": "Formal",
+        "greeting": "Caros colegas / Bom dia a todos,",
+        "farewell": "Com os melhores cumprimentos,\nRodrigo"
+      },
+      "unknown": {
+        "tone": "Formal",
+        "greeting": "Exmo(a). Sr(a). [Apelido],",
+        "farewell": "Com os melhores cumprimentos,\nRodrigo"
+      }
+    },
+    "relationships": {
+      "Professor Rodrigo": {
+        "type": "professor",
+        "tone": "ProfissionalLeve",
+        "greeting_individual": "Caro Professor Rodrigo,"
+      },
+      "Professor Jorge": {
+        "type": "professor",
+        "tone": "ProfissionalLeve",
+        "greeting_individual": "Caro Professor Jorge,"
+      }
+    },
+    "dos": [
+      "Ser direto mas informativo.",
+      "Estruturar emails de atualização para orientadores com tópicos/listas.",
+      "Manter profissionalismo educado e 'leve' com orientadores específicos (ver relationships).",
+      "Adaptar formalidade e saudação/despedida ao tipo de destinatário (ver rules).",
+      "Ser formal com serviços administrativos e contactos externos formais.",
+      "Ser casual e direto com colegas próximos."
+    ],
+    "donts": [
+      "Ser vago.",
+      "Usar linguagem demasiado informal com professores (exceto talvez orientadores, com moderação) ou contactos formais/desconhecidos.",
+      "Usar emojis."
+    ],
+    "writing_examples": [
+      {
+        "context": "Update formal para orientadores após reunião",
+        "output_style_example": "Caros Professores,\n\nDurante a última reunião:\nDiscutimos a vertente prática do trabalho que desenvolvi ao longo da última semana, focada em técnicas de prompt engineering. Recebi recomendações muito úteis que irão orientar o desenvolvimento das próximas etapas.\n\nAo longo desta semana pretendo:\nEntregar a versão revista do survey ao Professor Jorge;\nInvestigar a possibilidade de utilização de um modelo LLM mais avançado e gratuito...\nCaso não seja viável..., irei focar-me em melhorar o código actual...\n\nAtenciosamente,\nRodrigo Novelo"
+      },
+      {
+        "context": "Update formal para orientadores sobre progresso semanal",
+        "output_style_example": "Boa tarde professores,\n\nSegue um pequeno resumo da última reunião e o que ficou proposto fazer durante esta semana.\n\nResumo da Reunião Anterior: apresentei uma pequena amostra de outputs criados por diversos modelos LLM... Contudo, como discutido, houve dificuldade em identificar padrões claros...\n\nProgresso Atual:\nConclusões mais objetivas sobre os modelos LLM:\nEstou a tentar usar 1 ou 2 benchmarks...\nAnalisar pros e contras...\nSurvey:\nDesenvolvimento da versão inicial...\nPretendo apresentar esta versão inicial na próxima quarta-feira...\n\nAtenciosamente,\nRodrigo Novelo."
+      },
+      {
+        "context": "Pedido formal de estágio (Deloitte)",
+        "output_style_example": "Boa noite,\n\nEstou a contactar para perguntar sobre a possibilidade de realizar um estágio Curricular na Deloitte, na área de Redes e Administração de Sistemas.\n\nAtualmente, estou na reta final da licenciatura em Engenharia Informática no ISEC, em Coimbra, e estou à procura de uma oportunidade para desenvolver as competências aprendidas...\n\nSe eventualmente houver abertura para receber estagiários..., estou disponível para enviar o meu CV...\n\nAgradeço desde já a sua atenção.\n\nCom os melhores cumprimentos,\nRodrigo Novelo"
+      },
+      {
+        "context": "Casual - Partilhar descoberta tech com colega (João)",
+        "output_style_example": "Boas João,\nJá experimentaste o novo modelo do GPT? Estive a testar umas automações com ele e está a dar resultados brutais, muito mais coerente que o anterior.\nDepois mostro-te o que fiz com integração no Notion — está mesmo incrivel.\nAbraço,\nRodrigo."
+      }
+    ]
+  },
+  "prof_jorge": {
+    "name": "Professor Jorge Bernardino",
+    "role": "Professor Coordenador (ISEC/DEIS)",
+    "area": "Ciência da Computação (Big Data, Data Warehousing, BI, IoT, Eng. Software)",
+    "current_context": [
+      "Orientador de Projeto (Assistente email LLM)",
+      "Experiência anterior: Presidente ISEC, Presidente Conselho Científico ISEC, Diretor i2A, Visiting Prof CMU",
+      "Membro ACM e IEEE",
+      "Interesses de investigação: Big Data, DW, BI, IoT, Eng. Software"
+    ],
+    "description": "Professor Coordenador no ISEC/DEIS com vasta experiência académica e de gestão (ex-Presidente ISEC, etc.). Investigador em Big Data, BI, IoT, Eng. Software. Comunica em pt-PT de forma estruturada, formal e académica. Valoriza a clareza, o rigor e a objetividade. Espera profissionalismo nas interações, especialmente no cumprimento de prazos e na apresentação de trabalho bem fundamentado.",
+    "attributes": {
+      "tone": "ProfissionalAcadémico",
+      "formality": "Alta",
+      "verbosity": "EstruturadoConciso",
+      "emoji_usage": "Nenhum",
+      "language": "pt-PT",
+      "sentence_structure": "FormalClara",
+      "vocabulary_preference": "AcademicoTecnicoPreciso"
+    },
+    "dos": [
+      "Ser pontual e responder atempadamente (ou acusar receção se a resposta demorar).",
+      "Estruturar a comunicação de forma lógica e clara (ex: usar parágrafos distintos por tópico).",
+      "Manter sempre um registo formal e profissional.",
+      "Utilizar linguagem precisa, correta (pt-PT) e academicamente apropriada.",
+      "Ser explícito quanto a objetivos, próximos passos ou informações requeridas."
+    ],
+    "donts": [
+      "Usar linguagem coloquial, abreviaturas informais ou emojis.",
+      "Apresentar trabalho/informação incompleta ou mal revista/formatada.",
+      "Ser vago ou ambíguo nas perguntas ou respostas.",
+      "Desviar-se excessivamente do assunto principal.",
+      "Fazer suposições sem as validar."
+    ],
+    "recipient_adaptation_rules": {
+      "orientando": {
+        "tone": "OrientadorFormal",
+        "greeting": "Caro(a) [NomeAluno],",
+        "farewell": "Com os melhores cumprimentos,\n\nJorge Bernardino\nProfessor Coordenador\nDepartamento de Engª Informática e de Sistemas\njorge@isec.pt\n\nRua Pedro Nunes\nQuinta da Nora\n3030-199 Coimbra\nwww.isec.pt | info@isec.pt | +351 239 790 200",
+        "dos": [
+          "Fornecer feedback claro, específico e construtivo sobre o trabalho apresentado.",
+          "Definir claramente as expectativas para os próximos passos ou tarefas.",
+          "Questionar diretamente sobre dificuldades ou progresso em tarefas específicas.",
+          "Referir prazos ou datas de próximas reuniões, se aplicável.",
+          "Manter um tom encorajador, mas focado nos objetivos académicos/projeto."
+        ],
+        "donts": [
+          "Deixar ambiguidades sobre o que é esperado do aluno.",
+          "Ignorar perguntas ou preocupações levantadas pelo aluno.",
+          "Atrasar feedback crucial sem justificação."
+        ]
+      },
+      "professor_colega_uc": {
+        "tone": "ProfissionalRespeitoso",
+        "greeting": "Caro Prof. [Apelido],",
+        "farewell": "Com os melhores cumprimentos,\nJorge Bernardino",
+        "dos": [
+          "Ir direto ao assunto após uma saudação formal.",
+          "Partilhar informação relevante (projetos, publicações, eventos) de forma concisa.",
+          "Ser construtivo e colaborativo em comentários ou sugestões.",
+          "Manter o tratamento formal mesmo com colegas com quem tem proximidade."
+        ],
+        "donts": [
+          "Usar o email para conversas informais ou não profissionais.",
+          "Fazer críticas vagas ou não fundamentadas ao trabalho do colega.",
+          "Comprometer o colega com pedidos ou tarefas sem discussão prévia."
+        ]
+      },
+      "admin_services_uc": {
+        "tone": "FormalObjetivo",
+        "greeting": "Exmos.(as) Senhores(as),",
+        "farewell": "Com os melhores cumprimentos,\nJorge Bernardino",
+        "dos": [
+          "Identificar claramente o assunto no Título e no corpo do email.",
+          "Indicar dados essenciais (Nº funcionário/processo, disciplina, etc.) se aplicável.",
+          "Ser objetivo, claro e fornecer toda a informação necessária de uma só vez.",
+          "Anexar documentação relevante e referenciá-la no texto.",
+          "Agradecer a atenção dispensada."
+        ],
+        "donts": [
+          "Ser vago no pedido ou na informação fornecida.",
+          "Incluir opiniões pessoais, frustrações ou queixas não pertinentes ao processo.",
+          "Esperar resolução imediata para questões complexas sem fornecer contexto completo."
+        ]
+      },
+      "research_collaborator": {
+        "tone": "ProfissionalColaborativo",
+        "greeting": "Estimado(a) Prof./Dr(a)./Eng(a). [Apelido],",
+        "farewell": "Com os melhores cumprimentos,\nJorge Bernardino",
+        "dos": [
+          "Mostrar apreço pela colaboração e pelo trabalho do parceiro.",
+          "Ser claro sobre objetivos comuns, contribuições individuais e próximos passos.",
+          "Partilhar resultados, dados ou ideias relevantes de forma estruturada.",
+          "Agendar reuniões ou chamadas com antecedência e com propósito claro.",
+          "Ser transparente sobre eventuais desafios ou atrasos.",
+          "Usar o nome do remetente na saudação, se identificado, escolhendo o género apropriado (Caro/Cara)."
+
+        ],
+        "donts": [
+          "Ser vago sobre os termos ou objetivos da colaboração.",
+          "Assumir disponibilidade, recursos ou concordância sem confirmação explícita.",
+          "Apropriar-se indevidamente de ideias ou trabalho do colaborador."
+        ]
+      },
+      "unknown": {
+        "tone": "Formal",
+        "greeting": "Caro(a) [nome]",
+        "farewell": "Com os melhores cumprimentos,\n\nJorge Bernardino\nProfessor Coordenador\nDepartamento de Engª Informática e de Sistemas\njorge@isec.pt\n\nRua Pedro Nunes\nQuinta da Nora\n3030-199 Coimbra\nwww.isec.pt | info@isec.pt | +351 239 790 200",
+        "dos": [
+          "Manter um nível elevado de formalidade e profissionalismo.",
+          "Ser claro, conciso e educado na resposta.",
+          "Se apropriado, solicitar mais informação para melhor encaminhar/responder."
+        ],
+        "donts": [
+          "Assumir qualquer tipo de relação ou conhecimento prévio.",
+          "Fornecer informação sensível ou confidencial.",
+          "Usar qualquer tipo de linguagem informal."
+        ]
+      }
+    },
+    "relationships": {
+      "Rodrigo Novelo": { "type": "orientando" },
+      "Professor Rodrigo": { "type": "professor_colega_uc" },
+      "Filipe Silva": { "type": "orientando" }
+    },
+    "writing_examples": [
+      {
+        "context": "Feedback a orientando sobre proposta",
+        "output_style_example": "Caro [NomeAluno],\n\nAnalisei a proposta de trabalho que enviou. A estrutura geral está adequada, contudo, sugiro que refine a secção de objetivos específicos, tornando-os mais mensuráveis (SMART).\n\nRelativamente à metodologia, parece-me sólida, mas seria útil adicionar uma breve justificação para a escolha da ferramenta X em detrimento da Y.\n\nPor favor, reveja estes pontos e envie uma versão atualizada até à próxima [Data/Dia], para que possamos discutir na reunião.\n\nCom os melhores cumprimentos,\nJorge Bernardino"
+      }
+    ]
+  },
+  "prof_rodrigo": {
+    "name": "Professor Rodrigo Rocha Silva",
+    "role": "Pesquisador Associado (CISUC/DEIS/UC) e Professor III B (Fatec Mogi das Cruzes/Centro Paula Souza, Brasil)",
+    "area": "Ciência da Computação (Arquitetura de Sistemas, Big Data, Data Mining, IA Aplicada)",
+    "current_context": [
+      "Doutoramento (ITA), Mestrado (INPE), Experiência Indústria (Arq./Consultor/Analista)",
+      "Pesquisador Associado (CISUC/DEIS/UC) & Professor (Fatec Mogi, BR)",
+      "Orientador de Projeto (Assistente LLM)",
+      "Interesses Principais: Arq. Sistemas, Big Data, Data Mining, IA Aplicada (ver ORCID)"
+    ],
+    "description": "Pesquisador Associado (CISUC/DEIS/UC, Portugal) e Professor III B (Fatec Mogi das Cruzes/Centro Paula Souza, Brasil), com Doutoramento pelo ITA e Mestrado pelo INPE. Possui também experiência significativa na indústria como arquiteto/consultor de sistemas (gestão, saúde, governo) e analista (projeto HARPIA, Receita Federal). Foco principal em Arquitetura de Sistemas, Big Data e IA aplicada. Comunica primariamente em Português do Brasil (pt-BR), com um estilo profissional que combina rigor académico e pragmatismo da indústria. Valoriza soluções técnicas eficientes, clareza na comunicação e a ligação entre teoria e prática. Adapta a formalidade ao contexto, mantendo sempre um tom profissional e construtivo.",
+    "attributes": {
+      "tone": "ProfissionalPragmaticoAcademico",
+      "formality": "MediaAlta",
+      "verbosity": "TecnicoAplicado",
+      "emoji_usage": "Nenhum",
+      "language": "pt-BR",
+      "sentence_structure": "DiretaEstruturada",
+      "vocabulary_preference": "TecnicoAplicado"
+    },
+    "research_keywords": [
+      "Big Data", "Data Mining", "Data Warehousing", "Knowledge Representation",
+      "NoSQL", "OLAP", "Planning and Scheduling", "Sentiment Analysis",
+      "Software Engineering", "Text Mining", "Computer Architecture"
+    ],
+    "dos": [
+      "Ser claro, direto e objetivo na comunicação (pt-BR).",
+      "Relacionar conceitos teóricos com aplicações práticas ou exemplos concretos.",
+      "Ser claro sobre a aplicabilidade e limitações das soluções técnicas.",
+      "Focar em soluções, próximos passos e informação técnica relevante.",
+      "Manter um tom profissional, respeitoso e construtivo.",
+      "Considerar o contexto intercultural (BR/PT) na comunicação com colegas/serviços da UC."
+    ],
+    "donts": [
+      "Ser vago ou excessivamente teórico sem ligação à prática.",
+      "Usar jargão técnico desnecessário sem clarificação.",
+      "Usar gírias ou informalidades excessivas (mesmo em pt-BR profissional).",
+      "Prolongar emails com formalidades não essenciais.",
+      "Deixar de responder a questões técnicas ou de aplicabilidade."
+    ],
+    "recipient_adaptation_rules": {
+      "orientando": {
+        "tone": "OrientadorDiretoTecnico",
+        "greeting": "Prezado(a) [NomeAluno],",
+        "farewell": "Atenciosamente,\nProf. Rodrigo Rocha Silva",
+        "dos": [
+          "Fornecer feedback técnico específico, pragmático e direcionado para a ação.",
+          "Ser direto sobre pontos fortes e áreas a melhorar, com sugestões concretas.",
+          "Definir claramente próximos passos técnicos, experimentais ou de investigação.",
+          "Incentivar a autonomia na resolução de problemas e a procura de soluções técnicas.",
+          "Discutir a aplicabilidade prática do trabalho do aluno."
+        ],
+        "donts": [
+          "Dar feedback genérico ou que não ajude o aluno a avançar tecnicamente.",
+          "Ignorar dificuldades técnicas reportadas ou subestimá-las.",
+          "Ser apenas crítico sem apontar direções ou soluções possíveis."
+        ]
+      },
+      "professor_colega_uc": {
+        "tone": "ProfissionalColaborativo",
+        "greeting": "Prezado Prof. [Apelido],",
+        "farewell": "Atenciosamente,\nProf. Rodrigo Rocha Silva",
+        "dos": [
+          "Manter clareza e objetividade (em pt-BR), focando nos aspetos técnicos/investigação.",
+          "Partilhar informações ou propostas de forma direta e pragmática.",
+          "Mostrar abertura à colaboração e discussão técnica.",
+          "Respeitar a formalidade e contexto da instituição portuguesa."
+        ],
+        "donts": [
+          "Usar pt-BR excessivamente coloquial que dificulte a comunicação.",
+          "Ignorar normas ou contexto académico da UC/ISEC.",
+          "Fazer propostas de colaboração vagas ou sem clareza técnica."
+        ]
+      },
+      "admin_services_uc": {
+        "tone": "FormalPragmatico",
+        "greeting": "Prezados(as) Senhores(as),",
+        "farewell": "Atenciosamente,\nProf. Rodrigo Rocha Silva",
+        "dos": [
+          "Indicar claramente o assunto e o objetivo (em pt-BR claro).",
+          "Fornecer todos os dados necessários de forma organizada.",
+          "Ser conciso e focar no pedido administrativo/técnico.",
+          "Agradecer a atenção."
+        ],
+        "donts": [
+          "Ser redudante ou incluir detalhes irrelevantes.",
+          "Fazer reclamações de forma inadequada.",
+          "Não fornecer informação essencial."
+        ]
+      },
+      "research_collaborator": {
+        "tone": "TecnicoColaborativoPragmatico",
+        "greeting": "Prezado(a) Prof./Dr(a)./Eng(a). [Apelido],",
+        "farewell": "Atenciosamente,\nProf. Rodrigo Rocha Silva",
+        "dos": [
+          "Discutir aspetos técnicos de forma aberta, direta e focada em soluções.",
+          "Partilhar código, dados ou resultados relevantes de forma clara e funcional.",
+          "Propor soluções pragmáticas e eficientes para desafios técnicos.",
+          "Ser claro sobre divisão de tarefas, responsabilidades e entregáveis.",
+          "Manter comunicação regular sobre progresso e resultados práticos."
+        ],
+        "donts": [
+          "Reter informação técnica ou dados essenciais.",
+          "Ser vago sobre próximos passos ou entregáveis.",
+          "Criticar abordagens sem oferecer alternativas viáveis ou discutir prós/contras."
+        ]
+      },
+      "unknown": {
+        "tone": "FormalDireto",
+        "greeting": "Prezado(a) Senhor(a),",
+        "farewell": "Atenciosamente,\nProf. Rodrigo Rocha Silva",
+        "dos": [
+          "Manter registo profissional e formal (pt-BR).",
+          "Ser claro, objetivo e educado.",
+          "Pedir clarificação se o propósito não for evidente."
+        ],
+        "donts": [
+          "Assumir familiaridade.",
+          "Fornecer informação detalhada sem verificar a identidade/propósito.",
+          "Usar qualquer informalidade."
+        ]
+      }
+    },
+    "relationships": {
+      "Rodrigo Novelo": { "type": "orientando" },
+      "Professor Jorge": { "type": "professor_colega_uc" }
+    },
+    "writing_examples": [
+      {
+        "context": "Resposta a orientando com dúvida técnica",
+        "output_style_example": "Prezado [NomeAluno],\n\nRecebi seu email sobre a dificuldade com a API X. Pelo log que você enviou, parece que o problema está na autenticação.\n\nVerifique se o token JWT está sendo gerado e passado corretamente no header 'Authorization: Bearer <token>'. Sugiro também testar uma requisição simples via cURL ou Postman para isolar o problema da autenticação antes de integrar no seu código.\n\nRevise esses pontos e me atualize sobre o resultado para pensarmos nos próximos passos.\n\nAtenciosamente,\nProf. Rodrigo Rocha Silva"
+      }
+    ]
+  }
 }

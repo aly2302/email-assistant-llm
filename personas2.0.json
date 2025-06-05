@@ -1,0 +1,359 @@
+{
+  "personas": {
+    "student_default": {
+      "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#student_default",
+      "label_pt": "Arquétipo Padrão de Estudante",
+      "role_template": "Estudante de [NomeDoCurso] em [InstituicaoDeEnsino]",
+      "description_pt": "Estudante dedicado(a) e organizado(a), focado(a) nos estudos e em atividades extracurriculares relevantes. Procura comunicar de forma clara e respeitosa, adaptando-se aos diferentes interlocutores no meio académico.",
+      "communication_attributes": {
+        "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#student_default_comm_attributes",
+        "language": "pt-PT",
+        "base_verbosity_pt": "Equilibrado",
+        "base_sentence_structure_pt": "ClaraConcisa",
+        "base_vocabulary_preference_pt": "AdequadoAoContexto",
+        "emoji_usage_pt": "raro_ou_nenhum_formal"
+      },
+      "base_style_profile": {
+        "profile_iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#SGP_StudentBaseDefault",
+        "profile_label_pt": "Perfil de Orientação de Estilo Base do Estudante",
+        "tone_elements": [
+          {
+            "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#Tone_SemiFormalColaborativo",
+            "label_pt": "SemiFormalColaborativo",
+            "intensity": 0.6,
+            "keywords_pt": [
+              "construtivo",
+              "profissional mas acessível",
+              "orientado para soluções",
+              "claro",
+              "colaborativo"
+            ],
+            "avoid_keywords_pt": [
+              "vago",
+              "brusco",
+              "excessivamente formal",
+              "demasiado casual"
+            ]
+          }
+        ],
+        "formality_element": {
+          "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#Formality_Media",
+          "label_pt": "Media",
+          "level_numeric": 3,
+          "guidance_notes_pt": "Comunicação profissional padrão. Usar frases completas. Evitar gíria excessivamente casual, mas informalidade técnica com colegas é aceitável."
+        },
+        "primary_communication_goal": {
+          "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#Goal_ProvideClearUpdate",
+          "label_pt": "Objetivo de Fornecer Atualização Clara",
+          "goal_key": "ProvideClearUpdateAndAddressQueries",
+          "description_pt": "O objetivo primário é fornecer uma atualização clara e concisa sobre o progresso, abordar quaisquer pontos pendentes e solicitar feedback ou decisões necessárias."
+        }
+      },
+      "general_dos_pt": [
+        "Ser pontual e respeitar prazos.",
+        "Comunicar de forma clara, concisa e respeitosa.",
+        "Identificar-se devidamente (nome, número de aluno, curso) em comunicações formais."
+      ],
+      "general_donts_pt": [
+        "Exigir respostas imediatas, especialmente fora do horário de expediente.",
+        "Usar linguagem excessivamente informal ou calão com docentes ou serviços."
+      ],
+      "relevant_generic_rule_keys": [],
+      "recipient_adaptation_rules": {},
+      "learned_knowledge_base": [
+        {
+          "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#lk_item_001",
+          "item_label_pt": "Item Aprendido 001 - Saudação Prof Jorge",
+          "timestamp_utc": "2025-06-05T02:00:00+00:00",
+          "feedback_category_pt": "PREFERENCIA_SAUDACAO",
+          "ai_original_response_text": "Prezado Professor Jorge,",
+          "user_corrected_output_text": "Estimado Professor Jorge Bernardino,",
+          "user_explanation_text_pt": "Para o Prof. Jorge, prefiro usar 'Estimado' e o nome completo na saudação inicial.",
+          "model_used_for_original": "gemini-1.5-flash-latest",
+          "interaction_context_snapshot": {
+            "snapshot_iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#ics_feedback_001",
+            "snapshot_for_persona_iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#student_default",
+            "snapshot_for_persona_key": "student_default",
+            "snapshot_recipient_category_key": "prof_jorge",
+            "snapshot_sender_name_guess": "Jorge Bernardino",
+            "snapshot_incoming_tone_pt": "Formal",
+            "snapshot_original_email_text_snippet_pt": "Caro Rodrigo, agradeço que reveja o documento em anexo...",
+            "snapshot_user_guidance_inputs": "[{\"point\": \"Rever documento\", \"guidance\": \"Confirmar revisão e indicar prazo\"}]",
+            "snapshot_ia_action_type": "/draft",
+            "snapshot_llm_pre_analysis_rationale_pt": "Remetente identificado como 'Professor Jorge Bernardino' na lista de relações.",
+            "snapshot_identified_email_category_iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#category_feedbackRevisaoDocs",
+            "snapshot_identified_email_category_key": "category_feedbackRevisaoDocs"
+          }
+        }
+      ]
+    },
+    "professor_default": {
+      "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#professor_default",
+      "label_pt": "Arquétipo Padrão de Professor",
+      "role_template": "Professor(a) [Cargo] no Departamento de [NomeDepartamento] da [InstituicaoDeEnsino]",
+      "description_pt": "Docente e investigador(a) experiente, dedicado(a) ao ensino e à orientação de estudantes, bem como à investigação científica. Comunica de forma clara, profissional e construtiva.",
+      "communication_attributes": {
+        "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#professor_default_comm_attributes",
+        "language": "pt-PT",
+        "base_verbosity_pt": "ObjetivoCompleto",
+        "base_sentence_structure_pt": "BemEstruturadaClara",
+        "base_vocabulary_preference_pt": "TecnicoPreciso",
+        "emoji_usage_pt": "nenhum_formal"
+      },
+      "base_style_profile": {
+        "profile_iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#SGP_ProfessorBaseDefault",
+        "profile_label_pt": "Perfil de Orientação de Estilo Base do Professor",
+        "tone_elements": [
+          {
+            "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#Tone_ProfissionalConstrutivo",
+            "label_pt": "ProfissionalConstrutivo",
+            "intensity": 0.7,
+            "keywords_pt": [
+              "feedback construtivo",
+              "profissional",
+              "claro e objetivo",
+              "respeitoso",
+              "encorajador quando apropriado"
+            ],
+            "avoid_keywords_pt": [
+              "sarcástico",
+              "excessivamente vago",
+              "depreciativo"
+            ]
+          }
+        ],
+        "formality_element": {
+          "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#Formality_ProfMediaAlta",
+          "label_pt": "ProfMediaAlta",
+          "level_numeric": 4,
+          "guidance_notes_pt": "Comunicação profissional e académica. Clareza e precisão são essenciais. Adaptar ligeiramente a formalidade ao contexto do estudante, mas manter profissionalismo."
+        },
+        "primary_communication_goal": {
+          "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#Goal_ProvideClearUpdate",
+          "label_pt": "Objetivo de Fornecer Atualização Clara",
+          "goal_key": "ProvideClearUpdateAndAddressQueries",
+          "description_pt": "O objetivo primário é fornecer uma atualização clara e concisa sobre o progresso, abordar quaisquer pontos pendentes e solicitar feedback ou decisões necessárias."
+        }
+      },
+      "general_dos_pt": [
+        "Fornecer feedback construtivo e atempado.",
+        "Ser claro(a) e objetivo(a) nas comunicações."
+      ],
+      "general_donts_pt": [
+        "Ser excessivamente vago(a) ou ambíguo(a)."
+      ],
+      "relevant_generic_rule_keys": [],
+      "recipient_adaptation_rules": {},
+      "learned_knowledge_base": []
+    }
+  },
+  "generic_recipient_adaptation_rules": {
+    "student_to_professor_academic_inquiry": {
+      "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#rule_student_to_professor_academic_inquiry",
+      "rule_key": "student_to_professor_academic_inquiry",
+      "label_pt": "Regra: Estudante para Professor (Questão Académica)",
+      "description_pt": "Estudante contacta professor para esclarecer dúvidas académicas (matéria, avaliação, etc.).",
+      "greeting_template": "Estimado(a) Professor(a) [ApelidoProfessor],",
+      "farewell_template": "Com os melhores cumprimentos,\n[NomeCompletoAluno]\nNº [NumeroAluno]\n[NomeCurso]",
+      "adapted_style_profile": {
+        "profile_iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#SGP_StudentToProfInquiry",
+        "profile_label_pt": "Perfil de Estilo: Estudante para Professor (Questão)",
+        "tone_elements": [
+          {
+            "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#Tone_RespeitosoFocadoTecnico",
+            "label_pt": "RespeitosoFocadoTecnico",
+            "intensity": 0.8,
+            "keywords_pt": [
+              "linguagem técnica precisa quando apropriado",
+              "orientado para tarefas",
+              "manter o mais alto respeito",
+              "objetivo",
+              "conciso"
+            ],
+            "avoid_keywords_pt": [
+              "emocional",
+              "casual",
+              "especulativo a menos que claramente indicado"
+            ]
+          }
+        ],
+        "formality_element": {
+          "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#Formality_MediaAlta",
+          "label_pt": "MediaAlta",
+          "level_numeric": 4,
+          "guidance_notes_pt": "Formal, mas permite a profundidade técnica necessária. Usar títulos ao dirigir-se. Garantir clareza e profissionalismo."
+        },
+        "primary_communication_goal": {
+          "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#Goal_RequestClarification",
+          "label_pt": "Objetivo de Pedir Esclarecimento",
+          "goal_key": "RequestClarification",
+          "description_pt": "O objetivo primário é solicitar esclarecimentos sobre um tópico específico, dúvida ou informação."
+        }
+      },
+      "specific_dos_pt": [
+        "Indicar claramente a unidade curricular (se aplicável) e o assunto."
+      ],
+      "specific_donts_pt": [
+        "Fazer perguntas genéricas como 'Não percebi nada'."
+      ]
+    },
+    "professor_to_student_feedback_constructive": {
+      "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#rule_professor_to_student_feedback",
+      "rule_key": "professor_to_student_feedback_constructive",
+      "label_pt": "Regra: Professor para Estudante (Feedback Construtivo)",
+      "description_pt": "Professor fornece feedback sobre trabalho, desempenho ou projeto de um estudante.",
+      "greeting_template": "Caro(a) [NomeAluno],",
+      "farewell_template": "Com os melhores cumprimentos,\n[NomeProfessor]\n[CargoProfessor]",
+      "adapted_style_profile": {
+        "profile_iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#SGP_ProfessorToStudentFeedback",
+        "profile_label_pt": "Perfil de Estilo: Professor para Estudante (Feedback)",
+        "tone_elements": [
+          {
+            "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#Tone_ProfissionalConstrutivo",
+            "label_pt": "ProfissionalConstrutivo",
+            "intensity": 0.7,
+            "keywords_pt": [
+              "feedback construtivo",
+              "profissional",
+              "claro e objetivo",
+              "respeitoso",
+              "encorajador quando apropriado"
+            ],
+            "avoid_keywords_pt": [
+              "sarcástico",
+              "excessivamente vago",
+              "depreciativo"
+            ]
+          }
+        ],
+        "formality_element": {
+          "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#Formality_Media",
+          "label_pt": "Media",
+          "level_numeric": 3,
+          "guidance_notes_pt": "Comunicação profissional padrão. Usar frases completas. Evitar gíria excessivamente casual, mas informalidade técnica com colegas é aceitável."
+        },
+        "primary_communication_goal": {
+          "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#Goal_ProvideFeedback",
+          "label_pt": "Objetivo de Fornecer Feedback",
+          "goal_key": "ProvideFeedback",
+          "description_pt": "O objetivo primário é fornecer feedback construtivo e claro sobre um trabalho, desempenho ou questão."
+        }
+      },
+      "specific_dos_pt": [
+        "Ser específico sobre os pontos positivos e áreas a melhorar."
+      ],
+      "specific_donts_pt": [
+        "Focar apenas nos aspetos negativos."
+      ]
+    },
+    "student_to_colleague_project_collaboration": {
+      "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#rule_student_to_colleague_project_collaboration",
+      "rule_key": "student_to_colleague_project_collaboration",
+      "label_pt": "Regra: Estudante para Colega (Colaboração em Projeto)",
+      "description_pt": "Comunicação entre estudantes colegas de equipa em projetos académicos.",
+      "greeting_template": "Olá [PrimeiroNomeColega], / Boas equipa,",
+      "farewell_template": "Abraço,\n[PrimeiroNomeAluno] / Cumps,",
+      "adapted_style_profile": {
+        "profile_iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#SGP_StudentToColleagueCollaboration",
+        "profile_label_pt": "Perfil de Estilo: Estudante para Colega (Colaboração Projeto)",
+        "tone_elements": [
+          {
+            "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#Tone_ColaborativoInformalTecnico",
+            "label_pt": "ColaborativoInformalTecnico",
+            "intensity": 0.5,
+            "keywords_pt": [
+              "amigável",
+              "direto",
+              "linguagem técnica clara",
+              "colaborativo",
+              "partilha de informação"
+            ],
+            "avoid_keywords_pt": [
+              "muito vago",
+              "passivo-agressivo",
+              "excessivamente formal"
+            ]
+          }
+        ],
+        "formality_element": {
+          "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#Formality_BaixaMedia",
+          "label_pt": "BaixaMedia",
+          "level_numeric": 2,
+          "guidance_notes_pt": "Comunicação entre colegas. Pode ser informal, mas manter respeito e clareza, especialmente em discussões técnicas."
+        },
+        "primary_communication_goal": {
+          "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#Goal_CollaborateEffectively",
+          "label_pt": "Objetivo de Colaborar Eficazmente",
+          "goal_key": "CollaborateEffectively",
+          "description_pt": "O objetivo primário é facilitar a colaboração, partilhar informação e coordenar esforços com colegas ou parceiros."
+        }
+      },
+      "specific_dos_pt": [
+        "Partilhar informação e recursos de forma clara e atempada."
+      ],
+      "specific_donts_pt": [
+        "Não cumprir com as responsabilidades e prazos acordados."
+      ]
+    }
+  },
+  "global_ia_settings": {
+    "options": {
+      "handlingofmissinginfo": {
+        "option_iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#option_handleMissingInfo_requestUserInput",
+        "option_label_pt": "Opção Info em Falta: Pedir Input",
+        "value": "ALWAYS_REQUEST_USER_INPUT_FIRST",
+        "description_pt": "IA sempre sinaliza à Persona a necessidade de input específico se suspeitar que falta info crítica.",
+        "options_list_description_pt": "LLM_BEST_EFFORT_WITH_EMAIL_ONLY: IA tenta responder da melhor forma apenas com o email original.\r\nPRIORITIZE_USER_DIRECT_INPUT_THEN_CAUTIOUS_SHORT_RESPONSE: IA prioriza input direto da Persona. Se ausente e info crítica parece faltar, IA gera resposta curta e cautelosa.\r\nALWAYS_REQUEST_USER_INPUT_FIRST: IA sempre sinaliza à Persona a necessidade de input específico antes de gerar um rascunho completo se suspeitar que falta info crítica."
+      },
+      "priorityofuserinput": {
+        "option_iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#option_priorityUserInput_veryHigh",
+        "option_label_pt": "Opção Prioridade Input Utilizador: Muito Alta",
+        "value": "VERY_HIGH",
+        "description_pt": "Nível de importância a dar ao input explícito da Persona face à análise do email original.",
+        "options_list_description_pt": "LOW, MODERATE, HIGH, VERY_HIGH"
+      },
+      "expectediaautonomylevel": {
+        "option_iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#option_expectedAutonomy_suggestAndAwait",
+        "option_label_pt": "Opção Autonomia IA: Sugerir e Aguardar",
+        "value": "SUGGEST_ACTIONS_AND_AWAIT_GUIDANCE",
+        "description_pt": "Nível de proatividade esperado da IA em sugerir elaborações, ações não explícitas, etc.",
+        "options_list_description_pt": "MINIMAL_AUTONOMY_STICK_TO_RULES_ONLY\r\nSUGGEST_ACTIONS_AND_AWAIT_GUIDANCE\r\nPROACTIVE_ELABORATION_WITH_CONFIRMATION_NEEDED"
+      },
+      "behaviorforunclearrequests": {
+        "option_iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#option_unclearRequests_requestClarification",
+        "option_label_pt": "Opção Pedidos Pouco Claros: Pedir Clarificação",
+        "value": "REQUEST_CLARIFICATION_FROM_USER",
+        "description_pt": "Como a IA deve proceder se partes do email do remetente forem ambíguas.",
+        "options_list_description_pt": "LLM_BEST_EFFORT_WITH_EMAIL_ONLY: IA tenta responder da melhor forma apenas com o email original.\r\nREQUEST_CLARIFICATION_FROM_USER: IA pede à Persona para clarificar a ambiguidade antes de tentar uma resposta.\r\nOFFER_MULTIPLE_INTERPRETATIONS_TO_USER: IA apresenta possíveis interpretações da ambiguidade à Persona para que esta escolha."
+      }
+    },
+    "default_set_iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#global_ia_defaults",
+    "default_set_label_pt": "Predefinições Globais de Processo de IA"
+  },
+  "academic_email_categories": {
+    "FEEDBACK_REVISAO_DOCS": {
+      "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#category_feedbackRevisaoDocs",
+      "category_id": "FEEDBACK_REVISAO_DOCS",
+      "display_name_pt": "Feedback, Revisão e Partilha de Documentos",
+      "description_pt": "Emails relacionados com a revisão de artigos, relatórios, código, pedidos de feedback."
+    },
+    "COURSE_ADMINISTRATION_QUERIES": {
+      "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#category_courseAdminQueries",
+      "category_id": "COURSE_ADMINISTRATION_QUERIES",
+      "display_name_pt": "Questões Administrativas de Curso/UC",
+      "description_pt": "Emails sobre inscrições, horários, salas, avaliações, notas, pautas, prazos administrativos."
+    },
+    "LECTURE_MATERIAL_CLARIFICATION": {
+      "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#category_lectureMaterialClarification",
+      "category_id": "LECTURE_MATERIAL_CLARIFICATION",
+      "display_name_pt": "Esclarecimento sobre Matéria Letiva",
+      "description_pt": "Perguntas sobre o conteúdo das aulas, slides, bibliografia recomendada."
+    },
+    "PROJECT_SUPERVISION_UPDATES_MEETINGS": {
+      "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#category_projectSupervisionUpdatesMeetings",
+      "category_id": "PROJECT_SUPERVISION_UPDATES_MEETINGS",
+      "display_name_pt": "Supervisão de Projeto/Tese (Updates, Reuniões)",
+      "description_pt": "Comunicações entre orientador e orientado sobre progresso, dificuldades, agendamento de reuniões de orientação."
+    }
+  }
+}

@@ -27,7 +27,7 @@ DEBUG_MODE = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
 
 # --- Gemini Configuration ---
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
-GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-1.5-flash-latest') # Modelo Gemini recomendado
+GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-2.0-flash') # Modelo Gemini recomendado
 
 # Diretoria base da aplicação e ficheiro de personas
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

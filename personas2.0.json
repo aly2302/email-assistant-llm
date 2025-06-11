@@ -22,17 +22,17 @@
             "label_pt": "SemiFormalColaborativo",
             "intensity": 0.6,
             "keywords_pt": [
-              "construtivo",
+              "claro",
               "profissional mas acessível",
               "orientado para soluções",
-              "claro",
+              "construtivo",
               "colaborativo"
             ],
             "avoid_keywords_pt": [
-              "vago",
-              "brusco",
               "excessivamente formal",
-              "demasiado casual"
+              "vago",
+              "demasiado casual",
+              "brusco"
             ]
           }
         ],
@@ -50,9 +50,9 @@
         }
       },
       "general_dos_pt": [
+        "Identificar-se devidamente (nome, número de aluno, curso) em comunicações formais.",
         "Ser pontual e respeitar prazos.",
-        "Comunicar de forma clara, concisa e respeitosa.",
-        "Identificar-se devidamente (nome, número de aluno, curso) em comunicações formais."
+        "Comunicar de forma clara, concisa e respeitosa."
       ],
       "general_donts_pt": [
         "Exigir respostas imediatas, especialmente fora do horário de expediente.",
@@ -109,16 +109,16 @@
             "label_pt": "ProfissionalConstrutivo",
             "intensity": 0.7,
             "keywords_pt": [
-              "feedback construtivo",
-              "profissional",
-              "claro e objetivo",
+              "encorajador quando apropriado",
               "respeitoso",
-              "encorajador quando apropriado"
+              "claro e objetivo",
+              "feedback construtivo",
+              "profissional"
             ],
             "avoid_keywords_pt": [
               "sarcástico",
-              "excessivamente vago",
-              "depreciativo"
+              "depreciativo",
+              "excessivamente vago"
             ]
           }
         ],
@@ -136,11 +136,74 @@
         }
       },
       "general_dos_pt": [
-        "Fornecer feedback construtivo e atempado.",
-        "Ser claro(a) e objetivo(a) nas comunicações."
+        "Ser claro(a) e objetivo(a) nas comunicações.",
+        "Fornecer feedback construtivo e atempado."
       ],
       "general_donts_pt": [
         "Ser excessivamente vago(a) ou ambíguo(a)."
+      ],
+      "relevant_generic_rule_keys": [],
+      "recipient_adaptation_rules": {},
+      "learned_knowledge_base": []
+    },
+    "student_rodrigo_novelo": {
+      "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#student_rodrigo_novelo",
+      "label_pt": "Rodrigo Novelo",
+      "role_template": "",
+      "description_pt": "comunicação direta, sucinta mas informativa",
+      "communication_attributes": {
+        "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#student_rodrigo_novelo_comm_attributes",
+        "language": "pt-PT",
+        "base_verbosity_pt": "Conciso",
+        "base_sentence_structure_pt": "Clara e Direta",
+        "base_vocabulary_preference_pt": "Técnico",
+        "emoji_usage_pt": "nenhum_formal"
+      },
+      "base_style_profile": {
+        "profile_iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#SGP_StudentRodrigoNovelo",
+        "profile_label_pt": "Perfil de Estilo Base de Rodrigo Novelo",
+        "tone_elements": [
+          {
+            "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#Tone_SemiFormalColaborativo",
+            "label_pt": "SemiFormalColaborativo",
+            "intensity": 0.7,
+            "keywords_pt": [
+              "objetivo",
+              "claro",
+              "focado em soluções",
+              "direto",
+              "breve",
+              "formal mas descontraído"
+            ],
+            "avoid_keywords_pt": [
+              "ambíguo",
+              "excessivamente casual"
+            ]
+          }
+        ],
+        "formality_element": {
+          "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#Formality_Media",
+          "label_pt": "Média",
+          "level_numeric": 3,
+          "guidance_notes_pt": "Manter uma comunicação profissional. Evitar gírias, mas a utilização de termos técnicos é apropriada quando necessário."
+        },
+        "primary_communication_goal": {
+          "iri": "http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#Goal_ProvideClearUpdate",
+          "label_pt": "Objetivo de Fornecer Atualização Clara",
+          "goal_key": "ProvideClearUpdateAndAddressQueries",
+          "description_pt": "O objetivo principal é fornecer uma atualização clara e concisa sobre o progresso e abordar quaisquer pontos pendentes de forma eficiente."
+        }
+      },
+      "general_dos_pt": [
+        "Ser muito breve e responder da forma mais sucinta e direta possível",
+        "responder em apenas uma linha",
+        "Ser direto e ir direto ao assunto.",
+        "Utilizar listas para organizar informações complexas ou passos de ação.",
+        "despedir sempre com o nome Rodrigo Novelo"
+      ],
+      "general_donts_pt": [
+        "Fazer perguntas cujas respostas são facilmente pesquisáveis.",
+        "Utilizar um tom excessivamente informal com docentes ou serviços académicos."
       ],
       "relevant_generic_rule_keys": [],
       "recipient_adaptation_rules": {},
@@ -164,15 +227,15 @@
             "label_pt": "RespeitosoFocadoTecnico",
             "intensity": 0.8,
             "keywords_pt": [
-              "linguagem técnica precisa quando apropriado",
-              "orientado para tarefas",
-              "manter o mais alto respeito",
               "objetivo",
-              "conciso"
+              "conciso",
+              "orientado para tarefas",
+              "linguagem técnica precisa quando apropriado",
+              "manter o mais alto respeito"
             ],
             "avoid_keywords_pt": [
-              "emocional",
               "casual",
+              "emocional",
               "especulativo a menos que claramente indicado"
             ]
           }
@@ -213,16 +276,16 @@
             "label_pt": "ProfissionalConstrutivo",
             "intensity": 0.7,
             "keywords_pt": [
-              "feedback construtivo",
-              "profissional",
-              "claro e objetivo",
+              "encorajador quando apropriado",
               "respeitoso",
-              "encorajador quando apropriado"
+              "claro e objetivo",
+              "feedback construtivo",
+              "profissional"
             ],
             "avoid_keywords_pt": [
               "sarcástico",
-              "excessivamente vago",
-              "depreciativo"
+              "depreciativo",
+              "excessivamente vago"
             ]
           }
         ],
@@ -262,16 +325,16 @@
             "label_pt": "ColaborativoInformalTecnico",
             "intensity": 0.5,
             "keywords_pt": [
-              "amigável",
+              "partilha de informação",
               "direto",
+              "amigável",
               "linguagem técnica clara",
-              "colaborativo",
-              "partilha de informação"
+              "colaborativo"
             ],
             "avoid_keywords_pt": [
-              "muito vago",
               "passivo-agressivo",
-              "excessivamente formal"
+              "excessivamente formal",
+              "muito vago"
             ]
           }
         ],

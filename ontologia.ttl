@@ -1,0 +1,225 @@
+@prefix : <http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+#################################################################
+#    Metadados da Ontologia
+#################################################################
+
+<http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona> rdf:type owl:Ontology ;
+    owl:versionIRI <http://www.semanticweb.org/ontologies/2025/5/academicEmailPersona/3.0.0-pt> ;
+    rdfs:label "Ontologia de Personas para Email Académico (V3 - Final)"@pt ;
+    rdfs:comment """Versão final e refatorizada da meta-ontologia.
+Esta versão V3.0.0 introduz uma estrutura modular com a classe PersonaConfiguration para melhorar a organização visual e lógica.
+Remove a classe CommunicationGoal, confiando no LLM para inferir o objetivo.
+Distingue claramente entre Arquétipos (classes e indivíduos modelo) e Personas Específicas (indivíduos de produção)."""@pt ;
+    owl:versionInfo "3.0.0-pt" .
+
+#################################################################
+#    Propriedades de Anotação
+#################################################################
+
+:schema_version rdf:type owl:AnnotationProperty ; rdfs:label "Versão do Esquema Original"@pt .
+:notes_on_structure rdf:type owl:AnnotationProperty ; rdfs:label "Notas sobre a Estrutura"@pt .
+:archetype_description_note rdf:type owl:AnnotationProperty ; rdfs:label "Nota de Descrição do Arquétipo"@pt .
+:options_description rdf:type owl:AnnotationProperty ; rdfs:label "Descrição das Opções"@pt .
+:applies_from_archetype_note rdf:type owl:AnnotationProperty ; rdfs:label "Nota de Aplicação a Partir do Arquétipo"@pt .
+:applies_to_recipient_category_note rdf:type owl:AnnotationProperty ; rdfs:label "Nota de Aplicação à Categoria de Destinatário"@pt .
+
+#################################################################
+#    Classes
+#################################################################
+
+:PersonaArchetype rdf:type owl:Class ; rdfs:label "Arquétipo de Persona"@pt .
+:StudentArchetype rdf:type owl:Class ; rdfs:subClassOf :PersonaArchetype ; owl:disjointWith :ProfessorArchetype ; rdfs:label "Arquétipo de Estudante"@pt .
+:ProfessorArchetype rdf:type owl:Class ; rdfs:subClassOf :PersonaArchetype ; rdfs:label "Arquétipo de Professor"@pt .
+:PersonaConfiguration rdf:type owl:Class ; rdfs:label "Configuração da Persona"@pt .
+:StyleGuidanceProfile rdf:type owl:Class ; rdfs:label "Perfil de Orientação de Estilo"@pt .
+:ToneElement rdf:type owl:Class ; rdfs:label "Elemento de Tom"@pt .
+:FormalityElement rdf:type owl:Class ; rdfs:label "Elemento de Formalidade"@pt .
+:CommunicationAttributes rdf:type owl:Class ; rdfs:label "Atributos de Comunicação"@pt .
+:CommunicationGuideline rdf:type owl:Class ; rdfs:label "Diretriz de Comunicação"@pt .
+:GenericRecipientAdaptationRule rdf:type owl:Class ; rdfs:label "Regra Genérica de Adaptação ao Destinatário"@pt .
+:LearnedKnowledgeItem rdf:type owl:Class ; rdfs:label "Item de Conhecimento Aprendido"@pt .
+:InteractionContextSnapshot rdf:type owl:Class ; rdfs:label "Instantâneo do Contexto da Interação"@pt .
+:IAProcessDefaultSet rdf:type owl:Class ; rdfs:label "Conjunto de Predefinições de Processo de IA"@pt .
+:IAProcessOption rdf:type owl:Class; rdfs:label "Opção de Processo de IA"@pt .
+:AcademicEmailCategory rdf:type owl:Class ; rdfs:label "Categoria de Email Académico"@pt .
+
+#################################################################
+#    Propriedades de Objeto
+#################################################################
+
+:hasConfiguration rdf:type owl:ObjectProperty ; rdfs:domain :PersonaArchetype ; rdfs:range :PersonaConfiguration .
+:hasCommunicationAttributes rdf:type owl:ObjectProperty ; rdfs:domain :PersonaConfiguration ; rdfs:range :CommunicationAttributes .
+:hasBaseStyleProfile rdf:type owl:ObjectProperty ; rdfs:domain :PersonaConfiguration ; rdfs:range :StyleGuidanceProfile .
+:hasGeneralDo rdf:type owl:ObjectProperty ; rdfs:domain :PersonaConfiguration ; rdfs:range :CommunicationGuideline .
+:hasGeneralDont rdf:type owl:ObjectProperty ; rdfs:domain :PersonaConfiguration ; rdfs:range :CommunicationGuideline .
+:hasRelevantGenericRule rdf:type owl:ObjectProperty ; rdfs:domain :PersonaConfiguration ; rdfs:range :GenericRecipientAdaptationRule .
+:hasLearnedItem rdf:type owl:ObjectProperty ; rdfs:domain :PersonaArchetype ; rdfs:range :LearnedKnowledgeItem .
+:includesToneElement rdf:type owl:ObjectProperty ; rdfs:domain :StyleGuidanceProfile ; rdfs:range :ToneElement .
+:specifiesFormalityElement rdf:type owl:ObjectProperty ; rdfs:domain :StyleGuidanceProfile ; rdfs:range :FormalityElement .
+:hasAdaptedStyleProfile rdf:type owl:ObjectProperty ; rdfs:domain :GenericRecipientAdaptationRule ; rdfs:range :StyleGuidanceProfile .
+:hasSpecificDo rdf:type owl:ObjectProperty ; rdfs:domain :GenericRecipientAdaptationRule ; rdfs:range :CommunicationGuideline .
+:hasSpecificDont rdf:type owl:ObjectProperty ; rdfs:domain :GenericRecipientAdaptationRule ; rdfs:range :CommunicationGuideline .
+:hasInteractionContext rdf:type owl:ObjectProperty ; rdfs:domain :LearnedKnowledgeItem ; rdfs:range :InteractionContextSnapshot .
+:snapshotForPersona rdf:type owl:ObjectProperty ; rdfs:domain :InteractionContextSnapshot ; rdfs:range :PersonaArchetype .
+:snapshotIdentifiedEmailCategory rdf:type owl:ObjectProperty ; rdfs:domain :InteractionContextSnapshot ; rdfs:range :AcademicEmailCategory .
+:definesHandlingOfMissingInfo rdf:type owl:ObjectProperty ; rdfs:domain :IAProcessDefaultSet ; rdfs:range :IAProcessOption .
+:definesPriorityOfUserInput rdf:type owl:ObjectProperty ; rdfs:domain :IAProcessDefaultSet ; rdfs:range :IAProcessOption .
+:definesExpectedIAAutonomyLevel rdf:type owl:ObjectProperty ; rdfs:domain :IAProcessDefaultSet ; rdfs:range :IAProcessOption .
+:definesBehaviorForUnclearRequests rdf:type owl:ObjectProperty ; rdfs:domain :IAProcessDefaultSet ; rdfs:range :IAProcessOption .
+:definesEmailCategory rdf:type owl:ObjectProperty ; rdfs:domain :IAProcessDefaultSet; rdfs:range :AcademicEmailCategory .
+
+#################################################################
+#    Propriedades de Dados
+#################################################################
+
+:description rdf:type owl:DatatypeProperty ; rdfs:range xsd:string .
+:value rdf:type owl:DatatypeProperty; rdfs:range xsd:string .
+:label rdf:type owl:DatatypeProperty; rdfs:range xsd:string .
+:roleTemplate rdf:type owl:DatatypeProperty ; rdfs:domain :PersonaArchetype ; rdfs:range xsd:string .
+:language rdf:type owl:DatatypeProperty ; rdfs:domain :CommunicationAttributes ; rdfs:range xsd:string .
+:baseVerbosity rdf:type owl:DatatypeProperty ; rdfs:domain :CommunicationAttributes ; rdfs:range xsd:string .
+:baseSentenceStructure rdf:type owl:DatatypeProperty ; rdfs:domain :CommunicationAttributes ; rdfs:range xsd:string .
+:baseVocabularyPreference rdf:type owl:DatatypeProperty ; rdfs:domain :CommunicationAttributes ; rdfs:range xsd:string .
+:emojiUsage rdf:type owl:DatatypeProperty ; rdfs:domain :CommunicationAttributes ; rdfs:range xsd:string .
+:toneKeyword rdf:type owl:DatatypeProperty ; rdfs:domain :ToneElement ; rdfs:range xsd:string .
+:avoidToneKeyword rdf:type owl:DatatypeProperty ; rdfs:domain :ToneElement ; rdfs:range xsd:string .
+:toneIntensity rdf:type owl:DatatypeProperty ; rdfs:domain :ToneElement ; rdfs:range xsd:float .
+:formalityLevelNumeric rdf:type owl:DatatypeProperty ; rdfs:domain :FormalityElement ; rdfs:range xsd:integer .
+:formalityGuidanceNotes rdf:type owl:DatatypeProperty ; rdfs:domain :FormalityElement ; rdfs:range xsd:string .
+:guidelineText rdf:type owl:DatatypeProperty ; rdfs:domain :CommunicationGuideline ; rdfs:range xsd:string .
+:ruleKey rdf:type owl:DatatypeProperty ; rdfs:domain :GenericRecipientAdaptationRule ; rdfs:range xsd:string .
+:greetingTemplate rdf:type owl:DatatypeProperty ; rdfs:domain :GenericRecipientAdaptationRule ; rdfs:range xsd:string .
+:farewellTemplate rdf:type owl:DatatypeProperty ; rdfs:domain :GenericRecipientAdaptationRule ; rdfs:range xsd:string .
+:hasTimestampUTC rdf:type owl:DatatypeProperty ; rdfs:domain :LearnedKnowledgeItem ; rdfs:range xsd:dateTime .
+:hasFeedbackCategory rdf:type owl:DatatypeProperty ; rdfs:domain :LearnedKnowledgeItem ; rdfs:range xsd:string .
+:aiOriginalResponseText rdf:type owl:DatatypeProperty ; rdfs:domain :LearnedKnowledgeItem ; rdfs:range xsd:string .
+:userCorrectedOutputText rdf:type owl:DatatypeProperty ; rdfs:domain :LearnedKnowledgeItem ; rdfs:range xsd:string .
+:userExplanationText rdf:type owl:DatatypeProperty ; rdfs:domain :LearnedKnowledgeItem ; rdfs:range xsd:string .
+:modelUsedForOriginal rdf:type owl:DatatypeProperty ; rdfs:domain :LearnedKnowledgeItem ; rdfs:range xsd:string .
+:snapshotRecipientCategoryKey rdf:type owl:DatatypeProperty ; rdfs:domain :InteractionContextSnapshot ; rdfs:range xsd:string .
+:snapshotSenderNameGuess rdf:type owl:DatatypeProperty ; rdfs:domain :InteractionContextSnapshot ; rdfs:range xsd:string .
+:snapshotIncomingTone rdf:type owl:DatatypeProperty ; rdfs:domain :InteractionContextSnapshot ; rdfs:range xsd:string .
+:snapshotOriginalEmailTextSnippet rdf:type owl:DatatypeProperty ; rdfs:domain :InteractionContextSnapshot ; rdfs:range xsd:string .
+:snapshotUserGuidanceInputs rdf:type owl:DatatypeProperty ; rdfs:domain :InteractionContextSnapshot ; rdfs:range xsd:string .
+:snapshotIAActionType rdf:type owl:DatatypeProperty ; rdfs:domain :InteractionContextSnapshot ; rdfs:range xsd:string .
+:snapshotLLMPreAnalysisRationale rdf:type owl:DatatypeProperty; rdfs:domain :InteractionContextSnapshot; rdfs:range xsd:string .
+:categoryID rdf:type owl:DatatypeProperty ; rdfs:domain :AcademicEmailCategory ; rdfs:range xsd:string .
+:displayName rdf:type owl:DatatypeProperty ; rdfs:domain :AcademicEmailCategory ; rdfs:range xsd:string .
+
+#################################################################
+#    Indivíduos
+#################################################################
+
+### --- Indivíduos: Modelos de Arquétipo e Suas Configurações ---
+
+:student_default_config rdf:type :PersonaConfiguration ;
+    rdfs:label "Configuração Padrão do Arquétipo de Estudante"@pt ;
+    :hasCommunicationAttributes <#student_default_comm_attributes> ;
+    :hasBaseStyleProfile <#SGP_StudentBaseDefault> ;
+    :hasGeneralDo <#student_guideline_do1>, <#student_guideline_do2>, <#student_guideline_do3> ;
+    :hasGeneralDont <#student_guideline_dont1>, <#student_guideline_dont2> ;
+    :hasRelevantGenericRule <#rule_student_to_professor_academic_inquiry>, <#rule_student_to_colleague_project_collaboration> .
+
+:student_default rdf:type :StudentArchetype ;
+    rdfs:label "Modelo de Arquétipo de Estudante"@pt ;
+    :hasConfiguration :student_default_config .
+
+:professor_default_config rdf:type :PersonaConfiguration ;
+    rdfs:label "Configuração Padrão do Arquétipo de Professor"@pt ;
+    :hasCommunicationAttributes <#professor_default_comm_attributes> ;
+    :hasBaseStyleProfile <#SGP_ProfessorBaseDefault> ;
+    :hasGeneralDo <#professor_guideline_do1>, <#professor_guideline_do2> ;
+    :hasGeneralDont <#professor_guideline_dont1> ;
+    :hasRelevantGenericRule <#rule_professor_to_student_feedback> .
+
+:professor_default rdf:type :ProfessorArchetype ;
+    rdfs:label "Modelo de Arquétipo de Professor"@pt ;
+    :hasConfiguration :professor_default_config .
+
+### --- Indivíduos: PERSONAS ESPECÍFICAS (Os Utilizadores Reais) ---
+
+:Rodrigo_Novelo rdf:type :StudentArchetype ;
+    rdfs:label "Persona: Rodrigo Novelo"@pt ;
+    :roleTemplate "Aluno de Licenciatura em Engenharia Informática, ISEC/DEIS | Developer do Assistente de Email IA com LLM" ;
+    :description "Aluno de LEI no ISEC, atualmente a desenvolver este assistente de IA como projeto e a frequentar 2 cadeiras (ED e SO2)."@pt ;
+    :hasLearnedItem :lk_item_001 .
+
+:Prof_Jorge rdf:type :ProfessorArchetype ;
+    rdfs:label "Persona: Professor Jorge"@pt ;
+    :roleTemplate "Professor Coordenador, ISEC/DEIS" ;
+    :description "Professor com foco em investigação de bases de dados e big data."@pt .
+
+:Prof_Rodrigo rdf:type :ProfessorArchetype ;
+    rdfs:label "Persona: Professor Rodrigo"@pt ;
+    :roleTemplate "Professor Auxiliar, ISEC/DEIS" ;
+    :description "Professor com foco em engenharia de software e sistemas distribuídos."@pt .
+
+### --- Indivíduos: Componentes (Atributos, Perfis de Estilo, Diretrizes, etc.) ---
+
+:student_default_comm_attributes rdf:type :CommunicationAttributes; rdfs:label "Atributos de Comunicação Padrão do Estudante"@pt ; :language "pt-PT" ; :baseVerbosity "Equilibrado"@pt ; :baseSentenceStructure "ClaraConcisa"@pt ; :baseVocabularyPreference "AdequadoAoContexto"@pt ; :emojiUsage "raro_ou_nenhum_formal"@pt .
+:SGP_StudentBaseDefault rdf:type :StyleGuidanceProfile ; rdfs:label "Perfil de Orientação de Estilo Base do Estudante"@pt ; :includesToneElement :Tone_SemiFormalColaborativo ; :specifiesFormalityElement :Formality_Media .
+:professor_default_comm_attributes rdf:type :CommunicationAttributes; rdfs:label "Atributos de Comunicação Padrão do Professor"@pt ; :language "pt-PT" ; :baseVerbosity "ObjetivoCompleto"@pt ; :baseSentenceStructure "BemEstruturadaClara"@pt ; :baseVocabularyPreference "TecnicoPreciso"@pt ; :emojiUsage "nenhum_formal"@pt .
+:SGP_ProfessorBaseDefault rdf:type :StyleGuidanceProfile ; rdfs:label "Perfil de Orientação de Estilo Base do Professor"@pt ; :includesToneElement :Tone_ProfissionalConstrutivo ; :specifiesFormalityElement :Formality_ProfMediaAlta .
+
+:student_guideline_do1 rdf:type :CommunicationGuideline ; rdfs:label "Estudante Do 1"@pt ; :guidelineText "Ser pontual e respeitar prazos."@pt .
+:student_guideline_do2 rdf:type :CommunicationGuideline ; rdfs:label "Estudante Do 2"@pt ; :guidelineText "Comunicar de forma clara, concisa e respeitosa."@pt .
+:student_guideline_do3 rdf:type :CommunicationGuideline ; rdfs:label "Estudante Do 3"@pt ; :guidelineText "Identificar-se devidamente (nome, número de aluno, curso) em comunicações formais."@pt .
+:student_guideline_dont1 rdf:type :CommunicationGuideline ; rdfs:label "Estudante Don't 1"@pt ; :guidelineText "Usar linguagem excessivamente informal ou calão com docentes ou serviços."@pt .
+:student_guideline_dont2 rdf:type :CommunicationGuideline ; rdfs:label "Estudante Don't 2"@pt ; :guidelineText "Exigir respostas imediatas, especialmente fora do horário de expediente."@pt .
+:professor_guideline_do1 rdf:type :CommunicationGuideline ; rdfs:label "Professor Do 1"@pt ; :guidelineText "Ser claro(a) e objetivo(a) nas comunicações."@pt .
+:professor_guideline_do2 rdf:type :CommunicationGuideline ; rdfs:label "Professor Do 2"@pt ; :guidelineText "Fornecer feedback construtivo e atempado."@pt .
+:professor_guideline_dont1 rdf:type :CommunicationGuideline ; rdfs:label "Professor Don't 1"@pt ; :guidelineText "Ser excessivamente vago(a) ou ambíguo(a)."@pt .
+
+:Tone_SemiFormalColaborativo rdf:type :ToneElement ; rdfs:label "Tom Semiformal Colaborativo"@pt ; :label "SemiFormalColaborativo" ; :toneKeyword "profissional mas acessível"@pt, "colaborativo"@pt, "claro"@pt ; :avoidToneKeyword "excessivamente formal"@pt, "demasiado casual"@pt ; :toneIntensity "0.6"^^xsd:float .
+:Formality_Media rdf:type :FormalityElement ; rdfs:label "Formalidade Média"@pt ; :label "Media" ; :formalityLevelNumeric "3"^^xsd:integer ; :formalityGuidanceNotes "Comunicação profissional padrão."@pt .
+:Tone_ProfissionalConstrutivo rdf:type :ToneElement ; rdfs:label "Tom Profissional Construtivo"@pt ; :label "ProfissionalConstrutivo" ; :toneKeyword "claro e objetivo"@pt, "feedback construtivo"@pt ; :avoidToneKeyword "excessivamente vago"@pt, "depreciativo"@pt ; :toneIntensity "0.7"^^xsd:float .
+:Formality_ProfMediaAlta rdf:type :FormalityElement ; rdfs:label "Formalidade Profissional Média-Alta"@pt ; :label "ProfMediaAlta" ; :formalityLevelNumeric "4"^^xsd:integer ; :formalityGuidanceNotes "Comunicação profissional e académica."@pt .
+:SGP_StudentToProfInquiry rdf:type :StyleGuidanceProfile ; rdfs:label "Perfil de Estilo: Estudante para Professor (Questão)"@pt ; :includesToneElement <#Tone_RespeitosoFocadoTecnico> ; :specifiesFormalityElement <#Formality_MediaAlta> .
+:Tone_RespeitosoFocadoTecnico rdf:type :ToneElement ; rdfs:label "Tom Respeitoso Focado Técnico"@pt ; :label "RespeitosoFocadoTecnico" ; :toneKeyword "manter o mais alto respeito"@pt, "orientado para tarefas"@pt ; :avoidToneKeyword "casual"@pt, "emocional"@pt ; :toneIntensity "0.8"^^xsd:float .
+:Formality_MediaAlta rdf:type :FormalityElement ; rdfs:label "Formalidade Média-Alta"@pt ; :label "MediaAlta" ; :formalityLevelNumeric "4"^^xsd:integer ; :formalityGuidanceNotes "Formal, mas permite a profundidade técnica necessária."@pt .
+:SGP_ProfessorToStudentFeedback rdf:type :StyleGuidanceProfile ; rdfs:label "Perfil de Estilo: Professor para Estudante (Feedback)"@pt ; :includesToneElement :Tone_ProfissionalConstrutivo ; :specifiesFormalityElement :Formality_Media .
+:SGP_StudentToColleagueCollaboration rdf:type :StyleGuidanceProfile ; rdfs:label "Perfil de Estilo: Estudante para Colega (Colaboração Projeto)"@pt ; :includesToneElement <#Tone_ColaborativoInformalTecnico> ; :specifiesFormalityElement <#Formality_BaixaMedia> .
+:Tone_ColaborativoInformalTecnico rdf:type :ToneElement ; rdfs:label "Tom Colaborativo Informal Técnico"@pt ; :label "ColaborativoInformalTecnico" ; :toneKeyword "colaborativo"@pt, "direto"@pt, "amigável"@pt ; :avoidToneKeyword "excessivamente formal"@pt, "passivo-agressivo"@pt ; :toneIntensity "0.5"^^xsd:float .
+:Formality_BaixaMedia rdf:type :FormalityElement ; rdfs:label "Formalidade Baixa-Média"@pt ; :label "BaixaMedia" ; :formalityLevelNumeric "2"^^xsd:integer ; :formalityGuidanceNotes "Comunicação entre colegas. Pode ser informal, mas manter respeito e clareza, especialmente em discussões técnicas."@pt .
+
+:rule_s2p_inquiry_do1 rdf:type :CommunicationGuideline ; :guidelineText "Indicar claramente a unidade curricular (se aplicável) e o assunto."@pt .
+:rule_s2p_inquiry_dont1 rdf:type :CommunicationGuideline ; :guidelineText "Fazer perguntas genéricas como 'Não percebi nada'."@pt .
+:rule_student_to_professor_academic_inquiry rdf:type :GenericRecipientAdaptationRule ; rdfs:label "Regra: Estudante para Professor (Questão Académica)"@pt ; :ruleKey "student_to_professor_academic_inquiry" ; :description "Estudante contacta professor para esclarecer dúvidas académicas."@pt ; :greetingTemplate "Estimado(a) Professor(a) [ApelidoProfessor]," ; :farewellTemplate "Com os melhores cumprimentos,\n[NomeCompletoAluno]\nNº [NumeroAluno]\n[NomeCurso]" ; :hasAdaptedStyleProfile :SGP_StudentToProfInquiry ; :hasSpecificDo :rule_s2p_inquiry_do1; :hasSpecificDont :rule_s2p_inquiry_dont1 .
+
+:rule_p2s_feedback_do1 rdf:type :CommunicationGuideline; :guidelineText "Ser específico sobre os pontos positivos e áreas a melhorar."@pt .
+:rule_p2s_feedback_dont1 rdf:type :CommunicationGuideline; :guidelineText "Focar apenas nos aspetos negativos."@pt .
+:rule_professor_to_student_feedback rdf:type :GenericRecipientAdaptationRule ; rdfs:label "Regra: Professor para Estudante (Feedback Construtivo)"@pt ; :ruleKey "professor_to_student_feedback_constructive" ; :description "Professor fornece feedback sobre trabalho, desempenho ou projeto de um estudante."@pt ; :greetingTemplate "Caro(a) [NomeAluno]," ; :farewellTemplate "Com os melhores cumprimentos,\n[NomeProfessor]\n[CargoProfessor]" ; :hasAdaptedStyleProfile :SGP_ProfessorToStudentFeedback ; :hasSpecificDo :rule_p2s_feedback_do1 ; :hasSpecificDont :rule_p2s_feedback_dont1 .
+
+:rule_s2c_collab_do1 rdf:type :CommunicationGuideline; :guidelineText "Partilhar informação e recursos de forma clara e atempada."@pt .
+:rule_s2c_collab_dont1 rdf:type :CommunicationGuideline; :guidelineText "Não cumprir com as responsabilidades e prazos acordados."@pt .
+:rule_student_to_colleague_project_collaboration rdf:type :GenericRecipientAdaptationRule ; rdfs:label "Regra: Estudante para Colega (Colaboração em Projeto)"@pt ; :ruleKey "student_to_colleague_project_collaboration" ; :description "Comunicação entre estudantes colegas de equipa em projetos académicos."@pt ; :greetingTemplate "Olá [PrimeiroNomeColega], / Boas equipa," ; :farewellTemplate "Abraço,\n[PrimeiroNomeAluno] / Cumps," ; :hasAdaptedStyleProfile :SGP_StudentToColleagueCollaboration ; :hasSpecificDo :rule_s2c_collab_do1 ; :hasSpecificDont :rule_s2c_collab_dont1 .
+
+:lk_item_001 rdf:type :LearnedKnowledgeItem ; rdfs:label "Item Aprendido 001 - Saudação Prof Jorge"@pt ; :hasTimestampUTC "2025-06-05T02:00:00Z"^^xsd:dateTime ; :hasFeedbackCategory "PREFERENCIA_SAUDACAO"@pt ; :aiOriginalResponseText "Prezado Professor Jorge," ; :userCorrectedOutputText "Estimado Professor Jorge Bernardino," ; :userExplanationText "Para o Prof. Jorge, prefiro usar 'Estimado' e o nome completo na saudação inicial."@pt ; :modelUsedForOriginal "gemini-1.5-flash-latest" ; :hasInteractionContext :ics_feedback_001 .
+:ics_feedback_001 rdf:type :InteractionContextSnapshot ; rdfs:label "Contexto da Interação para Feedback 001"@pt ; :snapshotForPersona :Rodrigo_Novelo ; :snapshotRecipientCategoryKey "prof_jorge" ; :snapshotSenderNameGuess "Jorge Bernardino" ; :snapshotIncomingTone "Formal"@pt .
+
+:option_handleMissingInfo_requestUserInput rdf:type :IAProcessOption ; rdfs:label "Opção Info em Falta: Pedir Input"@pt ; :value "ALWAYS_REQUEST_USER_INPUT_FIRST" ; :description "IA sempre sinaliza à Persona a necessidade de input específico se suspeitar que falta info crítica."@pt ; :options_description """LLM_BEST_EFFORT_WITH_EMAIL_ONLY: IA tenta responder da melhor forma apenas com o email original.
+PRIORITIZE_USER_DIRECT_INPUT_THEN_CAUTIOUS_SHORT_RESPONSE: IA prioriza input direto da Persona. Se ausente e info crítica parece faltar, IA gera resposta curta e cautelosa.
+ALWAYS_REQUEST_USER_INPUT_FIRST: IA sempre sinaliza à Persona a necessidade de input específico antes de gerar um rascunho completo se suspeitar que falta info crítica."""@pt .
+:option_priorityUserInput_veryHigh rdf:type :IAProcessOption ; rdfs:label "Opção Prioridade Input Utilizador: Muito Alta"@pt ; :value "VERY_HIGH" ; :description "Nível de importância a dar ao input explícito da Persona face à análise do email original."@pt ; :options_description "LOW, MODERATE, HIGH, VERY_HIGH"@pt .
+:option_expectedAutonomy_suggestAndAwait rdf:type :IAProcessOption ; rdfs:label "Opção Autonomia IA: Sugerir e Aguardar"@pt ; :value "SUGGEST_ACTIONS_AND_AWAIT_GUIDANCE" ; :description "Nível de proatividade esperado da IA em sugerir elaborações, ações não explícitas, etc."@pt ; :options_description """MINIMAL_AUTONOMY_STICK_TO_RULES_ONLY
+SUGGEST_ACTIONS_AND_AWAIT_GUIDANCE
+PROACTIVE_ELABORATION_WITH_CONFIRMATION_NEEDED"""@pt .
+:option_unclearRequests_requestClarification rdf:type :IAProcessOption ; rdfs:label "Opção Pedidos Pouco Claros: Pedir Clarificação"@pt ; :value "REQUEST_CLARIFICATION_FROM_USER" ; :description "Como a IA deve proceder se partes do email do remetente forem ambíguas."@pt ; :options_description """LLM_BEST_EFFORT_WITH_EMAIL_ONLY: IA tenta responder da melhor forma apenas com o email original.
+REQUEST_CLARIFICATION_FROM_USER: IA pede à Persona para clarificar a ambiguidade antes de tentar uma resposta.
+OFFER_MULTIPLE_INTERPRETATIONS_TO_USER: IA apresenta possíveis interpretações da ambiguidade à Persona para que esta escolha."""@pt .
+
+:global_ia_defaults rdf:type :IAProcessDefaultSet ; rdfs:label "Predefinições Globais de Processo de IA"@pt ; :definesHandlingOfMissingInfo :option_handleMissingInfo_requestUserInput ; :definesPriorityOfUserInput :option_priorityUserInput_veryHigh ; :definesExpectedIAAutonomyLevel :option_expectedAutonomy_suggestAndAwait ; :definesBehaviorForUnclearRequests :option_unclearRequests_requestClarification .
+
+:category_courseAdminQueries rdf:type :AcademicEmailCategory ; rdfs:label "Categoria Questões Administrativas de Curso"@pt ; :categoryID "COURSE_ADMINISTRATION_QUERIES" ; :displayName "Questões Administrativas de Curso/UC"@pt ; :description "Emails sobre inscrições, horários, salas, avaliações, notas, pautas, prazos administrativos."@pt .
+:category_feedbackRevisaoDocs rdf:type :AcademicEmailCategory; rdfs:label "Categoria Revisão de Documentos para Feedback"@pt; :categoryID "FEEDBACK_REVISAO_DOCS"; :displayName "Feedback, Revisão e Partilha de Documentos"@pt; :description "Emails relacionados com a revisão de artigos, relatórios, código, pedidos de feedback."@pt .
+:category_lectureMaterialClarification rdf:type :AcademicEmailCategory; rdfs:label "Categoria Esclarecimento Matéria Letiva"@pt; :categoryID "LECTURE_MATERIAL_CLARIFICATION"; :displayName "Esclarecimento sobre Matéria Letiva"@pt; :description "Perguntas sobre o conteúdo das aulas, slides, bibliografia recomendada."@pt .
+:category_projectSupervisionUpdatesMeetings rdf:type :AcademicEmailCategory; rdfs:label "Categoria Supervisão Projeto (Updates, Reuniões)"@pt; :categoryID "PROJECT_SUPERVISION_UPDATES_MEETINGS"; :displayName "Supervisão de Projeto/Tese (Updates, Reuniões)"@pt; :description "Comunicações entre orientador e orientado sobre progresso, dificuldades, agendamento de reuniões."@pt .
+
+:global_ia_defaults :definesEmailCategory :category_courseAdminQueries, :category_lectureMaterialClarification, :category_projectSupervisionUpdatesMeetings, :category_feedbackRevisaoDocs .
+
+# Fim da Ontologia de Personas para Email Académico V3

@@ -70,7 +70,7 @@
             --btn-warning-border: var(--warning-accent);
             --btn-warning-hover-text: var(--text-dark);
             --btn-warning-glow: rgba(255, 193, 7, 0.3);
-            --btn-warning-hover-glow: rgba(255, 193, 7, 0.6);
+            --btn-warning-hover-glow: rgba(255, 193, 7, 0.5);
             --btn-refine-color: var(--secondary-accent);
             --btn-refine-border: var(--secondary-accent);
             --btn-refine-hover-text: #ffffff; /* Branco para magenta */
@@ -181,6 +181,9 @@
             line-height: 1.7;
             min-height: 100vh;
             transition: background var(--transition-speed) ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         ::-webkit-scrollbar { width: 8px; }
@@ -191,7 +194,7 @@
 
         .container {
             max-width: 1000px; background-color: var(--container-bg); padding: 40px 50px;
-            border-radius: 10px; box-shadow: var(--card-shadow); margin: 40px auto;
+            border-radius: 10px; box-shadow: var(--card-shadow); margin: 0 auto; /* Changed margin */
             border: 1px solid var(--container-border); backdrop-filter: blur(10px);
             position: relative; overflow: hidden;
             transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease;
@@ -204,7 +207,7 @@
             transition: background-image var(--transition-speed) ease;
         }
 
-        .theme-switch-wrapper { display: flex; align-items: center; position: absolute; top: 5px; left: 20px; z-index: 10; }
+        .theme-switch-wrapper { display: flex; align-items: center; position: absolute; top: 15px; left: 20px; z-index: 10; }
         .theme-switch { display: inline-block; height: 24px; position: relative; width: 50px; }
         .theme-switch input { display: none; }
         .slider { background-color: #555; bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: var(--transition-speed); border-radius: 24px; }
@@ -224,9 +227,10 @@
         .api-status.status-error { color: var(--api-status-error-color); border-color: var(--api-status-error-border); box-shadow: var(--api-status-error-glow); }
         #apiStatusIndicator { display: flex; }
 
-        header { margin-bottom: 45px; padding-bottom: 25px; border-bottom: 1px solid var(--container-border); text-align: center; }
+        header { margin-bottom: 45px; padding-bottom: 25px; border-bottom: 1px solid var(--container-border); text-align: center; position: relative; }
         header h1 { font-weight: 700; color: var(--primary-accent); margin-bottom: 0.75rem; font-size: 2.5rem; letter-spacing: 1px; }
         header .lead { color: var(--text-secondary); font-size: 1.15rem; font-weight: 300; }
+        #logoutBtn { position: absolute; top: 0; right: 0; }
 
         h2, h3 { color: var(--text-primary); margin-bottom: 1.8rem; font-weight: 600; padding-bottom: 0.8rem; border-bottom: 1px solid var(--primary-accent); display: inline-block; letter-spacing: 0.5px; }
         h3 { font-size: 1.6rem; }
@@ -248,7 +252,6 @@
         body.dark-mode select.form-select { box-shadow: inset 0 1px 3px rgba(0,0,0, 0.3); }
         textarea.form-control#originalEmail { min-height: 180px; }
         textarea.form-control#generatedDraft { min-height: 250px; }
-        /* Alturas para os textareas do modal de feedback */
         textarea.form-control#feedbackOriginalResponse { min-height: 100px; }
         textarea.form-control#feedbackUserCorrection { min-height: 120px; }
         textarea.form-control#feedbackUserExplanation { min-height: 80px; }
@@ -327,6 +330,14 @@
         .btn-primary::before { background-color: var(--btn-primary-color); }
         .btn-primary:hover { color: var(--btn-primary-hover-text); box-shadow: 0 0 15px var(--btn-primary-hover-glow); }
         .btn-primary:focus { box-shadow: 0 0 0 3px var(--btn-primary-glow), 0 0 15px var(--btn-primary-hover-glow); }
+        
+        /* NOVO: Estilo para o botão de Login com Google */
+        .btn-google {
+            color: #db4437; border-color: #db4437; box-shadow: 0 0 5px rgba(219, 68, 55, 0.3);
+            font-size: 1.1rem; padding: 15px 30px;
+        }
+        .btn-google::before { background-color: #db4437; }
+        .btn-google:hover { color: white; box-shadow: 0 0 15px rgba(219, 68, 55, 0.6); }
 
         .btn-success { color: var(--btn-success-color); border-color: var(--btn-success-border); box-shadow: 0 0 5px var(--btn-success-glow); }
         .btn-success::before { background-color: var(--btn-success-color); }
@@ -338,7 +349,6 @@
         .btn-secondary:hover { color: var(--btn-secondary-hover-text); box-shadow: 0 0 15px var(--btn-secondary-hover-glow); }
         .btn-secondary:focus { box-shadow: 0 0 0 3px var(--btn-secondary-glow), 0 0 15px var(--btn-secondary-hover-glow); }
         
-        /* Estilo para o botão de Feedback (baseado no warning) */
         .btn-warning { color: var(--btn-warning-color); border-color: var(--btn-warning-border); box-shadow: 0 0 5px var(--btn-warning-glow); }
         .btn-warning::before { background-color: var(--btn-warning-color); }
         .btn-warning:hover { color: var(--btn-warning-hover-text); box-shadow: 0 0 15px var(--btn-warning-hover-glow); }
@@ -365,6 +375,9 @@
         .btn-sm .loading-spinner, .refine-btn .loading-spinner { width: 0.8em; height: 0.8em; margin-left: 5px; }
         .btn-outline-secondary .loading-spinner { color: var(--btn-secondary-color); }
         .btn-outline-secondary:hover .loading-spinner { color: var(--btn-secondary-hover-text); }
+        #fetchEmailsBtn .loading-spinner { color: var(--btn-primary-color); }
+        #fetchEmailsBtn:hover .loading-spinner { color: var(--btn-primary-hover-text); }
+
 
         .error-message {
             color: var(--error-color); font-weight: 500; margin-top: 15px; font-size: 0.9rem; display: none;
@@ -416,50 +429,48 @@
         }
         .list-group-numbered > .list-group-item::before { color: var(--primary-accent); font-weight: bold; }
 
+        /* NOVO: Estilos para a lista de emails do Gmail */
+        #emailList { max-height: 400px; overflow-y: auto; }
+        .email-list-item {
+            cursor: pointer;
+            transition: background-color var(--transition-speed) ease;
+            border-left: 3px solid transparent;
+        }
+        .email-list-item:hover {
+            background-color: var(--point-group-hover-bg);
+            border-left-color: var(--primary-accent);
+        }
+        .email-sender { font-weight: 600; color: var(--text-primary); display: block; font-size: 0.95rem; }
+        .email-subject { font-weight: 400; color: var(--text-primary); opacity: 0.9; display: block; }
+        .email-snippet { font-weight: 300; font-size: 0.85rem; color: var(--text-secondary); display: block; font-style: italic; }
+
         /* Estilos para o Modal de Feedback */
         .modal-content {
             background-color: var(--modal-bg);
             color: var(--text-primary);
             border: 1px solid var(--container-border);
         }
-        .modal-header {
-            border-bottom: 1px solid var(--modal-header-border);
-        }
-        .modal-header .btn-close {
-            filter: invert(1) grayscale(100%) brightness(200%); /* Torna o X branco no tema escuro */
-        }
-        body.light-mode .modal-header .btn-close {
-            filter: none; /* Reset para o X padrão no modo claro */
-        }
-        .modal-footer {
-            border-top: 1px solid var(--modal-footer-border);
-        }
-        .modal-body .form-label {
-            color: var(--text-secondary); 
-        }
+        .modal-header { border-bottom: 1px solid var(--modal-header-border); }
+        .modal-header .btn-close { filter: invert(1) grayscale(100%) brightness(200%); }
+        body.light-mode .modal-header .btn-close { filter: none; }
+        .modal-footer { border-top: 1px solid var(--modal-footer-border); }
+        .modal-body .form-label { color: var(--text-secondary); }
         .modal-body textarea, .modal-body select {
-            background-color: var(--input-bg);
-            color: var(--text-primary);
-            border: 1px solid var(--input-border);
+            background-color: var(--input-bg); color: var(--text-primary); border: 1px solid var(--input-border);
         }
-         .modal-body textarea:focus, .modal-body select:focus {
-            border-color: var(--input-focus-border);
-            box-shadow: var(--focus-glow);
-            background-color: var(--input-bg); 
+        .modal-body textarea:focus, .modal-body select:focus {
+            border-color: var(--input-focus-border); box-shadow: var(--focus-glow); background-color: var(--input-bg); 
         }
         body.dark-mode .modal-body textarea:focus,
-        body.dark-mode .modal-body select:focus {
-            background-color: rgba(45, 45, 70, 0.95);
-        }
+        body.dark-mode .modal-body select:focus { background-color: rgba(45, 45, 70, 0.95); }
 
 
         @media (max-width: 992px) {
             .container { padding: 30px 40px; }
-            .theme-switch-wrapper { top: 15px; right: 15px; }
         }
         @media (max-width: 768px) {
-            body { padding: 25px 10px; }
-            .container { padding: 25px; margin: 25px auto; }
+            body { padding: 25px 10px; align-items: flex-start; }
+            .container { padding: 25px; margin: 0 auto; }
             header h1 { font-size: 2rem; }
             header .lead { font-size: 1.05rem; }
             h2 { font-size: 1.6rem; }
@@ -470,6 +481,7 @@
             .refine-btn { font-size: 0.75rem; padding: 5px 10px; }
             .draft-section .d-flex.justify-content-between { flex-direction: column; align-items: flex-start !important; gap: 15px; }
             #contextInfo { text-align: left; width: 100%; }
+            #logoutBtn { position: relative; top: auto; right: auto; margin-top: 1rem; display: block; text-align: center; }
         }
         @media (max-width: 576px) {
             .container { padding: 20px 15px; }
@@ -477,23 +489,18 @@
             .point-input-group .d-flex { flex-direction: column; align-items: flex-start !important; gap: 8px; }
             .btn-outline-secondary.suggest-btn { margin-left: 0; }
             .btn { width: 100%; }
-            /* Ajuste para botões de ação do rascunho não ocuparem largura total em mobile, mas estarem em grupo */
-            .draft-section .d-flex.justify-content-between > .btn-group {
-                width: 100%; /* O grupo ocupa a largura */
-            }
-            .draft-section .d-flex.justify-content-between > .btn-group > .btn {
-                width: auto; /* Botões dentro do grupo têm largura automática */
-                flex-grow: 1; /* Permite que cresçam para preencher o espaço do grupo */
-            }
-            #contextInfo { margin-left: 0 !important; } /* Remove margem esquerda no mobile */
-
-            .theme-switch-wrapper { top: 10px; right: 10px; }
+            .draft-section .d-flex.justify-content-between > .btn-group { width: 100%; }
+            .draft-section .d-flex.justify-content-between > .btn-group > .btn { width: auto; flex-grow: 1; }
+            #contextInfo { margin-left: 0 !important; }
+            .theme-switch-wrapper { top: 10px; left: 10px; }
             .theme-switch-wrapper span { display: none; }
         }
     </style>
 </head>
-<body class="dark-mode">
-    <div class="container">
+<body class="dark-mode" data-is-logged-in="{{ is_logged_in|string|lower }}">
+
+    {% if is_logged_in %}
+    <div id="mainAppWrapper" class="container">
         <div class="theme-switch-wrapper">
             <span title="Modo Claro"><i class="fas fa-sun"></i></span>
             <label class="theme-switch" for="theme-checkbox">
@@ -503,18 +510,35 @@
             <span title="Modo Escuro"><i class="fas fa-moon"></i></span>
         </div>
 
+        <header>
+            <a href="{{ url_for('logout') }}" class="btn btn-secondary btn-sm" id="logoutBtn" title="Terminar Sessão">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </a>
+            <h1>Assistente de Email com LLM</h1>
+            <p class="lead">Potenciado por Gemini & Gmail</p>
+        </header>
+
         <div id="apiStatusIndicator" class="api-status status-ok">
             <i class="fas fa-satellite-dish"></i>
             <span>Status - Gemini API: <strong>Online</strong></span>
         </div>
 
-        <header>
-            <h1>Assistente de Email com LLM</h1>
-        </header>
+        <section id="gmailSection" class="mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2>Caixa de Entrada (Recentes)</h2>
+                <button id="fetchEmailsBtn" class="btn btn-primary btn-sm">
+                    <i class="fas fa-sync-alt"></i> Atualizar
+                    <div class="spinner-border spinner-border-sm loading-spinner" role="status" id="gmailSpinner"></div>
+                </button>
+            </div>
+            <div id="gmailError" class="error-message"></div>
+            <ul id="emailList" class="list-group">
+                </ul>
+        </section>
 
         <section id="emailInputSection" class="mb-4">
             <label for="originalEmail" class="form-label">Input de Dados (Email Recebido):</label>
-            <textarea class="form-control" id="originalEmail" rows="8" placeholder="Cole o texto do email aqui para processamento..."></textarea>
+            <textarea class="form-control" id="originalEmail" rows="8" placeholder="Selecione um email acima ou cole o texto aqui para processamento..."></textarea>
             <div class="mt-3">
                 <button id="analyzeBtn" class="btn btn-primary">
                     Processar & Analisar
@@ -573,19 +597,45 @@
                 <button class="btn btn-sm refine-btn" data-action="translate_en" title="Traduzir seleção para Inglês">Traduzir EN <span class="loading-spinner spinner-border spinner-border-sm" role="status"></span></button>
             </div>
 
-            <div class="mt-3 d-flex justify-content-between align-items-center flex-wrap"> <div class="btn-group mb-2 mb-md-0" role="group" aria-label="Ações do Rascunho"> <button id="copyDraftBtn" class="btn btn-secondary" title="Copiar composição atual para a área de transferência">
+            <div class="mt-3 d-flex justify-content-between align-items-center flex-wrap">
+                 <div class="btn-group mb-2 mb-md-0" role="group" aria-label="Ações do Rascunho">
+                    <button id="copyDraftBtn" class="btn btn-secondary" title="Copiar composição atual para a área de transferência">
                         <i class="fas fa-copy"></i> Copiar
                     </button>
                     <button id="feedbackBtn" class="btn btn-warning ms-2" title="A IA errou? Ajude-a a aprender para o futuro." disabled>
                         <i class="fas fa-lightbulb"></i> Ensinar IA
                     </button>
                 </div>
-                <div id="contextInfo" class="small ms-md-3" style="display: none;"> <strong>Metadados de Contexto:</strong> <span id="contextDetails"></span>
+                <div id="contextInfo" class="small ms-md-3" style="display: none;">
+                    <strong>Metadados de Contexto:</strong> <span id="contextDetails"></span>
                 </div>
             </div>
-             <div id="feedbackSuccessMessage" class="alert alert-success mt-3" style="display: none;"></div>
+            <div id="feedbackSuccessMessage" class="alert alert-success mt-3" style="display: none;"></div>
         </section>
     </div>
+
+    {% else %}
+    <div id="loginWrapper" class="container text-center">
+         <div class="theme-switch-wrapper">
+            <span title="Modo Claro"><i class="fas fa-sun"></i></span>
+            <label class="theme-switch" for="theme-checkbox">
+                <input type="checkbox" id="theme-checkbox" />
+                <div class="slider"></div>
+            </label>
+            <span title="Modo Escuro"><i class="fas fa-moon"></i></span>
+        </div>
+        <header>
+            <h1>Assistente de Email com LLM</h1>
+            <p class="lead">A sua ferramenta de comunicação inteligente.</p>
+        </header>
+        <div class="mt-5">
+            <p class="mb-4 text-secondary">Para começar, por favor conecte a sua conta Google para ler e processar os seus emails.</p>
+            <a href="{{ url_for('login') }}" class="btn btn-google">
+                <i class="fab fa-google me-2"></i> Login com Google
+            </a>
+        </div>
+    </div>
+    {% endif %}
 
     <div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
@@ -596,23 +646,18 @@
                 </div>
                 <div class="modal-body">
                     <div id="feedbackErrorModal" class="error-message mb-3" style="display: none;"></div>
-                    
                     <div class="mb-3">
                         <label for="feedbackOriginalResponse" class="form-label">Resposta Original da IA (ou trecho):</label>
                         <textarea class="form-control" id="feedbackOriginalResponse" rows="4" readonly style="background-color: var(--point-text-bg); opacity: 0.8;"></textarea>
                     </div>
-                    
                     <div class="mb-3">
                         <label for="feedbackUserCorrection" class="form-label">Minha Versão Correta / O que eu queria:</label>
                         <textarea class="form-control" id="feedbackUserCorrection" rows="5" placeholder="Descreva ou cole aqui a resposta/comportamento que esperava..."></textarea>
                     </div>
-                    
                     <div class="mb-3">
                         <label for="feedbackTypeSelect" class="form-label">Tipo de Correção/Feedback:</label>
-                        <select class="form-select" id="feedbackTypeSelect">
-                            </select>
+                        <select class="form-select" id="feedbackTypeSelect"></select>
                     </div>
-                    
                     <div class="mb-3">
                         <label for="feedbackUserExplanation" class="form-label">Explicação Adicional (Opcional):</label>
                         <textarea class="form-control" id="feedbackUserExplanation" rows="3" placeholder="Porquê esta correção é melhor? Que princípio a IA deve aprender?"></textarea>
@@ -633,6 +678,12 @@
 
     <script>
         // --- Seletores de Elementos DOM ---
+        const bodyEl = document.body;
+        const themeToggle = document.getElementById('theme-checkbox');
+        const apiStatusIndicatorEl = document.getElementById('apiStatusIndicator');
+        const isLoggedIn = bodyEl.dataset.isLoggedIn === 'true';
+
+        // --- Seletores da App Principal (só existem se estiver logado) ---
         const originalEmailEl = document.getElementById('originalEmail');
         const analyzeBtn = document.getElementById('analyzeBtn');
         const analyzeSpinner = document.getElementById('analyzeSpinner');
@@ -651,12 +702,16 @@
         const contextInfoEl = document.getElementById('contextInfo');
         const contextDetailsEl = document.getElementById('contextDetails');
         const refinementControlsEl = document.getElementById('refinementControls');
-        const apiStatusIndicatorEl = document.getElementById('apiStatusIndicator');
-        const themeToggle = document.getElementById('theme-checkbox');
-        const bodyEl = document.body;
+        const feedbackBtn = document.getElementById('feedbackBtn');
+        const feedbackSuccessMessageEl = document.getElementById('feedbackSuccessMessage');
+
+        // --- NOVOS Seletores para Gmail ---
+        const fetchEmailsBtn = document.getElementById('fetchEmailsBtn');
+        const emailListEl = document.getElementById('emailList');
+        const gmailSpinnerEl = document.getElementById('gmailSpinner');
+        const gmailErrorEl = document.getElementById('gmailError');
 
         // --- Seletores para Elementos de Feedback ---
-        const feedbackBtn = document.getElementById('feedbackBtn');
         const feedbackModalEl = document.getElementById('feedbackModal');
         const feedbackOriginalResponseEl = document.getElementById('feedbackOriginalResponse');
         const feedbackUserCorrectionEl = document.getElementById('feedbackUserCorrection');
@@ -665,7 +720,6 @@
         const submitFeedbackBtn = document.getElementById('submitFeedbackBtn');
         const feedbackErrorModalEl = document.getElementById('feedbackErrorModal');
         const feedbackSubmitSpinner = document.getElementById('feedbackSubmitSpinner');
-        const feedbackSuccessMessageEl = document.getElementById('feedbackSuccessMessage');
         let feedbackModalInstance = null; 
 
         // --- Estado da Aplicação ---
@@ -688,7 +742,7 @@
             if (typeof unsafe !== 'string') return '';
             return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
-        function showSuccessMessage(element, message, duration = 4000) { // Aumentado para 4s
+        function showSuccessMessage(element, message, duration = 4000) {
             if (!element) return;
             element.innerHTML = `<i class="fas fa-check-circle me-2"></i> ${message}`;
             element.style.display = 'block';
@@ -702,33 +756,134 @@
             if (theme === 'light') {
                 bodyEl.classList.add('light-mode');
                 bodyEl.classList.remove('dark-mode');
-                themeToggle.checked = false;
+                if (themeToggle) themeToggle.checked = false;
             } else {
                 bodyEl.classList.add('dark-mode');
                 bodyEl.classList.remove('light-mode');
-                themeToggle.checked = true;
+                if (themeToggle) themeToggle.checked = true;
             }
         }
-        themeToggle.addEventListener('change', () => {
-            const newTheme = themeToggle.checked ? 'dark' : 'light';
-            applyTheme(newTheme);
-            localStorage.setItem('themePreference', newTheme);
-        });
+        if (themeToggle) {
+            themeToggle.addEventListener('change', () => {
+                const newTheme = themeToggle.checked ? 'dark' : 'light';
+                applyTheme(newTheme);
+                localStorage.setItem('themePreference', newTheme);
+            });
+        }
         
         // --- Lógica Principal da Aplicação ---
         document.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('themePreference') || 'dark';
-            themeToggle.checked = (savedTheme === 'dark');
             applyTheme(savedTheme);
 
+            if (isLoggedIn) {
+                // Se está logado, inicializa a app principal
+                initializeMainApp();
+            }
+        });
+
+        function initializeMainApp() {
             if (feedbackModalEl) {
                 feedbackModalInstance = new bootstrap.Modal(feedbackModalEl);
             }
-            populateFeedbackTypes(); // Popula o dropdown de tipos de feedback
-        });
+            populateFeedbackTypes();
 
-        // 1. Event Listener: Botão "Analisar Email"
-        analyzeBtn.addEventListener('click', async () => {
+            // Adiciona todos os event listeners da aplicação principal
+            analyzeBtn.addEventListener('click', handleAnalysis);
+            draftBtn.addEventListener('click', handleDrafting);
+            copyDraftBtn.addEventListener('click', handleCopy);
+            userInputsSection.addEventListener('click', handleGuidanceSuggestion);
+            generatedDraftEl.addEventListener('select', handleTextSelection);
+            generatedDraftEl.addEventListener('mouseup', handleTextSelection);
+            document.addEventListener('click', handleDeselection);
+            refinementControlsEl.addEventListener('click', handleRefinement);
+            feedbackBtn.addEventListener('click', openFeedbackModal);
+            submitFeedbackBtn.addEventListener('click', submitFeedback);
+            
+            // --- NOVA LÓGICA GMAIL ---
+            fetchEmailsBtn.addEventListener('click', fetchAndRenderEmails);
+            emailListEl.addEventListener('click', handleEmailClick);
+
+            // Fetch emails automaticamente ao carregar a página
+            fetchAndRenderEmails();
+        }
+
+        // --- NOVAS FUNÇÕES GMAIL ---
+        async function fetchAndRenderEmails() {
+            showSpinner(gmailSpinnerEl);
+            hideError(gmailErrorEl);
+            fetchEmailsBtn.disabled = true;
+            emailListEl.innerHTML = '<li class="list-group-item text-secondary">A carregar emails...</li>';
+
+            try {
+                const response = await fetch('/api/emails');
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error("Sessão expirada. Por favor, <a href='/login'>faça login novamente</a>.");
+                    }
+                    throw new Error(`Erro ao buscar emails: ${response.statusText}`);
+                }
+                const emails = await response.json();
+                emailListEl.innerHTML = ''; // Limpa a lista
+                if (emails.error) {
+                     throw new Error(emails.error);
+                }
+                if (emails.length === 0) {
+                    emailListEl.innerHTML = '<li class="list-group-item text-secondary">Nenhum email encontrado na sua caixa de entrada.</li>';
+                    return;
+                }
+                emails.forEach(email => {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item email-list-item';
+                    li.dataset.threadId = email.threadId;
+                    li.innerHTML = `
+                        <span class="email-sender">${escapeHtml(email.sender.replace(/<.*?>/g, ''))}</span>
+                        <span class="email-subject">${escapeHtml(email.subject)}</span>
+                        <span class="email-snippet">${escapeHtml(email.snippet)}</span>
+                    `;
+                    emailListEl.appendChild(li);
+                });
+            } catch (error) {
+                console.error("Erro ao carregar emails:", error);
+                showError(gmailErrorEl, error.message);
+                emailListEl.innerHTML = '';
+            } finally {
+                hideSpinner(gmailSpinnerEl);
+                fetchEmailsBtn.disabled = false;
+            }
+        }
+
+        async function handleEmailClick(event) {
+            const listItem = event.target.closest('.email-list-item');
+            if (listItem && listItem.dataset.threadId) {
+                const threadId = listItem.dataset.threadId;
+                originalEmailEl.value = `A carregar a conversa (Thread ID: ${threadId})...`;
+
+                try {
+                    const response = await fetch(`/api/thread/${threadId}`);
+                    if (!response.ok) {
+                        throw new Error(`Falha ao carregar a thread. Status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    if (data.error) throw new Error(data.error);
+
+                    originalEmailEl.value = data.thread_text;
+                    // Dispara a análise automaticamente
+                    analyzeBtn.click();
+
+                } catch (error) {
+                    console.error("Erro ao carregar thread:", error);
+                    showError(analyzeErrorEl, error.message);
+                    originalEmailEl.value = ''; // Limpa o textarea em caso de erro
+                } finally {
+                    originalEmailEl.disabled = false;
+                    // O spinner de análise será escondido pela função handleAnalysis
+                }
+            }
+        }
+
+        // --- LÓGICA EXISTENTE REORGANIZADA EM FUNÇÕES ---
+        async function handleAnalysis() {
             const emailText = originalEmailEl.value.trim();
             if (!emailText) {
                 showError(analyzeErrorEl, "Por favor, insira o texto do email recebido.");
@@ -774,7 +929,7 @@
                     draftBtn.disabled = false;
                 }
             }
-        });
+        }
 
         function displayAnalysisResults(data) {
             let html = '<h4>Pontos de Ação Identificados:</h4>';
@@ -801,15 +956,10 @@
                 const div = document.createElement('div');
                 div.className = 'point-input-group';
                 const inputId = isGeneral ? 'userInput-general' : `userInput-${index}`;
-                const pointIdentifier = isGeneral ? "N/A" : (point || "N/A"); // Usado em data-point
+                const pointIdentifier = isGeneral ? "N/A" : (point || "N/A");
                 const labelText = isGeneral ? '<strong>Diretriz Geral:</strong> <span class="form-label-sm">(Opcional - instrução global para este rascunho)</span>' : `<strong>Ponto ${index + 1}:</strong>`;
                 const pointDisplay = !isGeneral ? `<p class="point-text">"${escapeHtml(point)}"</p>` : '';
-                // Apenas pontos específicos são "required" se não houver diretriz geral.
-                // Esta lógica de 'required' pode ser complexa de gerir apenas no frontend.
-                // Por agora, vamos simplificar e não tornar os campos de ponto 'required' dinamicamente.
-                // A validação no backend ou no JS antes de submeter o draft pode ser mais robusta.
-                // const requiredAttr = !isGeneral ? 'required' : ''; 
-                const requiredAttr = ''; // Simplificado por agora
+                const requiredAttr = ''; 
                 const requiredFeedback = !isGeneral ? '<div class="invalid-feedback">Por favor, forneça uma diretriz para este ponto.</div>' : '';
                 const directionRadiosHTML = !isGeneral ? `<div class="mb-2 guidance-direction-group"><span class="form-label-sm d-block mb-1">Vetor de Resposta Rápida:</span><div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="direction-${index}" id="direction-${index}-sim" value="sim"><label class="form-check-label" for="direction-${index}-sim">Afirmativo</label></div><div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="direction-${index}" id="direction-${index}-nao" value="nao"><label class="form-check-label" for="direction-${index}-nao">Negativo</label></div><div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="direction-${index}" id="direction-${index}-outro" value="outro" checked><label class="form-check-label" for="direction-${index}-outro">Neutro/Detalhado</label></div></div>` : '';
                 const suggestButtonHTML = !isGeneral ? `<button class="btn btn-sm btn-outline-secondary suggest-btn" data-target-textarea="${inputId}" data-point-index="${index}" type="button" title="Gerar sugestão de diretriz via IA, usando o Vetor de Resposta">Sugerir Diretriz<div class="spinner-border spinner-border-sm loading-spinner" role="status" style="display: none;"></div></button>` : '';
@@ -821,13 +971,11 @@
             createGroup(null, 'general', true); 
         }
 
-        // 2. Event Listener: Botão "Gerar Rascunho"
-        draftBtn.addEventListener('click', async () => {
+        async function handleDrafting() {
             const originalEmail = originalEmailEl.value.trim();
             const selectedPersona = personaSelect.value;
             const guidanceInputs = userInputsSection.querySelectorAll('.user-guidance');
             let userInputsData = [];
-            // let formIsValid = true; // Validação de required foi simplificada/removida dos campos de ponto
             hideError(draftErrorEl); hideError(feedbackErrorModalEl);
             if(feedbackSuccessMessageEl) feedbackSuccessMessageEl.style.display = 'none';
             contextInfoEl.style.display = 'none'; refinementControlsEl.style.display = 'none';
@@ -838,13 +986,11 @@
             guidanceInputs.forEach(input => {
                 const pointText = input.getAttribute('data-point');
                 const guidanceText = input.value.trim();
-                // Adiciona à lista se tiver texto ou se for o campo geral (mesmo vazio)
                 if (guidanceText || input.id === 'userInput-general') {
-                     userInputsData.push({ point: pointText, guidance: guidanceText });
+                    userInputsData.push({ point: pointText, guidance: guidanceText });
                 }
             });
 
-            // if (!formIsValid) { showError(draftErrorEl, "Por favor, forneça diretrizes para todos os pontos de ação obrigatórios."); return; }
             if (!selectedPersona) { showError(draftErrorEl, "Por favor, selecione um protocolo de persona."); personaSelect.focus(); return; }
             
             showSpinner(draftSpinner); draftSection.style.display = 'none'; generatedDraftEl.value = '';
@@ -875,7 +1021,7 @@
                         user_guidance_inputs_snapshot: userInputsData,
                         llm_pre_analysis_snapshot: data.context_analysis,
                         persona_used: selectedPersona,
-                        ia_action_type: '/draft' // Indica que este contexto é de uma ação de draft
+                        ia_action_type: '/draft'
                     };
                 } else {
                      currentDraftContext = { 
@@ -894,10 +1040,9 @@
                 if (personaSelect.value && !personaSelect.disabled) { draftBtn.disabled = false; }
                 analyzeBtn.disabled = false;
             }
-        });
+        }
 
-        // 3. Event Listener: Botão "Copiar Texto" 
-        copyDraftBtn.addEventListener('click', () => {
+        function handleCopy() {
             if (!generatedDraftEl.value) return;
             const textToCopy = generatedDraftEl.value;
             navigator.clipboard.writeText(textToCopy).then(() => {
@@ -911,10 +1056,9 @@
                     setTimeout(() => { copyDraftBtn.innerHTML = '<i class="fas fa-copy"></i> Copiar'; copyDraftBtn.classList.remove('btn-warning'); copyDraftBtn.classList.add('btn-secondary'); }, 2000);
                 } catch (execErr) { console.error('Fallback execCommand também falhou:', execErr); showError(draftErrorEl, 'Falha ao copiar automaticamente. Use Ctrl+C.'); }
             });
-        });
+        }
 
-        // 4. Event Listener (Delegado): Botões "Sugerir Texto"
-        userInputsSection.addEventListener('click', async (event) => {
+        async function handleGuidanceSuggestion(event) {
             const button = event.target.closest('.suggest-btn');
             if (button && !button.disabled) {
                 const spinner = button.querySelector('.loading-spinner'); const targetTextareaId = button.dataset.targetTextarea; const pointIndex = parseInt(button.dataset.pointIndex, 10); const targetTextarea = document.getElementById(targetTextareaId); const originalEmail = originalEmailEl.value.trim(); const selectedPersonaName = personaSelect.value;
@@ -931,30 +1075,22 @@
                 } catch (error) { console.error("Erro ao obter sugestão de diretriz:", error); showError(draftErrorEl, `Erro na sugestão: ${error.message}`); }
                 finally { if (spinner) hideSpinner(spinner); button.disabled = false; }
             }
-        });
+        }
 
-        // 5. Mostrar/Esconder Botões de Refinamento 
         function handleTextSelection() { 
             setTimeout(() => { 
                 const hasSelection = draftSection.style.display === 'block' && generatedDraftEl.selectionStart !== generatedDraftEl.selectionEnd;
                 refinementControlsEl.style.display = hasSelection ? 'flex' : 'none';
-                // Se houver seleção, o botão de feedback deve ser para o trecho.
-                // Se não houver seleção, o botão de feedback é para o rascunho completo.
-                // Esta lógica pode ser expandida se quiser um botão de feedback específico para trechos.
-                // Por agora, o botão 'feedbackBtn' principal refere-se sempre ao rascunho completo.
             }, 0); 
         }
-        generatedDraftEl.addEventListener('select', handleTextSelection);
-        generatedDraftEl.addEventListener('mouseup', handleTextSelection);
-        generatedDraftEl.addEventListener('keyup', handleTextSelection);
-        document.addEventListener('click', (event) => { 
+
+        function handleDeselection(event) { 
             if (!generatedDraftEl.contains(event.target) && !refinementControlsEl.contains(event.target)) { 
                 refinementControlsEl.style.display = 'none'; 
             } 
-        });
+        }
 
-        // 6. Event Listener (Delegado): Botões de Refinamento
-        refinementControlsEl.addEventListener('click', async (event) => {
+        async function handleRefinement(event) {
             const button = event.target.closest('.refine-btn');
             if (button && !isRefining) {
                 const action = button.dataset.action; const spinner = button.querySelector('.loading-spinner');
@@ -980,7 +1116,7 @@
                     const after = fullContext.substring(end); 
                     const refinedText = data.refined_text || "";
                     generatedDraftEl.value = before + refinedText + after;
-                    lastGeneratedDraftForFeedback = generatedDraftEl.value; // Atualiza o rascunho para feedback
+                    lastGeneratedDraftForFeedback = generatedDraftEl.value;
                     generatedDraftEl.focus(); 
                     const newCursorPos = start + refinedText.length; 
                     generatedDraftEl.setSelectionRange(newCursorPos, newCursorPos);
@@ -992,12 +1128,11 @@
                     if(spinner) hideSpinner(spinner); 
                     refinementControlsEl.querySelectorAll('.refine-btn').forEach(btn => btn.disabled = false); 
                     isRefining = false; 
-                    refinementControlsEl.style.display = 'none'; // Esconde após a ação
+                    refinementControlsEl.style.display = 'none';
                 }
             }
-        });
+        }
 
-        // --- Lógica para o Feedback ---
         function populateFeedbackTypes() {
             const feedbackTypes = [
                 { value: "", text: "Selecione o tipo de feedback..." },
@@ -1023,82 +1158,66 @@
             }
         }
 
-        if (feedbackBtn) {
-            feedbackBtn.addEventListener('click', () => {
-                if (!lastGeneratedDraftForFeedback.trim()) {
-                    showError(draftErrorEl, "Não há rascunho gerado para fornecer feedback.");
-                    return;
-                }
-                hideError(feedbackErrorModalEl); 
-                if(feedbackSuccessMessageEl) feedbackSuccessMessageEl.style.display = 'none';
+        function openFeedbackModal() {
+            if (!lastGeneratedDraftForFeedback.trim()) {
+                showError(draftErrorEl, "Não há rascunho gerado para fornecer feedback.");
+                return;
+            }
+            hideError(feedbackErrorModalEl); 
+            if(feedbackSuccessMessageEl) feedbackSuccessMessageEl.style.display = 'none';
 
-                feedbackOriginalResponseEl.value = lastGeneratedDraftForFeedback; 
-                feedbackUserCorrectionEl.value = '';
-                feedbackTypeSelectEl.value = '';
-                feedbackUserExplanationEl.value = '';
-                
-                if (feedbackModalInstance) {
-                    feedbackModalInstance.show();
-                }
-            });
+            feedbackOriginalResponseEl.value = lastGeneratedDraftForFeedback; 
+            feedbackUserCorrectionEl.value = '';
+            feedbackTypeSelectEl.value = '';
+            feedbackUserExplanationEl.value = '';
+            
+            if (feedbackModalInstance) {
+                feedbackModalInstance.show();
+            }
         }
 
-        if (submitFeedbackBtn) {
-            submitFeedbackBtn.addEventListener('click', async () => {
-                const selectedPersona = personaSelect.value;
-                const userCorrection = feedbackUserCorrectionEl.value.trim();
-                const feedbackCategory = feedbackTypeSelectEl.value;
+        async function submitFeedback() {
+            const selectedPersona = personaSelect.value;
+            const userCorrection = feedbackUserCorrectionEl.value.trim();
+            const feedbackCategory = feedbackTypeSelectEl.value;
 
-                if (!selectedPersona) {
-                    showError(feedbackErrorModalEl, "Nenhuma persona selecionada. Não é possível submeter feedback.");
-                    return;
-                }
-                if (!userCorrection) {
-                    showError(feedbackErrorModalEl, "Por favor, forneça a sua versão correta ou o que esperava.");
-                    feedbackUserCorrectionEl.focus();
-                    return;
-                }
-                if (!feedbackCategory) {
-                    showError(feedbackErrorModalEl, "Por favor, selecione um tipo de feedback.");
-                    feedbackTypeSelectEl.focus();
-                    return;
-                }
-                hideError(feedbackErrorModalEl);
-                showSpinner(feedbackSubmitSpinner);
-                submitFeedbackBtn.disabled = true;
+            if (!selectedPersona) { showError(feedbackErrorModalEl, "Nenhuma persona selecionada. Não é possível submeter feedback."); return; }
+            if (!userCorrection) { showError(feedbackErrorModalEl, "Por favor, forneça a sua versão correta ou o que esperava."); feedbackUserCorrectionEl.focus(); return; }
+            if (!feedbackCategory) { showError(feedbackErrorModalEl, "Por favor, selecione um tipo de feedback."); feedbackTypeSelectEl.focus(); return; }
+            hideError(feedbackErrorModalEl);
+            showSpinner(feedbackSubmitSpinner);
+            submitFeedbackBtn.disabled = true;
 
-                const payload = {
-                    persona_name: selectedPersona,
-                    ai_original_response: feedbackOriginalResponseEl.value, 
-                    user_corrected_output: userCorrection,
-                    feedback_category: feedbackCategory,
-                    user_explanation: feedbackUserExplanationEl.value.trim(),
-                    interaction_context: currentDraftContext 
-                };
+            const payload = {
+                persona_name: selectedPersona,
+                ai_original_response: feedbackOriginalResponseEl.value, 
+                user_corrected_output: userCorrection,
+                feedback_category: feedbackCategory,
+                user_explanation: feedbackUserExplanationEl.value.trim(),
+                interaction_context: currentDraftContext 
+            };
+            
+            try {
+                const response = await fetch('/submit_feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (!response.ok || data.error) {
+                    throw new Error(data.error || `Erro HTTP ${response.status}`);
+                }
                 
-                try {
-                    const response = await fetch('/submit_feedback', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    const data = await response.json();
+                if(feedbackModalInstance) feedbackModalInstance.hide();
+                showSuccessMessage(feedbackSuccessMessageEl, "Feedback submetido com sucesso! A IA agradece a sua ajuda para aprender.");
 
-                    if (!response.ok || data.error) {
-                        throw new Error(data.error || `Erro HTTP ${response.status}`);
-                    }
-                    
-                    if(feedbackModalInstance) feedbackModalInstance.hide();
-                    showSuccessMessage(feedbackSuccessMessageEl, "Feedback submetido com sucesso! A IA agradece a sua ajuda para aprender.");
-
-                } catch (error) {
-                    console.error("Erro ao submeter feedback:", error);
-                    showError(feedbackErrorModalEl, `Erro ao submeter feedback: ${error.message}`);
-                } finally {
-                    hideSpinner(feedbackSubmitSpinner);
-                    submitFeedbackBtn.disabled = false;
-                }
-            });
+            } catch (error) {
+                console.error("Erro ao submeter feedback:", error);
+                showError(feedbackErrorModalEl, `Erro ao submeter feedback: ${error.message}`);
+            } finally {
+                hideSpinner(feedbackSubmitSpinner);
+                submitFeedbackBtn.disabled = false;
+            }
         }
     </script>
 </body>

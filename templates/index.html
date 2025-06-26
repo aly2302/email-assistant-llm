@@ -354,6 +354,21 @@
         .btn-warning:hover { color: var(--btn-warning-hover-text); box-shadow: 0 0 15px var(--btn-warning-hover-glow); }
         .btn-warning:focus { box-shadow: 0 0 0 3px var(--btn-warning-glow), 0 0 15px var(--btn-warning-hover-glow); }
 
+        /* Style for the new Send button */
+        .btn-send-email { 
+            color: #28a745; /* Bootstrap green success */
+            border-color: #28a745; 
+            box-shadow: 0 0 5px rgba(40, 167, 69, 0.3);
+        }
+        .btn-send-email::before { background-color: #28a745; }
+        .btn-send-email:hover { 
+            color: white; 
+            box-shadow: 0 0 15px rgba(40, 167, 69, 0.6); 
+        }
+        .btn-send-email:focus { 
+            box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.4), 0 0 15px rgba(40, 167, 69, 0.5); 
+        }
+
 
         .btn-outline-secondary.suggest-btn {
             color: var(--btn-secondary-color); border-color: var(--btn-secondary-border); background-color: transparent;
@@ -605,12 +620,18 @@
                     <button id="feedbackBtn" class="btn btn-warning ms-2" title="A IA errou? Ajude-a a aprender para o futuro." disabled>
                         <i class="fas fa-lightbulb"></i> Ensinar IA
                     </button>
+                    <button id="sendEmailBtn" class="btn btn-send-email ms-2" title="Enviar email automaticamente via Gmail" disabled>
+                        <i class="fas fa-paper-plane"></i> Enviar
+                        <div class="spinner-border spinner-border-sm loading-spinner" role="status" id="sendEmailSpinner"></div>
+                    </button>
                 </div>
                 <div id="contextInfo" class="small ms-md-3" style="display: none;">
                     <strong>Metadados de Contexto:</strong> <span id="contextDetails"></span>
                 </div>
             </div>
             <div id="feedbackSuccessMessage" class="alert alert-success mt-3" style="display: none;"></div>
+            <div id="sendEmailSuccessMessage" class="alert alert-success mt-3" style="display: none;"></div>
+            <div id="sendEmailError" class="error-message mt-3"></div>
         </section>
     </div>
 
@@ -722,11 +743,20 @@
         const feedbackSubmitSpinner = document.getElementById('feedbackSubmitSpinner');
         let feedbackModalInstance = null; 
 
+        // --- Seletores para Envio de Email ---
+        const sendEmailBtn = document.getElementById('sendEmailBtn');
+        const sendEmailSpinner = document.getElementById('sendEmailSpinner');
+        const sendEmailSuccessMessageEl = document.getElementById('sendEmailSuccessMessage');
+        const sendEmailErrorEl = document.getElementById('sendEmailError');
+
         // --- Estado da Aplicação ---
         let currentAnalysisPoints = [];
         let isRefining = false;
         let currentDraftContext = {}; 
-        let lastGeneratedDraftForFeedback = ""; 
+        let lastGeneratedDraftForFeedback = "";
+        let currentOriginalSenderEmail = ""; // NEW: To store the sender for replies
+        let currentOriginalSubject = "";   // NEW: To store the subject for replies
+        let currentThreadId = "";          // NEW: To store the thread ID for replies
 
         // --- Funções Auxiliares ---
         function showSpinner(spinner) { if(spinner) spinner.style.display = 'inline-block'; }
@@ -803,6 +833,7 @@
             // --- NOVA LÓGICA GMAIL ---
             fetchEmailsBtn.addEventListener('click', fetchAndRenderEmails);
             emailListEl.addEventListener('click', handleEmailClick);
+            sendEmailBtn.addEventListener('click', handleSendEmail); // NEW: Send Email button handler
 
             // Fetch emails automaticamente ao carregar a página
             fetchAndRenderEmails();
@@ -836,6 +867,7 @@
                     const li = document.createElement('li');
                     li.className = 'list-group-item email-list-item';
                     li.dataset.threadId = email.threadId;
+                    li.dataset.emailId = email.id; // Store email ID if needed for specific message actions
                     li.innerHTML = `
                         <span class="email-sender">${escapeHtml(email.sender.replace(/<.*?>/g, ''))}</span>
                         <span class="email-subject">${escapeHtml(email.subject)}</span>
@@ -858,6 +890,9 @@
             if (listItem && listItem.dataset.threadId) {
                 const threadId = listItem.dataset.threadId;
                 originalEmailEl.value = `A carregar a conversa (Thread ID: ${threadId})...`;
+                sendEmailBtn.disabled = true; // Disable send button while loading new email
+                hideError(sendEmailErrorEl);
+                showSuccessMessage(sendEmailSuccessMessageEl, '', 0);
 
                 try {
                     const response = await fetch(`/api/thread/${threadId}`);
@@ -868,6 +903,10 @@
                     if (data.error) throw new Error(data.error);
 
                     originalEmailEl.value = data.thread_text;
+                    currentOriginalSenderEmail = data.original_sender_email; // Store original sender email
+                    currentOriginalSubject = data.original_subject;       // Store original subject
+                    currentThreadId = threadId;                           // Store thread ID
+
                     // Dispara a análise automaticamente
                     analyzeBtn.click();
 
@@ -875,9 +914,12 @@
                     console.error("Erro ao carregar thread:", error);
                     showError(analyzeErrorEl, error.message);
                     originalEmailEl.value = ''; // Limpa o textarea em caso de erro
+                    currentOriginalSenderEmail = "";
+                    currentOriginalSubject = "";
+                    currentThreadId = "";
                 } finally {
                     originalEmailEl.disabled = false;
-                    // O spinner de análise será escondido pela função handleAnalysis
+                    // The analysis spinner will be hidden by the handleAnalysis function
                 }
             }
         }
@@ -892,14 +934,16 @@
                 originalEmailEl.classList.remove('is-invalid');
             }
             showSpinner(analyzeSpinner);
-            hideError(analyzeErrorEl); hideError(draftErrorEl); hideError(feedbackErrorModalEl);
+            hideError(analyzeErrorEl); hideError(draftErrorEl); hideError(feedbackErrorModalEl); hideError(sendEmailErrorEl);
             if(feedbackSuccessMessageEl) feedbackSuccessMessageEl.style.display = 'none';
+            if(sendEmailSuccessMessageEl) sendEmailSuccessMessageEl.style.display = 'none';
             analysisSection.style.display = 'none'; draftSection.style.display = 'none';
             refinementControlsEl.style.display = 'none'; analysisResultEl.innerHTML = '';
             userInputsSection.innerHTML = ''; generatedDraftEl.value = '';
             contextInfoEl.style.display = 'none';
             analyzeBtn.disabled = true; draftBtn.disabled = true; 
             if(feedbackBtn) feedbackBtn.disabled = true;
+            if(sendEmailBtn) sendEmailBtn.disabled = true; // Disable send button on new analysis
             currentDraftContext = {}; 
             lastGeneratedDraftForFeedback = "";
 
@@ -976,10 +1020,12 @@
             const selectedPersona = personaSelect.value;
             const guidanceInputs = userInputsSection.querySelectorAll('.user-guidance');
             let userInputsData = [];
-            hideError(draftErrorEl); hideError(feedbackErrorModalEl);
+            hideError(draftErrorEl); hideError(feedbackErrorModalEl); hideError(sendEmailErrorEl);
             if(feedbackSuccessMessageEl) feedbackSuccessMessageEl.style.display = 'none';
+            if(sendEmailSuccessMessageEl) sendEmailSuccessMessageEl.style.display = 'none';
             contextInfoEl.style.display = 'none'; refinementControlsEl.style.display = 'none';
             if(feedbackBtn) feedbackBtn.disabled = true; 
+            if(sendEmailBtn) sendEmailBtn.disabled = true; // Disable send button during drafting
             currentDraftContext = {}; 
             lastGeneratedDraftForFeedback = "";
 
@@ -1011,7 +1057,11 @@
                 generatedDraftEl.value = data.draft || "";
                 lastGeneratedDraftForFeedback = data.draft || ""; 
                 draftSection.style.display = 'block';
-                if(feedbackBtn) feedbackBtn.disabled = !lastGeneratedDraftForFeedback.trim(); 
+                if(feedbackBtn) feedbackBtn.disabled = !lastGeneratedDraftForFeedback.trim();
+                // Enable send email button if a draft is generated and we have a recipient
+                if (lastGeneratedDraftForFeedback.trim() && currentOriginalSenderEmail && currentOriginalSubject) {
+                    sendEmailBtn.disabled = false;
+                }
 
                 if (data.context_analysis) {
                     contextDetailsEl.textContent = `Cat: ${data.context_analysis.recipient_category || 'N/D'}, Tom Rx: ${data.context_analysis.incoming_tone || 'N/D'}, Remet: ${data.context_analysis.sender_name_guess || 'N/D'}`;
@@ -1066,7 +1116,7 @@
                 const pointToAddress = (currentAnalysisPoints && pointIndex >= 0 && pointIndex < currentAnalysisPoints.length) ? currentAnalysisPoints[pointIndex] : null;
                 if (!targetTextarea || !originalEmail || !pointToAddress || !selectedPersonaName || pointToAddress === 'N/A') { console.error("Dados em falta para sugestão de diretriz. Ponto:", pointToAddress); showError(draftErrorEl, "Erro interno: Dados insuficientes para sugestão."); return; }
                 if (!selectedPersonaName) { showError(draftErrorEl, "Por favor, selecione um protocolo de persona."); personaSelect.focus(); return; }
-                if (spinner) showSpinner(spinner); button.disabled = true; hideError(draftErrorEl);
+                if (spinner) showSpinner(spinner); button.disabled = true; hideError(draftErrorEl); hideError(sendEmailErrorEl);
                 try {
                     const response = await fetch('/suggest_guidance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ original_email: originalEmail, point_to_address: pointToAddress, persona_name: selectedPersonaName, direction: selectedDirection }) });
                     const data = await response.json();
@@ -1103,7 +1153,7 @@
                 if (!selectedPersonaName) { showError(draftErrorEl, "Selecione um protocolo de persona para otimização."); personaSelect.focus(); return; }
                 isRefining = true; if(spinner) showSpinner(spinner); 
                 refinementControlsEl.querySelectorAll('.refine-btn').forEach(btn => btn.disabled = true); 
-                hideError(draftErrorEl);
+                hideError(draftErrorEl); hideError(sendEmailErrorEl);
                 try {
                     const response = await fetch('/refine_text', { 
                         method: 'POST', 
@@ -1165,6 +1215,7 @@
             }
             hideError(feedbackErrorModalEl); 
             if(feedbackSuccessMessageEl) feedbackSuccessMessageEl.style.display = 'none';
+            if(sendEmailSuccessMessageEl) sendEmailSuccessMessageEl.style.display = 'none'; // Hide send email success
 
             feedbackOriginalResponseEl.value = lastGeneratedDraftForFeedback; 
             feedbackUserCorrectionEl.value = '';
@@ -1217,6 +1268,74 @@
             } finally {
                 hideSpinner(feedbackSubmitSpinner);
                 submitFeedbackBtn.disabled = false;
+            }
+        }
+
+        // NEW: Function to handle sending the email
+        async function handleSendEmail() {
+            const generatedDraft = generatedDraftEl.value.trim();
+
+            if (!generatedDraft) {
+                showError(sendEmailErrorEl, "Não há composição para enviar.");
+                return;
+            }
+            if (!currentOriginalSenderEmail) {
+                showError(sendEmailErrorEl, "Não foi possível identificar o remetente original para enviar.");
+                return;
+            }
+            if (!currentOriginalSubject) {
+                showError(sendEmailErrorEl, "Não foi possível identificar o assunto original do email.");
+                return;
+            }
+            if (!currentThreadId) {
+                showError(sendEmailErrorEl, "Não foi possível identificar o ID da conversa (thread) para responder.");
+                return;
+            }
+
+            // Confirm with the user before sending
+            const confirmation = confirm(`Tem certeza que deseja enviar este email para:\n\nPara: ${currentOriginalSenderEmail}\nAssunto: ${currentOriginalSubject}\n\nConteúdo:\n"${generatedDraft.substring(0, 150)}..."`);
+            if (!confirmation) {
+                showError(sendEmailErrorEl, "Envio de email cancelado pelo utilizador.");
+                return;
+            }
+
+            showSpinner(sendEmailSpinner);
+            sendEmailBtn.disabled = true;
+            hideError(sendEmailErrorEl);
+            showSuccessMessage(sendEmailSuccessMessageEl, '', 0); // Clear any previous success message
+
+            try {
+                const response = await fetch('/api/send_email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        recipient: currentOriginalSenderEmail,
+                        subject: `Re: ${currentOriginalSubject}`, // Add "Re:" for replies
+                        body: generatedDraft,
+                        thread_id: currentThreadId // Pass thread_id to backend
+                    })
+                });
+                const data = await response.json();
+
+                if (!response.ok || data.error) {
+                    throw new Error(data.error || `Erro HTTP ${response.status}`);
+                }
+
+                showSuccessMessage(sendEmailSuccessMessageEl, "Email enviado com sucesso!");
+                generatedDraftEl.value = ''; // Clear the draft after sending
+                lastGeneratedDraftForFeedback = "";
+                feedbackBtn.disabled = true;
+                sendEmailBtn.disabled = true;
+
+            } catch (error) {
+                console.error("Erro ao enviar email:", error);
+                showError(sendEmailErrorEl, `Erro ao enviar email: ${error.message}`);
+            } finally {
+                hideSpinner(sendEmailSpinner);
+                // Re-enable button if there's a draft and recipient (in case of error before clearing draft)
+                if (generatedDraftEl.value.trim() && currentOriginalSenderEmail && currentOriginalSubject) {
+                    sendEmailBtn.disabled = false;
+                }
             }
         }
     </script>

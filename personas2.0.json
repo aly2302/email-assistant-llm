@@ -207,7 +207,37 @@
       ],
       "relevant_generic_rule_keys": [],
       "recipient_adaptation_rules": {},
-      "learned_knowledge_base": []
+      "learned_knowledge_base": [
+        {
+          "timestamp_utc": "2025-06-26T15:46:06.594992+00:00",
+          "feedback_category_pt": "OUTRO",
+          "ai_original_response_text": "Olá Rodrigo, bom dia!\n\nSim, quarta-feira às 8h00 (BRT) está ótimo para mim.\n\nCumprimentos,\nRodrigo Novelo",
+          "user_corrected_output_text": "Olá/Bom dia/ Boa tarde ou Boa noite professor,",
+          "user_explanation_text_pt": "tratar sempre o professor Rodrigo por \"professor\"!",
+          "interaction_context_snapshot": {
+            "original_email_text": "From: Rodrigo Novelo <rodrigo.c.novelo2302@gmail.com>\nSubject: Próximas reunioes\n\nOlá Rodrigo, bom dia!\n\nEsses dias tem sido bastante corrido para mim, desta maneira, vamos nos\nreunir na quarta-feira as 08:00 BR.\n\nAtenciosamente,\nProfessor Rodrigo Rocha Silva",
+            "user_guidance_inputs_snapshot": [
+              {
+                "point": "Confirmar ou propor um novo horário para a reunião.",
+                "guidance": "confirmar"
+              },
+              {
+                "point": "N/A",
+                "guidance": ""
+              }
+            ],
+            "llm_pre_analysis_snapshot": {
+              "incoming_tone": "Semi-Formal",
+              "rationale": "The email is from a colleague, scheduling a meeting, suggesting a collaborative project context.",
+              "recipient_category": "student_to_colleague_project_collaboration",
+              "sender_name_guess": "Rodrigo Rocha Silva"
+            },
+            "persona_used": "student_rodrigo_novelo",
+            "ia_action_type": "/draft"
+          },
+          "model_used_for_original": "gemini-1.5-flash-latest"
+        }
+      ]
     }
   },
   "generic_recipient_adaptation_rules": {

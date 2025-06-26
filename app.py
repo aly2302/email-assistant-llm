@@ -19,6 +19,7 @@ from google_auth_oauthlib.flow import Flow
 import google.oauth2.credentials
 import googleapiclient.discovery
 import base64 # To decode email body
+from email.mime.text import MIMEText # NEW: Import MIMEText for composing emails
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -59,7 +60,7 @@ SCOPES = [
     'https://www.googleapis.com/auth/userinfo.email',
     'https://www.googleapis.com/auth/userinfo.profile',
     'https://www.googleapis.com/auth/gmail.readonly',
-    'https://www.googleapis.com/auth/gmail.compose',
+    'https://www.googleapis.com/auth/gmail.compose', # REQUIRED for sending emails
     'openid'
 ]
 
@@ -118,7 +119,7 @@ def call_gemini(prompt, model=GEMINI_MODEL, temperature=GENERATION_TEMPERATURE):
 
     try:
         response = requests.post(api_url, json=payload, headers=headers, timeout=180)
-        response.raise_for_status()
+        response.raise_for_status() # Raise an exception for HTTP errors (4xx or 5xx)
         data = response.json()
         app.logger.debug(f"API Response (partial): {str(data)[:500]}...")
 
@@ -604,15 +605,21 @@ def get_thread_route(thread_id):
         if not thread.get('messages'):
             return jsonify({"error": "Thread contains no messages."}), 404
             
+        # Get the first message in the thread for original sender and subject (for reply context)
+        first_message = thread['messages'][0]
+        first_payload = first_message.get('payload', {})
+        first_headers = first_payload.get('headers', [])
+        
+        # Extract original sender email (e.g., "John Doe <john.doe@example.com>")
+        original_sender_email = next((h['value'] for h in first_headers if h['name'].lower() == 'from'), 'Remetente Desconhecido')
+        # Extract original subject
+        original_subject = next((h['value'] for h in first_headers if h['name'].lower() == 'subject'), '(Sem Assunto)')
+
+        # Get the last message in the thread for the `originalEmailEl` content (what the user sees)
         last_message = thread['messages'][-1]
         payload = last_message.get('payload', {})
         headers = payload.get('headers', [])
         
-        # Extrai os cabeçalhos que nos interessam
-        sender = next((h['value'] for h in headers if h['name'].lower() == 'from'), 'Remetente Desconhecido')
-        subject = next((h['value'] for h in headers if h['name'].lower() == 'subject'), '(Sem Assunto)')
-        
-        # Extrai o corpo do email em texto simples
         body = ''
         if 'parts' in payload:
             for part in payload['parts']:
@@ -625,16 +632,66 @@ def get_thread_route(thread_id):
             data = payload['body']['data']
             body = base64.urlsafe_b64decode(data).decode('utf-8')
 
-        # Cria o texto final formatado de forma simples
-        # A sua função de análise de contexto já está preparada para extrair o nome disto
-        display_text = f"From: {sender}\nSubject: {subject}\n\n{body.strip()}"
+        # Create the final formatted text for display in the textarea
+        # This format helps the analysis function extract sender/subject from the displayed text
+        display_text = f"From: {original_sender_email}\nSubject: {original_subject}\n\n{body.strip()}"
         
-        # Devolve apenas o texto simples
-        return jsonify({"thread_text": display_text})
+        # Return the simplified text PLUS the original sender and subject for sending replies
+        return jsonify({
+            "thread_text": display_text,
+            "original_sender_email": original_sender_email,
+            "original_subject": original_subject
+        })
 
     except Exception as e:
         logging.error(f"Error fetching simplified thread for ID {thread_id}: {e}")
         return jsonify({"error": f"Failed to retrieve thread content: {e}"}), 500
+
+@app.route('/api/send_email', methods=['POST'])
+def send_email_route():
+    """API endpoint to send an email using Gmail API."""
+    service = get_gmail_service()
+    if not service:
+        return jsonify({"error": "User not authenticated or session expired."}), 401
+
+    data = request.get_json()
+    recipient = data.get('recipient')
+    subject = data.get('subject')
+    body = data.get('body')
+    thread_id = data.get('thread_id') # Get thread_id from request
+
+    if not all([recipient, subject, body]):
+        return jsonify({"error": "Recipient, subject, and body are required."}), 400
+
+    try:
+        # Create the email message
+        message = MIMEText(body)
+        message['to'] = recipient
+        message['subject'] = subject
+        # Add 'In-Reply-To' header to link to the specific message being replied to
+        # This helps Gmail correctly group replies in the same thread.
+        # Note: Gmail API's `threadId` parameter typically handles this, but including headers can be good practice.
+        # If replying to a specific message, you would need the original message's Message-ID header.
+        # For simplicity, relying on threadId parameter for now.
+
+        # Encode message for Gmail API
+        raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+        
+        send_options = {'raw': raw_message}
+        
+        # If thread_id is provided, reply in the same thread
+        if thread_id:
+            send_options['threadId'] = thread_id
+
+        # Use the send method to send the email
+        sent_message = service.users().messages().send(userId='me', body=send_options).execute()
+        
+        logging.info(f"Email sent successfully to {recipient} with message ID: {sent_message['id']}")
+        return jsonify({"message": "Email sent successfully!", "id": sent_message['id']})
+
+    except Exception as e:
+        logging.error(f"Failed to send email: {e}")
+        return jsonify({"error": f"Failed to send email: {e}"}), 500
 
 
 # --- Main Application Routes ---
@@ -642,6 +699,7 @@ def get_thread_route(thread_id):
 def index_route():
     """Serves the main page."""
     global PERSONA_DATA
+    # Reload personas data in debug mode to pick up changes without restarting Flask
     if DEBUG_MODE:
         PERSONA_DATA = load_persona_file()
     personas_dict = PERSONA_DATA.get("personas", {})
@@ -682,10 +740,15 @@ def draft_response_route():
         return jsonify({"error": f"Persona '{active_persona_key}' not found or personas not loaded."}), 400
     selected_persona = PERSONA_DATA["personas"][active_persona_key]
     generic_rules = PERSONA_DATA.get("generic_recipient_adaptation_rules", {})
+    
+    # Perform context analysis
     context_analysis_result = analyze_sender_and_context(original_email, selected_persona, generic_rules)
     if context_analysis_result.get("error"):
         logging.warning(f"Context pre-analysis failed: {context_analysis_result['error']}. Continuing with defaults.")
+    
+    # Find and summarize relevant knowledge based on context analysis
     summarized_knowledge = find_and_summarize_relevant_knowledge(selected_persona, context_analysis_result)
+    
     user_inputs = request.json['user_inputs']
     if not user_inputs or not any(item.get('guidance', '').strip() for item in user_inputs):
         user_guidance = "Write an appropriate response to the email, considering the context and persona."
@@ -693,6 +756,7 @@ def draft_response_route():
         guidance_points = [f'- For the decision point "{item.get("point", "geral")}", my intention is: "{item.get("guidance")}"'
                            for item in user_inputs if item.get('guidance', '').strip()]
         user_guidance = "The intention for the response is as follows:\n" + "\n".join(guidance_points)
+    
     logging.info(f"Starting HYBRID Draft Generation for Persona: {active_persona_key}")
     draft_prompt = build_holistic_draft_prompt(
         original_email, user_guidance, active_persona_key, PERSONA_DATA, context_analysis_result, summarized_knowledge
@@ -765,12 +829,13 @@ def submit_feedback_route():
                     "model_used_for_original": request.json['interaction_context'].get('model_used', GEMINI_MODEL)
                 }
                 persona_obj['learned_knowledge_base'].append(feedback_entry)
-                f.seek(0)
+                f.seek(0) # Rewind to the beginning of the file
                 json.dump(current_persona_data, f, ensure_ascii=False, indent=2)
-                f.truncate()
+                f.truncate() # Truncate the file to the new size
         except Exception as e:
             logging.exception("Error saving feedback:")
             return jsonify({"error": f"Unexpected server error: {e}"}), 500
+    # Update the global persona data in memory after saving to disk
     global PERSONA_DATA
     PERSONA_DATA = current_persona_data
     return jsonify({"message": "Feedback submitted successfully!"})

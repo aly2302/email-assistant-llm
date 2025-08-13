@@ -38,7 +38,7 @@ DEBUG_MODE = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
 
 # --- Gemini Configuration ---
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
-GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-1.5-flash-latest')
+GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-2.5-flash-lite')
 
 # --- File Paths ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -198,11 +198,11 @@ For each request, you must follow a rigorous process of **Chain of Thought and a
 ### PART 2: GENERATION AND QUALITY CYCLE
 1.  **Write the First Draft (Draft 1).**
 2.  **Quality Check & Refinement:** Critically evaluate your Draft 1 against this mandatory checklist:
-    * **✅ Context Memory:** Were the high-priority rules from the `CONTEXT MEMORY` 100% followed? (THE MOST IMPORTANT)
-    * **✅ Non-Negotiable Rules:** Were the rules of etiquette and factual accuracy followed?
-    * **✅ Intent Fulfillment:** Does it 100% achieve the user's goal?
-    * **✅ Persona and Context Alignment:** Does the response genuinely sound like the persona and is it adapted to the `Received Email Tone`?
-    * **✅ Clarity and Professionalism:** Is the language clear, professional, and human?
+    * ✅ **Context Memory:** Were the high-priority rules from the `CONTEXT MEMORY` 100% followed? (THE MOST IMPORTANT)
+    * ✅ **Non-Negotiable Rules:** Were the rules of etiquette and factual accuracy followed?
+    * ✅ **Intent Fulfillment:** Does it 100% achieve the user's goal?
+    * ✅ **Persona and Context Alignment:** Does the response genuinely sound like the persona and is it adapted to the `Received Email Tone`?
+    * ✅ **Clarity and Professionalism:** Is the language clear, professional, and human?
 3.  **Write the Final Improved Version (Final Version):** Based on your check, rewrite the email to produce the final, polished version.
 ## 4. EXPECTED OUTPUT
 Your final output must be **ONLY the full text of the "Final Version" email**. Do not show your chain of thought or intermediate drafts.
@@ -276,8 +276,8 @@ Received Email:
 ---
 {truncated_email}
 ---
-Task: Analyze the received email and the persona context. Determine the most likely category of the MAIN sender and the tone of the received email. Return **ONLY** a JSON object with the following **MANDATORY** keys:
-1.  `recipient_category`: (string) The **exact** key that best describes the sender. It must be ONE of the `recipient_types` provided (e.g., "student_to_professor_academic_inquiry"). If no option applies, return "unknown".
+Task: Analyze the received email and the persona context. Determine the most likely category of the MAIN sender and the tone of the **received email**. Choose ONE of the `recipient_types` provided (e.g., "student_to_professor_academic_inquiry"). If no option applies, return "unknown". Return **ONLY** a JSON object with the following **MANDATORY** keys:
+1.  `recipient_category`: (string) The **exact** key that best describes the sender. It must be ONE of the `recipient_types` provided.
 2.  `incoming_tone`: (string) The perceived tone of the **received email**. Choose ONE of the options: "Muito Formal", "Formal", "Semi-Formal", "Casual", "Urgente", "InformativoNeutro", "Outro".
 3.  `sender_name_guess`: (string) The best guess of the main sender's name (e.g., "Marta Silva", "João Carlos"). **IMPORTANT: Omit titles like 'Prof.', 'Dr.', 'Eng.', etc.** If impossible to determine, return an empty string "".
 4.  `rationale`: (string) A **short and objective** sentence justifying the choice of `recipient_category`.
@@ -720,7 +720,7 @@ def analyze_email_route():
         return jsonify({"error": f"LLM analysis failed: {llm_response['error']}", "raw_analysis": llm_response.get("text")}), 500
     analysis_result = parse_analysis_output(llm_response.get("text", ""))
     if analysis_result.get("error"):
-         return jsonify(analysis_result), 500
+        return jsonify(analysis_result), 500
     logging.info("Intent analysis processed successfully.")
     return jsonify(analysis_result)
 
@@ -780,7 +780,7 @@ def suggest_guidance_route():
     prompt = build_prompt_3_suggestion(request.json['point_to_address'], selected_persona, request.json.get('direction', 'outro'))
     llm_response = call_gemini(prompt, temperature=ANALYSIS_TEMPERATURE)
     if "error" in llm_response:
-         return jsonify(llm_response), 500
+        return jsonify(llm_response), 500
     return jsonify({"suggestion": llm_response.get("text", "").strip()})
 
 

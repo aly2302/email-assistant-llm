@@ -63,8 +63,46 @@ const backToAnalysisBtn = document.getElementById('backToAnalysisBtn');
 const backToSelectBtn = document.getElementById('backToSelectBtn');
 const progressSteps = document.querySelectorAll('.progress-step');
 
+// --- NOVOS Seletores para Gestão de Personas ---
+const createPersonaBtn = document.getElementById('createPersonaBtn');
+const personasTableBody = document.getElementById('personasTableBody');
+const personaFormModalEl = document.getElementById('personaFormModal');
+const personaFormModalLabel = document.getElementById('personaFormModalLabel');
+const personaForm = document.getElementById('personaForm');
+const personaKeyInput = document.getElementById('personaKeyInput');
+const personaLabelPtInput = document.getElementById('personaLabelPtInput');
+const personaDescriptionPtInput = document.getElementById('personaDescriptionPtInput');
+const personaRoleTemplateInput = document.getElementById('personaRoleTemplateInput');
+const commLanguageInput = document.getElementById('commLanguageInput');
+const commVerbosityInput = document.getElementById('commVerbosityInput');
+const commSentenceStructureInput = document.getElementById('commSentenceStructureInput');
+const commVocabularyPreferenceInput = document.getElementById('commVocabularyPreferenceInput');
+const commEmojiUsageInput = document.getElementById('commEmojiUsageInput');
+const styleToneLabelInput = document.getElementById('styleToneLabelInput');
+const styleToneKeywordsInput = document.getElementById('styleToneKeywordsInput');
+const styleFormalityLabelInput = document.getElementById('styleFormalityLabelInput');
+const styleFormalityNumericInput = document.getElementById('styleFormalityNumericInput');
+const styleFormalityGuidanceInput = document.getElementById('styleFormalityGuidanceInput');
+const generalDosInput = document.getElementById('generalDosInput');
+const generalDontsInput = document.getElementById('generalDontsInput');
+const fewShotExamplesContainer = document.getElementById('fewShotExamplesContainer');
+const addFewShotExampleBtn = document.getElementById('addFewShotExampleBtn');
+const savePersonaBtn = document.getElementById('savePersonaBtn');
+const savePersonaSpinner = document.getElementById('savePersonaSpinner');
+const personaFormError = document.getElementById('personaFormError');
+const personaListError = document.getElementById('personaListError');
+const deletePersonaConfirmModalEl = document.getElementById('deletePersonaConfirmModal');
+const personaToDeleteNameEl = document.getElementById('personaToDeleteName');
+const confirmDeletePersonaBtn = document.getElementById('confirmDeletePersonaBtn');
+const deletePersonaSpinner = document.getElementById('deletePersonaSpinner');
+const currentPersonaKeyInput = document.getElementById('currentPersonaKey'); // Hidden input for editing
+
+let personaFormModalInstance = null;
+let deletePersonaConfirmModalInstance = null;
+let personaToDeleteKey = null; // Armazena a chave da persona a ser eliminada
+
 // --- Estado da Aplicação ---
-let currentStep = 1; // 1: Selecionar Email, 2: Analisar, 3: Compor
+let currentStep = 1; // 1: Selecionar Email, 2: Analisar, 3: Compor, 4: Gerir Personas
 let currentAnalysisPoints = [];
 let isRefining = false;
 let currentDraftContext = {};
@@ -135,6 +173,14 @@ function initializeMainApp() {
     if (sendEmailConfirmModalEl) {
         sendEmailConfirmModalInstance = new bootstrap.Modal(sendEmailConfirmModalEl);
     }
+    // NOVOS MODAIS
+    if (personaFormModalEl) {
+        personaFormModalInstance = new bootstrap.Modal(personaFormModalEl);
+    }
+    if (deletePersonaConfirmModalEl) {
+        deletePersonaConfirmModalInstance = new bootstrap.Modal(deletePersonaConfirmModalEl);
+    }
+
     populateFeedbackTypes();
 
     // Adiciona todos os event listeners da aplicação principal
@@ -156,6 +202,10 @@ function initializeMainApp() {
     // Event listeners para navegação entre passos
     backToSelectBtn.addEventListener('click', () => showStep(1));
     backToAnalysisBtn.addEventListener('click', () => showStep(2));
+    // NOVO: Navegação para o passo de gestão de personas
+    document.getElementById('progress-step-4').addEventListener('click', () => showStep(4));
+    document.getElementById('backToMainFlowBtn').addEventListener('click', () => showStep(1));
+
 
     // Event listener para habilitar/desabilitar o botão de análise do Passo 1
     originalEmailEl.addEventListener('input', () => {
@@ -176,14 +226,32 @@ function initializeMainApp() {
         }
     });
 
+    // --- NOVOS Event Listeners para Gestão de Personas ---
+    createPersonaBtn.addEventListener('click', openCreatePersonaModal);
+    personaForm.addEventListener('submit', submitPersonaForm);
+    addFewShotExampleBtn.addEventListener('click', () => addFewShotExampleField('', '')); // Adiciona um campo vazio
+    fewShotExamplesContainer.addEventListener('click', (event) => { // Delegação para remover exemplos
+        if (event.target.classList.contains('remove-few-shot-example')) {
+            event.target.closest('.few-shot-example-group').remove();
+            updateFewShotExampleLabels();
+        }
+    });
+
+    personasTableBody.addEventListener('click', handlePersonaTableClick);
+    confirmDeletePersonaBtn.addEventListener('click', deletePersona);
+
     // Inicia a aplicação no primeiro passo
     showStep(1);
     fetchAndRenderEmails();
+    // Carrega as personas no select (se já não estiverem carregadas pelo Jinja)
+    // E também carrega na tabela de gestão
+    fetchAndRenderPersonas(); 
+    populatePersonaSelect(); // Garante que o select está atualizado
 }
 
 /**
  * Controla a exibição dos passos do assistente e atualiza o indicador de progresso.
- * @param {number} stepNumber O número do passo a ser exibido (1, 2 ou 3).
+ * @param {number} stepNumber O número do passo a ser exibido (1, 2, 3 ou 4).
  */
 function showStep(stepNumber) {
     currentStep = stepNumber;
@@ -397,7 +465,7 @@ function createUserInputFields(points) {
         const pointIdentifier = isGeneral ? "N/A" : (point || "N/A");
         const labelText = isGeneral ? '<strong>Diretriz Geral:</strong> <span class="form-label-sm">(Opcional - instrução global para este rascunho)</span>' : `<strong>Ponto ${index + 1}:</strong>`;
         const pointDisplay = !isGeneral ? `<p class="point-text">"${escapeHtml(point)}"</p>` : '';
-        const requiredAttr = '';
+        const requiredAttr = ''; // Removido 'required' para permitir campos vazios
         const requiredFeedback = !isGeneral ? '<div class="invalid-feedback">Por favor, forneça uma diretriz para este ponto.</div>' : '';
         const directionRadiosHTML = !isGeneral ? `<div class="mb-2 guidance-direction-group"><span class="form-label-sm d-block mb-1">Vetor de Resposta Rápida:</span><div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="direction-${index}" id="direction-${index}-sim" value="sim"><label class="form-check-label" for="direction-${index}-sim">Afirmativo</label></div><div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="direction-${index}" id="direction-${index}-nao" value="nao"><label class="form-check-label" for="direction-${index}-nao">Negativo</label></div><div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="direction-${index}" id="direction-${index}-outro" value="outro" checked><label class="form-check-label" for="direction-${index}-outro">Neutro/Detalhado</label></div></div>` : '';
         const suggestButtonHTML = !isGeneral ? `<button class="btn btn-sm btn-outline-secondary suggest-btn" data-target-textarea="${inputId}" data-point-index="${index}" type="button" title="Gerar sugestão de diretriz via IA, usando o Vetor de Resposta">Sugerir Diretriz<div class="spinner-border spinner-border-sm loading-spinner" role="status" style="display: none;"></div></button>` : '';
@@ -447,7 +515,12 @@ async function handleDrafting() {
         const data = await response.json();
         if (!response.ok || data.error) {
             let errorMsg = data.error || `Erro HTTP ${response.status}: ${response.statusText}`;
-            if(data.context_analysis && data.context_analysis.error) { errorMsg += ` (Erro na pré-análise de contexto: ${escapeHtml(data.context_analysis.error)})`; }
+            if (data.context_analysis) { 
+                // Apenas adiciona o erro da pré-análise se existir e for diferente do erro principal
+                if (data.context_analysis.error && data.context_analysis.error !== errorMsg) {
+                    errorMsg += ` (Erro na pré-análise de contexto: ${escapeHtml(data.context_analysis.error)})`; 
+                }
+            }
             throw new Error(errorMsg);
         }
         generatedDraftEl.value = data.draft || "";
@@ -776,5 +849,398 @@ async function handleSendEmail() {
         if (generatedDraftEl.value.trim() && currentOriginalSenderEmail && currentOriginalSubject) {
             sendEmailBtn.disabled = false;
         }
+    }
+}
+
+// --- NOVAS Funções para Gestão de Personas ---
+
+/**
+ * Adiciona um novo campo de exemplo few-shot ao formulário.
+ * @param {string} inputData O texto do email de input para preencher o campo.
+ * @param {string} outputData O texto da resposta de output para preencher o campo.
+ */
+function addFewShotExampleField(inputData = '', outputData = '') {
+    const exampleCount = fewShotExamplesContainer.children.length + 1;
+    const div = document.createElement('div');
+    div.className = 'few-shot-example-group mb-3 p-3 border rounded';
+    div.style.backgroundColor = 'var(--point-group-bg)'; // Reutiliza a variável CSS
+    div.innerHTML = `
+        <label class="form-label">Exemplo ${exampleCount}:</label>
+        <textarea class="form-control mb-2 few-shot-input" rows="2" placeholder="Email de Input">${escapeHtml(inputData)}</textarea>
+        <textarea class="form-control few-shot-output" rows="2" placeholder="Resposta de Output">${escapeHtml(outputData)}</textarea>
+        <button type="button" class="btn btn-danger btn-sm mt-2 remove-few-shot-example"><i class="fas fa-trash-alt"></i> Remover</button>
+    `;
+    fewShotExamplesContainer.appendChild(div);
+
+    // O event listener para remover é delegado no container pai (fewShotExamplesContainer)
+}
+
+/**
+ * Atualiza os rótulos dos exemplos few-shot após adicionar/remover.
+ */
+function updateFewShotExampleLabels() {
+    const exampleGroups = fewShotExamplesContainer.querySelectorAll('.few-shot-example-group');
+    exampleGroups.forEach((group, index) => {
+        group.querySelector('label').textContent = `Exemplo ${index + 1}:`;
+    });
+}
+
+/**
+ * Abre o modal para criar uma nova persona, limpando o formulário.
+ */
+function openCreatePersonaModal() {
+    clearPersonaForm();
+    personaFormModalLabel.textContent = 'Criar Nova Persona';
+    personaKeyInput.disabled = false; // A chave pode ser editada ao criar
+    personaFormModalInstance.show();
+}
+
+/**
+ * Abre o modal para editar uma persona existente, preenchendo o formulário.
+ * @param {string} personaKey A chave da persona a ser editada.
+ */
+async function openEditPersonaModal(personaKey) {
+    clearPersonaForm();
+    hideError(personaFormError);
+    personaFormModalLabel.textContent = 'Editar Persona';
+    personaKeyInput.disabled = true; // A chave não pode ser editada ao editar
+    currentPersonaKeyInput.value = personaKey; // Armazena a chave atual no campo hidden
+
+    try {
+        const response = await fetch(`/api/personas/${personaKey}`);
+        if (!response.ok) {
+            throw new Error(`Erro ao carregar persona: ${response.statusText}`);
+        }
+        const personaData = await response.json();
+        // A chave da persona vem como parte dos dados, mas já temos ela no parâmetro
+        populatePersonaForm(personaData, personaKey); 
+        personaFormModalInstance.show();
+    } catch (error) {
+        console.error("Erro ao carregar persona para edição:", error);
+        showError(personaListError, `Falha ao carregar persona para edição: ${error.message}`);
+    }
+}
+
+/**
+ * Preenche o formulário de persona com os dados de uma persona existente.
+ * @param {object} personaData Os dados da persona.
+ * @param {string} personaKey A chave da persona (usada para preencher o input oculto).
+ */
+function populatePersonaForm(personaData, personaKey) {
+    currentPersonaKeyInput.value = personaKey; // Garante que a chave está no campo hidden
+    personaKeyInput.value = personaKey; // Preenche o campo visível (desabilitado)
+    personaLabelPtInput.value = personaData.label_pt || '';
+    personaDescriptionPtInput.value = personaData.description_pt || '';
+    personaRoleTemplateInput.value = personaData.role_template || '';
+
+    // Atributos de Comunicação
+    const comm = personaData.communication_attributes || {};
+    commLanguageInput.value = comm.language || '';
+    commVerbosityInput.value = comm.base_verbosity_pt || '';
+    commSentenceStructureInput.value = comm.base_sentence_structure_pt || '';
+    commVocabularyPreferenceInput.value = comm.base_vocabulary_preference_pt || '';
+    commEmojiUsageInput.value = comm.emoji_usage_pt || '';
+
+    // Perfil de Estilo Base
+    const styleProfile = personaData.base_style_profile || {};
+    // Assume que tone_elements é um array e pega o primeiro objeto
+    const tone = styleProfile.tone_elements && styleProfile.tone_elements.length > 0 ? styleProfile.tone_elements[0] : {};
+    const formality = styleProfile.formality_element || {};
+    styleToneLabelInput.value = tone.label_pt || '';
+    styleToneKeywordsInput.value = (tone.keywords_pt || []).join(', ');
+    styleFormalityLabelInput.value = formality.label_pt || '';
+    styleFormalityNumericInput.value = formality.level_numeric || '';
+    styleFormalityGuidanceInput.value = formality.guidance_notes_pt || '';
+
+    // Regras Gerais
+    generalDosInput.value = (personaData.general_dos_pt || []).join('\n');
+    generalDontsInput.value = (personaData.general_donts_pt || []).join('\n');
+
+    // Few-shot Examples
+    fewShotExamplesContainer.innerHTML = ''; // Limpa os existentes
+    if (personaData.few_shot_examples && personaData.few_shot_examples.length > 0) {
+        personaData.few_shot_examples.forEach(example => {
+            addFewShotExampleField(example.input_email, example.output_email);
+        });
+    } else {
+        addFewShotExampleField(); // Adiciona um campo vazio se não houver exemplos
+    }
+}
+
+/**
+ * Limpa o formulário de persona.
+ */
+function clearPersonaForm() {
+    personaForm.reset();
+    currentPersonaKeyInput.value = ''; // Limpa a chave oculta
+    personaKeyInput.disabled = false; // Habilita para criação
+    hideError(personaFormError);
+    fewShotExamplesContainer.innerHTML = ''; // Limpa todos os exemplos
+    addFewShotExampleField(); // Adiciona um campo vazio por padrão
+}
+
+/**
+ * Lida com o envio do formulário de persona (criação ou edição).
+ */
+async function submitPersonaForm(event) {
+    event.preventDefault();
+    hideError(personaFormError);
+    showSpinner(savePersonaSpinner);
+    savePersonaBtn.disabled = true;
+
+    const isEditing = !!currentPersonaKeyInput.value;
+    const personaKey = isEditing ? currentPersonaKeyInput.value : personaKeyInput.value.trim();
+
+    if (!personaKey) {
+        showError(personaFormError, "A chave da persona é obrigatória.");
+        hideSpinner(savePersonaSpinner);
+        savePersonaBtn.disabled = false;
+        return;
+    }
+    // Validação do formato da chave para novas personas
+    if (!isEditing && !/^[a-z0-9_]+$/.test(personaKey)) {
+        showError(personaFormError, "A chave da persona deve conter apenas letras minúsculas, números e sublinhados.");
+        hideSpinner(savePersonaSpinner);
+        savePersonaBtn.disabled = false;
+        return;
+    }
+
+    // Coleta os dados do formulário
+    const fewShotExamples = [];
+    fewShotExamplesContainer.querySelectorAll('.few-shot-example-group').forEach(group => {
+        const input = group.querySelector('.few-shot-input').value.trim();
+        const output = group.querySelector('.few-shot-output').value.trim();
+        if (input && output) { // Apenas adiciona se ambos os campos estiverem preenchidos
+            fewShotExamples.push({ input_email: input, output_email: output });
+        }
+    });
+
+    const personaData = {
+        label_pt: personaLabelPtInput.value.trim(),
+        description_pt: personaDescriptionPtInput.value.trim(),
+        role_template: personaRoleTemplateInput.value.trim(),
+        communication_attributes: {
+            language: commLanguageInput.value.trim(),
+            base_verbosity_pt: commVerbosityInput.value.trim(),
+            base_sentence_structure_pt: commSentenceStructureInput.value.trim(),
+            base_vocabulary_preference_pt: commVocabularyPreferenceInput.value.trim(),
+            emoji_usage_pt: commEmojiUsageInput.value.trim()
+        },
+        base_style_profile: {
+            profile_label_pt: styleToneLabelInput.value.trim(), 
+            tone_elements: [{
+                label_pt: styleToneLabelInput.value.trim(),
+                keywords_pt: styleToneKeywordsInput.value.split(',').map(k => k.trim()).filter(k => k)
+            }],
+            formality_element: {
+                label_pt: styleFormalityLabelInput.value.trim(),
+                level_numeric: parseInt(styleFormalityNumericInput.value, 10) || 0,
+                guidance_notes_pt: styleFormalityGuidanceInput.value.trim()
+            }
+        },
+        general_dos_pt: generalDosInput.value.split('\n').map(s => s.trim()).filter(s => s),
+        general_donts_pt: generalDontsInput.value.split('\n').map(s => s.trim()).filter(s => s),
+        few_shot_examples: fewShotExamples,
+        // learned_knowledge_base NÃO é enviado do frontend para evitar sobrescrever
+        // Ele é inicializado no backend na criação ou mantido na edição.
+    };
+
+    const url = isEditing ? `/api/personas/${personaKey}` : '/api/personas';
+    const method = isEditing ? 'PUT' : 'POST';
+
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            // Ao criar, o backend espera {persona_key: "...", persona_data: {...}}
+            // Ao editar, o backend espera apenas os dados da persona no corpo
+            body: JSON.stringify(isEditing ? personaData : { persona_key: personaKey, persona_data: personaData })
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || `Erro HTTP ${response.status}`);
+        }
+
+        personaFormModalInstance.hide();
+        showSuccessMessage(personaListError, data.message || "Operação realizada com sucesso!");
+        fetchAndRenderPersonas(); // Recarrega a lista e o select
+        populatePersonaSelect(); // Atualiza o select de personas
+    } catch (error) {
+        console.error("Erro ao salvar persona:", error);
+        showError(personaFormError, `Erro ao salvar persona: ${error.message}`);
+    } finally {
+        hideSpinner(savePersonaSpinner);
+        savePersonaBtn.disabled = false;
+    }
+}
+
+/**
+ * Lida com cliques na tabela de personas (botões de editar/eliminar).
+ * @param {Event} event O evento de clique.
+ */
+function handlePersonaTableClick(event) {
+    const editBtn = event.target.closest('.edit-persona-btn');
+    const deleteBtn = event.target.closest('.delete-persona-btn');
+
+    if (editBtn) {
+        const personaKey = editBtn.dataset.personaKey;
+        openEditPersonaModal(personaKey);
+    } else if (deleteBtn) {
+        const personaKey = deleteBtn.dataset.personaKey;
+        const personaName = deleteBtn.dataset.personaName;
+        confirmDeletePersona(personaKey, personaName);
+    }
+}
+
+/**
+ * Exibe o modal de confirmação de eliminação de persona.
+ * @param {string} key A chave da persona a ser eliminada.
+ * @param {string} name O nome de exibição da persona.
+ */
+function confirmDeletePersona(key, name) {
+    personaToDeleteKey = key;
+    personaToDeleteNameEl.textContent = name;
+    deletePersonaConfirmModalInstance.show();
+}
+
+/**
+ * Executa a eliminação da persona após a confirmação.
+ */
+async function deletePersona() {
+    if (!personaToDeleteKey) return;
+
+    hideError(personaListError);
+    showSpinner(deletePersonaSpinner);
+    confirmDeletePersonaBtn.disabled = true;
+
+    try {
+        const response = await fetch(`/api/personas/${personaToDeleteKey}`, {
+            method: 'DELETE'
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || `Erro HTTP ${response.status}`);
+        }
+
+        deletePersonaConfirmModalInstance.hide();
+        showSuccessMessage(personaListError, data.message || "Persona eliminada com sucesso!");
+        fetchAndRenderPersonas(); // Recarrega a lista e o select
+        populatePersonaSelect(); // Atualiza o select de personas
+        personaToDeleteKey = null; // Limpa a chave
+    } catch (error) {
+        console.error("Erro ao eliminar persona:", error);
+        showError(personaListError, `Erro ao eliminar persona: ${error.message}`);
+    } finally {
+        hideSpinner(deletePersonaSpinner);
+        confirmDeletePersonaBtn.disabled = false;
+    }
+}
+
+/**
+ * Busca e renderiza a lista de personas na tabela de gestão.
+ */
+async function fetchAndRenderPersonas() {
+    personasTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-secondary">A carregar personas...</td></tr>';
+    hideError(personaListError);
+
+    try {
+        const response = await fetch('/api/personas');
+        if (!response.ok) {
+            throw new Error(`Erro ao carregar personas: ${response.statusText}`);
+        }
+        const personas = await response.json();
+        personasTableBody.innerHTML = ''; // Limpa o "A carregar..."
+
+        if (Object.keys(personas).length === 0) {
+            personasTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-secondary">Nenhuma persona encontrada.</td></tr>';
+            return;
+        }
+
+        for (const key in personas) {
+            if (personas.hasOwnProperty(key)) {
+                const persona = personas[key];
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${escapeHtml(key)}</td>
+                    <td>${escapeHtml(persona.label_pt || 'N/A')}</td>
+                    <td>${escapeHtml(persona.description_pt || 'N/A')}</td>
+                    <td class="persona-actions">
+                        <button class="btn btn-sm btn-info edit-persona-btn" data-persona-key="${escapeHtml(key)}" title="Editar Persona">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger delete-persona-btn" data-persona-key="${escapeHtml(key)}" data-persona-name="${escapeHtml(persona.label_pt || key)}" title="Eliminar Persona">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                `;
+                personasTableBody.appendChild(tr);
+            }
+        }
+    } catch (error) {
+        console.error("Erro ao carregar personas para a tabela:", error);
+        showError(personaListError, `Falha ao carregar personas: ${error.message}`);
+        personasTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Erro ao carregar personas.</td></tr>';
+    }
+}
+
+/**
+ * Popula o dropdown de seleção de persona no Passo 2.
+ * Chamada após qualquer alteração nas personas (criação, edição, eliminação).
+ */
+async function populatePersonaSelect() {
+    personaSelect.innerHTML = ''; // Limpa opções existentes
+    personaSelect.disabled = true; // Desabilita enquanto carrega
+
+    try {
+        const response = await fetch('/api/personas');
+        if (!response.ok) {
+            throw new Error(`Erro ao carregar personas para seleção: ${response.statusText}`);
+        }
+        const personas = await response.json();
+
+        // Adiciona uma opção padrão "Selecione..."
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = 'Selecione uma persona...';
+        personaSelect.appendChild(defaultOption);
+
+        if (Object.keys(personas).length === 0) {
+            defaultOption.textContent = 'Nenhuma persona carregada';
+            draftBtn.disabled = true; // Desabilita o botão de rascunho se não houver personas
+            return;
+        }
+
+        let firstSelectablePersonaKey = null;
+        for (const key in personas) {
+            if (personas.hasOwnProperty(key)) {
+                const persona = personas[key];
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = persona.label_pt || key;
+                personaSelect.appendChild(option);
+                if (!firstSelectablePersonaKey) { // Seleciona a primeira persona real por padrão
+                    firstSelectablePersonaKey = key;
+                }
+            }
+        }
+        // Tenta selecionar a primeira persona real ou mantém a opção padrão
+        if (firstSelectablePersonaKey) {
+            personaSelect.value = firstSelectablePersonaKey;
+        } else {
+            personaSelect.value = '';
+        }
+        
+        personaSelect.disabled = false;
+        draftBtn.disabled = false; // Habilita o botão de rascunho
+    } catch (error) {
+        console.error("Erro ao popular o select de personas:", error);
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'Erro ao carregar personas';
+        personaSelect.appendChild(option);
+        personaSelect.disabled = true;
+        draftBtn.disabled = true;
     }
 }

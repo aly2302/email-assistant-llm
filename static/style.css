@@ -238,26 +238,26 @@ body.light-mode .theme-switch-wrapper span { color: var(--text-secondary); }
 #app-wizard {
     position: relative;
     overflow: hidden;
-    min-height: 600px;
+    min-height: 600px; /* Garante altura mínima para transições suaves */
     display: flex;
     flex-direction: column;
 }
 .wizard-step {
     width: 100%;
-    position: absolute;
+    position: absolute; /* Permite a transição horizontal */
     top: 0;
     left: 0;
     opacity: 0;
     visibility: hidden;
     transform: translateX(100%);
     transition: transform 0.4s ease-in-out, opacity 0.4s ease-in-out, visibility 0s 0.4s;
-    height: 100%;
-    overflow-y: auto;
+    height: 100%; /* Ocupa a altura do pai */
+    overflow-y: auto; /* Scroll interno se o conteúdo for grande */
     padding-top: 15px;
     padding-bottom: 15px;
 }
 .wizard-step.active-step {
-    position: relative;
+    position: relative; /* Volta ao fluxo normal para ser visível */
     opacity: 1;
     visibility: visible;
     transform: translateX(0);
@@ -282,12 +282,11 @@ header {
     border-bottom: 1px solid var(--container-border);
     text-align: center;
     position: relative;
-    /* 'padding-right' foi removido para permitir o centramento correto */
 }
 header h1 {
     font-weight: 700;
     color: var(--primary-accent);
-    margin: 0 auto 0.75rem auto; /* Centraliza horizontalmente e adiciona margem inferior */
+    margin: 0 auto 0.75rem auto;
     font-size: 2.5rem;
     letter-spacing: 1px;
 }
@@ -316,14 +315,28 @@ h4 { font-size: 1.1rem; margin-bottom: 1rem; border-bottom: none; padding-bottom
 .small.text-muted { color: var(--text-secondary) !important; opacity: 0.7; }
 
 textarea.form-control,
-select.form-select {
-    min-height: 100px; border-radius: var(--border-radius); border: 1px solid var(--input-border);
-    background-color: var(--input-bg); padding: 12px 16px; color: var(--text-primary);
+select.form-select,
+input.form-control:not([type="checkbox"]):not([type="radio"]) { /* Exclui checkboxes e radios */
+    min-height: 100px; /* Padrão para textareas */
+    border-radius: var(--border-radius);
+    border: 1px solid var(--input-border);
+    background-color: var(--input-bg);
+    padding: 12px 16px;
+    color: var(--text-primary);
     transition: border-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease, background-color var(--transition-speed) ease;
     box-shadow: inset 0 1px 2px rgba(0,0,0, 0.1);
 }
+/* Ajuste para inputs de linha única */
+input.form-control:not([type="checkbox"]):not([type="radio"]) {
+    min-height: auto;
+    height: calc(1.6em + 1.6rem + 2px); /* Altura padrão para inputs */
+}
+
 body.dark-mode textarea.form-control,
-body.dark-mode select.form-select { box-shadow: inset 0 1px 2px rgba(0,0,0, 0.3); }
+body.dark-mode select.form-select,
+body.dark-mode input.form-control:not([type="checkbox"]):not([type="radio"]) {
+    box-shadow: inset 0 1px 2px rgba(0,0,0, 0.3);
+}
 textarea.form-control#originalEmail { min-height: 150px; }
 textarea.form-control#generatedDraft { min-height: 200px; }
 textarea.form-control#feedbackOriginalResponse { min-height: 80px; }
@@ -331,13 +344,15 @@ textarea.form-control#feedbackUserCorrection { min-height: 100px; }
 textarea.form-control#feedbackUserExplanation { min-height: 70px; }
 
 textarea.form-control:focus,
-select.form-select:focus {
+select.form-select:focus,
+input.form-control:not([type="checkbox"]):not([type="radio"]):focus {
     border-color: var(--input-focus-border);
     box-shadow: var(--focus-glow);
     background-color: var(--input-bg); outline: none;
 }
 body.dark-mode textarea.form-control:focus,
-body.dark-mode select.form-select:focus {
+body.dark-mode select.form-select:focus,
+body.dark-mode input.form-control:not([type="checkbox"]):not([type="radio"]):focus {
     background-color: var(--input-bg);
 }
 
@@ -349,7 +364,7 @@ select.form-select {
 body.light-mode select.form-select {
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%236c757d' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
 }
-textarea::placeholder { color: var(--text-secondary); opacity: 0.6; font-style: italic; font-weight: 300; }
+textarea::placeholder, input::placeholder { color: var(--text-secondary); opacity: 0.6; font-style: italic; font-weight: 300; }
 
 .analysis-section, .draft-section { margin-top: 25px; padding-top: 25px; border-top: 1px solid var(--container-border); }
 
@@ -431,9 +446,14 @@ body.dark-mode .point-input-group:hover { box-shadow: 0 4px 12px rgba(0, 0, 0, 0
 .btn-secondary:hover { background-color: var(--btn-secondary-hover-bg); color: var(--btn-secondary-hover-text); }
 .btn-secondary:focus { box-shadow: 0 0 0 2px rgba(108, 117, 125, 0.2); }
 
-.btn-warning { color: var(--btn-warning-color); background-color: var(--btn-warning-bg); border-color: var(--btn-warning-border); }
+.btn-warning { color: var(--btn-warning-color); background-color: var(--btn-warning-bg); border-color: var(--warning-accent); }
 .btn-warning:hover { background-color: var(--btn-warning-hover-bg); }
 .btn-warning:focus { box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.3); }
+
+.btn-danger { color: #fff; background-color: #dc3545; border-color: #dc3545; }
+.btn-danger:hover { background-color: #c82333; border-color: #bd2130; }
+.btn-danger:focus { box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.5); }
+
 
 .btn-send-email {
     color: var(--success-color);
@@ -577,10 +597,10 @@ body.light-mode .is-invalid:focus { box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2)
 body.light-mode .modal-header .btn-close { filter: none; }
 .modal-footer { border-top: 1px solid var(--modal-footer-border); padding: 1.2rem; }
 .modal-body .form-label { color: var(--text-secondary); }
-.modal-body textarea, .modal-body select {
+.modal-body textarea, .modal-body select, .modal-body input:not([type="checkbox"]):not([type="radio"]) { /* Adicionado input */
     background-color: var(--input-bg); color: var(--text-primary); border: 1px solid var(--input-border);
 }
-.modal-body textarea:focus, .modal-body select:focus {
+.modal-body textarea:focus, .modal-body select:focus, .modal-body input:not([type="checkbox"]):not([type="radio"]):focus { /* Adicionado input */
     border-color: var(--input-focus-border); box-shadow: var(--focus-glow); background-color: var(--input-bg);
 }
 
@@ -737,4 +757,61 @@ body.light-mode .modal-header .btn-close { filter: none; }
 .progress-step.active .progress-step-label,
 .progress-step.completed .progress-step-label {
     color: var(--text-primary);
+}
+
+/* Estilos para a Tabela de Personas */
+.persona-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: var(--border-radius);
+    overflow: hidden; /* Garante que o border-radius seja aplicado */
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--container-border);
+}
+
+.persona-table th, .persona-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--list-item-border);
+    color: var(--text-primary);
+}
+
+.persona-table th {
+    background-color: rgba(0, 123, 255, 0.1); /* Um toque de cor da accent */
+    color: var(--primary-accent);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.persona-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.persona-table tbody tr:hover {
+    background-color: rgba(50, 50, 50, 0.4); /* Mais escuro no hover */
+}
+
+.persona-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.persona-actions .btn {
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    margin-right: 5px;
+}
+
+/* Estilo para os grupos de Few-shot Examples no modal */
+.few-shot-example-group {
+    background-color: var(--point-group-bg); /* Reutiliza o estilo de grupo de input */
+    border: 1px solid var(--point-group-border);
+    padding: 15px;
+    border-radius: var(--border-radius);
+    margin-bottom: 15px;
+}
+.few-shot-example-group textarea {
+    min-height: 60px; /* Menor altura para os exemplos */
 }

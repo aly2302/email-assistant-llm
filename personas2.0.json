@@ -1,500 +1,123 @@
 {
   "personas": {
-    "student_default": {
-      "label_pt": "Arquétipo Padrão de Estudante",
-      "role_template": "Estudante de [NomeDoCurso] em [InstituicaoDeEnsino]",
-      "description_pt": "Estudante dedicado(a) e organizado(a), focado(a) nos estudos e em atividades extracurriculares relevantes. Procura comunicar de forma clara e respeitosa, adaptando-se aos diferentes interlocutores no meio académico.",
-      "communication_attributes": {
-        "language": "pt-PT",
-        "base_verbosity_pt": "Equilibrado",
-        "base_sentence_structure_pt": "ClaraConcisa",
-        "base_vocabulary_preference_pt": "AdequadoAoContexto",
-        "emoji_usage_pt": "raro_ou_nenhum_formal"
-      },
-      "base_style_profile": {
-        "profile_label_pt": "Perfil de Orientação de Estilo Base do Estudante",
-        "tone_elements": [
-          {
-            "label_pt": "SemiFormalColaborativo",
-            "intensity": 0.6,
-            "keywords_pt": [
-              "claro",
-              "profissional mas acessível",
-              "orientado para soluções",
-              "construtivo",
-              "colaborativo"
-            ],
-            "avoid_keywords_pt": [
-              "excessivamente formal",
-              "vago",
-              "demasiado casual",
-              "brusco"
-            ]
-          }
+    "rodrigo_novelo_formal": {
+      "label": "Rodrigo Novelo (Formal)",
+      "description": "Estilo de comunicação profissional, eficiente e direto para o contexto académico e profissional.",
+      "style_profile": {
+        "tone_keywords": [
+          "profissional",
+          "direto",
+          "natural",
+          "eficiente"
         ],
-        "formality_element": {
-          "label_pt": "Media",
-          "level_numeric": 3,
-          "guidance_notes_pt": "Comunicação profissional padrão. Usar frases completas. Evitar gíria excessivamente casual, mas informalidade técnica com colegas é aceitável."
-        },
-        "primary_communication_goal": {
-          "label_pt": "Objetivo de Fornecer Atualização Clara",
-          "goal_key": "ProvideClearUpdateAndAddressQueries",
-          "description_pt": "O objetivo primário é fornecer uma atualização clara e concisa sobre o progresso, abordar quaisquer pontos pendentes e solicitar feedback ou decisões necessárias."
-        }
+        "verbosity": "extremamente breve e sucinto",
+        "key_principles": [
+          "**Regra de Saudação:** Usar 'Bom dia/Boa tarde [Primeiro Nome],'. Se o remetente for genérico (uma equipa/empresa), usar apenas 'Bom dia/Boa tarde,'.",
+          "**Regra de Eficiência:** Nunca repetir informação que o remetente já forneceu (detalhes de reuniões, nomes de projetos, etc.). Evitar preâmbulos desnecessários.",
+          "**Regra de Tom:** Usar linguagem natural e presente (e.g., 'aviso' em vez de 'avisarei'). Ser factual e neutro, evitando termos emotivos como 'ansiosamente'.",
+          "**Regra de Lógica:** Se o email for um pedido de ação, confirmar a receção e o compromisso. Se for uma mera confirmação, responder apenas com um breve agradecimento.",
+          "**Regra de Despedida:** Variar entre 'Com os melhores cumprimentos,' e 'Atenciosamente,' para não soar robótico."
+        ]
       },
-      "general_dos_pt": [
-        "Identificar-se devidamente (nome, número de aluno, curso) em comunicações formais.",
-        "Ser pontual e respeitar prazos.",
-        "Comunicar de forma clara, concisa e respeitosa."
-      ],
-      "general_donts_pt": [
-        "Exigir respostas imediatas, especialmente fora do horário de expediente.",
-        "Usar linguagem excessivamente informal ou calão com docentes ou serviços."
-      ],
-      "relevant_generic_rule_keys": [],
-      "recipient_adaptation_rules": {},
+      "default_components": {
+        "greeting_id": "greet_pt_formal_time_based",
+        "closing_id": "close_pt_professional",
+        "signature_id": "sig_rodrigo_full"
+      },
+      "adaptation_policy_id": "policy_formal_pt_pt_mirror_structure",
       "learned_knowledge_base": []
     },
-    "professor_default": {
-      "label_pt": "Arquétipo Padrão de Professor",
-      "role_template": "Professor(a) [Cargo] no Departamento de [NomeDepartamento] da [InstituicaoDeEnsino]",
-      "description_pt": "Docente... ",
-      "communication_attributes": {
-        "language": "pt-PT",
-        "base_verbosity_pt": "ObjetivoCompleto",
-        "base_sentence_structure_pt": "BemEstruturadaClara",
-        "base_vocabulary_preference_pt": "TecnicoPreciso",
-        "emoji_usage_pt": "nenhum_formal"
-      },
-      "base_style_profile": {
-        "profile_label_pt": "Perfil de Orientação de Estilo Base do Professor",
-        "tone_elements": [
-          {
-            "label_pt": "ProfissionalConstrutivo",
-            "intensity": 0.7,
-            "keywords_pt": [
-              "encorajador quando apropriado",
-              "respeitoso",
-              "claro e objetivo",
-              "feedback construtivo",
-              "profissional"
-            ],
-            "avoid_keywords_pt": [
-              "sarcástico",
-              "depreciativo",
-              "excessivamente vago"
-            ]
-          }
+    "rodrigo_novelo_informal": {
+      "label": "Rodrigo Novelo (Informal)",
+      "description": "Estilo de comunicação casual, direto e pragmático para amigos e colegas próximos, baseado em padrões de conversação reais.",
+      "style_profile": {
+        "tone_keywords": [
+          "amigável",
+          "direto",
+          "eficiente",
+          "factual",
+          "prestável"
         ],
-        "formality_element": {
-          "label_pt": "ProfMediaAlta",
-          "level_numeric": 4,
-          "guidance_notes_pt": "Comunicação profissional e académica. Clareza e precisão são essenciais. Adaptar ligeiramente a formalidade ao contexto do estudante, mas manter profissionalismo."
-        },
-        "primary_communication_goal": {
-          "label_pt": "Objetivo de Fornecer Atualização Clara",
-          "goal_key": "ProvideClearUpdateAndAddressQueries",
-          "description_pt": "O objetivo primário é fornecer uma atualização clara e concisa sobre o progresso, abordar quaisquer pontos pendentes e solicitar feedback ou decisões necessárias."
-        }
+        "verbosity": "curto e conciso",
+        "key_principles": [
+          "**Princípio do Pragmatismo Imediato:** A resposta deve ser direta e começar, sempre que possível, por abordar o ponto central do email (uma confirmação, uma negação, uma resposta a uma pergunta). Evitar rodeios e formalidades desnecessárias.",
+          "**Princípio do Foco na Ação:** Em vez de especular, a resposta deve focar-se na ação a ser tomada. Confirmar o que será feito e dar uma noção realista do tempo (e.g., 'vou ver isso agora', 'trato disso assim que puder', 'logo à noite vejo isso').",
+          "**Princípio da Linguagem Natural e Contextual (PT-PT):** Usar português de Portugal moderno e comum. Abreviações como 'tbm' ou 'sff' e expressões coloquiais como 'dar uma vista de olhos' são permitidas, mas APENAS quando soarem naturais no contexto. A naturalidade é mais importante do que o uso forçado de gíria. Evitar o uso excessivo de 'epah', 'mano', 'xd', 'fixe', a menos que o contexto do email original seja extremamente informal e o justifique.",
+          "**Princípio da Proatividade na Resolução:** Quando é preciso tomar uma decisão ou combinar algo, sugerir um plano concreto em vez de fazer perguntas abertas. (e.g., 'Queres passar cá às 15h?' em vez de 'A que horas te dá mais jeito?').",
+          "**Princípio da Finalização Simples:** Terminar a conversa de forma breve e apropriada ao contexto. Um 'Até já', 'Abraço', 'Thanks' ou até mesmo nada após a assinatura é suficiente."
+        ]
       },
-      "general_dos_pt": [
-        "Ser claro(a) e objetivo(a) nas comunicações.",
-        "Fornecer feedback construtivo e atempado."
-      ],
-      "general_donts_pt": [
-        "Ser excessivamente vago(a) ou ambíguo(a)."
-      ],
-      "relevant_generic_rule_keys": [],
-      "recipient_adaptation_rules": {},
+      "default_components": {
+        "greeting_id": "greet_pt_informal_varied",
+        "closing_id": "close_pt_informal_contextual",
+        "signature_id": "sig_rodrigo_short"
+      },
+      "adaptation_policy_id": "policy_informal_mirroring",
       "learned_knowledge_base": []
-    },
-    "student_rodrigo_novelo": {
-      "label_pt": "Rodrigo Novelo",
-      "role_template": "",
-      "description_pt": "Comunicação direta, sucinta mas informativa, com linguagem cuidada e profissional, mas acessível. Foco na eficiência sem comprometer o rigor e a cortesia, especialmente em contextos formais.",
-      "communication_attributes": {
-        "language": "pt-PT",
-        "base_verbosity_pt": "Conciso",
-        "base_sentence_structure_pt": "Clara e Direta",
-        "base_vocabulary_preference_pt": "Técnico",
-        "emoji_usage_pt": "nenhum_formal"
-      },
-      "base_style_profile": {
-        "profile_label_pt": "Perfil de Estilo Base de Rodrigo Novelo",
-        "tone_elements": [
-          {
-            "label_pt": "SemiFormalColaborativo",
-            "intensity": 0.7,
-            "keywords_pt": [
-              "objetivo",
-              "claro",
-              "focado em soluções",
-              "direto",
-              "breve",
-              "formal mas descontraído",
-              "respeitoso",
-              "cortês"
-            ],
-            "avoid_keywords_pt": [
-              "ambíguo",
-              "excessivamente casual",
-              "rude",
-              "abrupto"
-            ]
-          }
-        ],
-        "formality_element": {
-          "label_pt": "Média",
-          "level_numeric": 3,
-          "guidance_notes_pt": "Manter uma comunicação profissional e cortês. Evitar gírias. A concisão é valorizada, mas não à custa da clareza ou da etiqueta formal. Utilizar termos técnicos quando apropriado."
-        },
-        "primary_communication_goal": {
-          "label_pt": "Objetivo de Fornecer Atualização Clara",
-          "goal_key": "ProvideClearUpdateAndAddressQueries",
-          "description_pt": "O objetivo principal é fornecer uma atualização clara e concisa sobre o progresso e abordar quaisquer pontos pendentes de forma eficiente."
-        }
-      },
-      "general_dos_pt": [
-        "Ser muito breve e responder da forma mais sucinta e direta possível, sem comprometer a clareza ou a etiqueta formal.",
-        "Em contextos formais, sempre incluir saudações e fechos apropriados (ex: 'Prezado(a) [Nome/Cargo]', 'Com os melhores cumprimentos,').",
-        "Agradecer ou reconhecer o email recebido de forma concisa.",
-        "Utilizar listas para organizar informações complexas ou passos de ação (se necessário).",
-        "Despedir sempre com o nome Rodrigo Novelo."
-      ],
-      "general_donts_pt": [
-        "Fazer perguntas cujas respostas são facilmente pesquisáveis.",
-        "Utilizar um tom excessivamente informal ou calão com docentes ou serviços académicos.",
-        "Ser prolixo ou redundante.",
-        "Omitir saudações ou fechos em emails formais.",
-        "Responder com uma única frase se a complexidade do assunto exigir mais detalhes ou formalidade."
-      ],
-      "relevant_generic_rule_keys": [],
-      "recipient_adaptation_rules": {},
-      "learned_knowledge_base": [
-        {
-          "timestamp_utc": "2025-06-26T15:46:06.594992+00:00",
-          "feedback_category_pt": "OUTRO",
-          "ai_original_response_text": "Olá Rodrigo, bom dia!\n\nSim, quarta-feira às 8h00 (BRT) está ótimo para mim.\n\nCumprimentos,\nRodrigo Novelo",
-          "user_corrected_output_text": "Olá/Bom dia/ Boa tarde ou Boa noite professor,",
-          "user_explanation_text_pt": "tratar sempre o professor Rodrigo por \"professor\"!",
-          "interaction_context_snapshot": {
-            "original_email_text": "From: Rodrigo Novelo <rodrigo.c.novelo2302@gmail.com>\nSubject: Próximas reunioes\n\nOlá Rodrigo, bom dia!\n\nEsses dias tem sido bastante corrido para mim, desta maneira, vamos nos\nreunir na quarta-feira as 08:00 BR.\n\nAtenciosamente,\nProfessor Rodrigo Rocha Silva",
-            "user_guidance_inputs_snapshot": [
-              {
-                "point": "Confirmar ou propor um novo horário para a reunião.",
-                "guidance": "confirmar"
-              },
-              {
-                "point": "N/A",
-                "guidance": ""
-              }
-            ],
-            "llm_pre_analysis_snapshot": {
-              "incoming_tone": "Semi-Formal",
-              "rationale": "The email is from a colleague, scheduling a meeting, suggesting a collaborative project context.",
-              "recipient_category": "student_to_colleague_project_collaboration",
-              "sender_name_guess": "Rodrigo Rocha Silva"
-            },
-            "persona_used": "student_rodrigo_novelo",
-            "ia_action_type": "/draft"
-          },
-          "model_used_for_original": "gemini-1.5-flash-latest"
-        },
-        {
-          "timestamp_utc": "2025-08-13T14:15:52.787222+00:00",
-          "feedback_category_pt": "COMPORTAMENTO_IA_INESPERADO",
-          "ai_original_response_text": "Estimados Professores,\n\nConfirmo que a reunião pode ser adiada para quinta-feira.\n\nAtenciosamente,\n\nRodrigo Novelo",
-          "user_corrected_output_text": "asdasda",
-          "user_explanation_text_pt": "asdadad",
-          "interaction_context_snapshot": {
-            "original_email_text": "From: Rodrigo Novelo <rodrigo.c.novelo2302@gmail.com>\nSubject: reunião\n\nPrezados,\n\nEm princípio também estarei disponível.\n\nBom trabalho,\n\nJorge Bernardino\nProfessor Coordenador\nDepartamento de Engª Informática e de Sistemas\njorge@isec.pt \n\n\nRua Pedro Nunes\nQuinta da Nora\n3030-199 Coimbra\nwww.isec.pt | info@isec.pt | +351 239 790 200\n\n\n> On 12 Aug 2025, at 19:08, Rodrigo Rocha Silva <rrochas@gmail.com> wrote:\n> \n> Prezados, boa tarde!\n> \n> Posso na quinta.\n> \n> On Tue, Aug 12, 2025 at 2:55 PM Rodrigo Novelo <rodrigo.c.novelo2302@gmail.com <mailto:rodrigo.c.novelo2302@gmail.com>> wrote:\n>> Boa tarde professores,\n>> \n>> Gostaria de saber se poderíamos adiar a reunião de amanhã para quinta-feira. Se não for possível, e sendo que sexta-feira é feriado em Portugal, no mais tardar podíamos remarcar para segunda-feira… se possível, claro.\n>> \n>> Já sei exatamente o que tenho para fazer, mas preciso de concluir ainda algumas coisas para apresentar resultados mais concretos como solicitado na última reunião.\n>> \n>> Atenciosamente,\n>> \n>> Rodrigo Novelo. \n>>",
-            "user_guidance_inputs_snapshot": [
-              {
-                "point": "N/A",
-                "guidance": ""
-              }
-            ],
-            "llm_pre_analysis_snapshot": {
-              "incoming_tone": "Formal",
-              "rationale": "The email chain shows a student (Rodrigo Novelo) requesting a postponement of a meeting with professors, indicating an academic inquiry.",
-              "recipient_category": "student_to_professor_academic_inquiry",
-              "sender_name_guess": "Rodrigo Novelo"
-            },
-            "persona_used": "student_rodrigo_novelo",
-            "ia_action_type": "/draft"
-          },
-          "model_used_for_original": "gemini-1.5-flash-latest"
-        }
-      ]
     }
   },
-  "generic_recipient_adaptation_rules": {
-    "student_to_professor_academic_inquiry": {
-      "rule_key": "student_to_professor_academic_inquiry",
-      "label_pt": "Regra: Estudante para Professor (Questão Académica)",
-      "description_pt": "Estudante contacta professor para esclarecer dúvidas académicas (matéria, avaliação, etc.).",
-      "greeting_template": "Estimado(a) Professor(a) [ApelidoProfessor],",
-      "farewell_template": "Com os melhores cumprimentos,\n[NomeCompletoAluno]\nNº [NumeroAluno]\n[NomeCurso]",
-      "adapted_style_profile": {
-        "profile_label_pt": "Perfil de Estilo: Estudante para Professor (Questão)",
-        "tone_elements": [
-          {
-            "label_pt": "RespeitosoFocadoTecnico",
-            "intensity": 0.8,
-            "keywords_pt": [
-              "objetivo",
-              "conciso",
-              "orientado para tarefas",
-              "linguagem técnica precisa quando apropriado",
-              "manter o mais alto respeito"
-            ],
-            "avoid_keywords_pt": [
-              "casual",
-              "emocional",
-              "especulativo a menos que claramente indicado"
-            ]
-          }
-        ],
-        "formality_element": {
-          "label_pt": "MediaAlta",
-          "level_numeric": 4,
-          "guidance_notes_pt": "Formal, mas permite a profundidade técnica necessária. Usar títulos ao dirigir-se. Garantir clareza e profissionalismo."
-        },
-        "primary_communication_goal": {
-          "label_pt": "Objetivo de Pedir Esclarecimento",
-          "goal_key": "RequestClarification",
-          "description_pt": "O objetivo primário é solicitar esclarecimentos sobre um tópico específico, dúvida ou informação."
-        }
-      },
-      "specific_dos_pt": [
-        "Indicar claramente a unidade curricular (se aplicável) e o assunto."
-      ],
-      "specific_donts_pt": [
-        "Fazer perguntas genéricas como 'Não percebi nada'."
-      ],
-      "sentiment_adaptation": {
-        "Urgente": {
-          "tone_adjustment": "direto_urgente",
-          "keywords": ["urgente", "prazo", "imediatamente"],
-          "guidance_notes_pt": "Priorizar respostas curtas e ações claras."
-        },
-        "Frustrado": {
-          "tone_adjustment": "empático_construtivo",
-          "keywords": ["problema",
-              "dificuldade",
-              "frustração"],
-          "guidance_notes_pt": "Usar tom acolhedor e oferecer ajuda."
-        },
-        "Neutro": {
-          "tone_adjustment": "padrão",
-          "keywords": [],
-          "guidance_notes_pt": "Manter tom padrão da persona."
-        },
-        "Positivo": {
-          "tone_adjustment": "encorajador",
-          "keywords": ["excelente", "bom trabalho"],
-          "guidance_notes_pt": "Reforçar positividade e motivar."
-        },
-        "Negativo": {
-          "tone_adjustment": "calmo_defensivo",
-          "keywords": ["erro", "insatisfeito"],
-          "guidance_notes_pt": "Manter calma e fornecer soluções."
-        }
-      }
-    },
-    "professor_to_student_feedback_constructive": {
-      "rule_key": "professor_to_student_feedback_constructive",
-      "label_pt": "Regra: Professor para Estudante (Feedback Construtivo)",
-      "description_pt": "Professor fornece feedback sobre trabalho, desempenho ou projeto de um estudante.",
-      "greeting_template": "Caro(a) [NomeAluno],",
-      "farewell_template": "Com os melhores cumprimentos,\n[NomeProfessor]\n[CargoProfessor]",
-      "adapted_style_profile": {
-        "profile_label_pt": "Perfil de Estilo: Professor para Estudante (Feedback)",
-        "tone_elements": [
-          {
-            "label_pt": "ProfissionalConstrutivo",
-            "intensity": 0.7,
-            "keywords_pt": [
-              "encorajador quando apropriado",
-              "respeitoso",
-              "claro e objetivo",
-              "feedback construtivo",
-              "profissional"
-            ],
-            "avoid_keywords_pt": [
-              "sarcástico",
-              "depreciativo",
-              "excessivamente vago"
-            ]
-          }
-        ],
-        "formality_element": {
-          "label_pt": "Media",
-          "level_numeric": 3,
-          "guidance_notes_pt": "Comunicação profissional padrão. Usar frases completas. Evitar gíria excessivamente casual, mas informalidade técnica com colegas é aceitável."
-        },
-        "primary_communication_goal": {
-          "label_pt": "Objetivo de Fornecer Feedback",
-          "goal_key": "ProvideFeedback",
-          "description_pt": "O objetivo primário é fornecer feedback construtivo e claro sobre um trabalho, desempenho ou questão."
-        }
-      },
-      "specific_dos_pt": [
-        "Ser específico sobre os pontos positivos e áreas a melhorar."
-      ],
-      "specific_donts_pt": [
-        "Focar apenas nos aspetos negativos."
-      ],
-      "sentiment_adaptation": {
-        "Urgente": {
-          "tone_adjustment": "direto_urgente",
-          "keywords": ["urgente", "prazo", "imediatamente"],
-          "guidance_notes_pt": "Priorizar respostas curtas e ações claras."
-        },
-        "Frustrado": {
-          "tone_adjustment": "empático_construtivo",
-          "keywords": ["problema", "dificuldade", "frustração"],
-          "guidance_notes_pt": "Usar tom acolhedor e oferecer ajuda."
-        },
-        "Neutro": {
-          "tone_adjustment": "padrão",
-          "keywords": [],
-          "guidance_notes_pt": "Manter tom padrão da persona."
-        },
-        "Positivo": {
-          "tone_adjustment": "encorajador",
-          "keywords": ["excelente", "bom trabalho"],
-          "guidance_notes_pt": "Reforçar positividade e motivar."
-        },
-        "Negativo": {
-          "tone_adjustment": "calmo_defensivo",
-          "keywords": ["erro", "insatisfeito"],
-          "guidance_notes_pt": "Manter calma e fornecer soluções."
-        }
-      }
-    },
-    "student_to_colleague_project_collaboration": {
-      "rule_key": "student_to_colleague_project_collaboration",
-      "label_pt": "Regra: Estudante para Colega (Colaboração em Projeto)",
-      "description_pt": "Comunicação entre estudantes colegas de equipa em projetos académicos.",
-      "greeting_template": "Olá [PrimeiroNomeColega], / Boas equipa,",
-      "farewell_template": "Abraço,\n[PrimeiroNomeAluno] / Fica bem,",
-      "adapted_style_profile": {
-        "profile_label_pt": "Perfil de Estilo: Estudante para Colega (Colaboração Projeto)",
-        "tone_elements": [
-          {
-            "label_pt": "ColaborativoInformalTecnico",
-            "intensity": 0.5,
-            "keywords_pt": [
-              "partilha de informação",
-              "direto",
-              "amigável",
-              "linguagem técnica clara",
-              "colaborativo"
-            ],
-            "avoid_keywords_pt": [
-              "passivo-agressivo",
-              "excessivamente formal",
-              "muito vago"
-            ]
-          }
-        ],
-        "formality_element": {
-          "label_pt": "BaixaMedia",
-          "level_numeric": 2,
-          "guidance_notes_pt": "Comunicação entre colegas. Pode ser informal, mas manter respeito e clareza, especialmente em discussões técnicas."
-        },
-        "primary_communication_goal": {
-          "label_pt": "Objetivo de Colaborar Eficazmente",
-          "goal_key": "CollaborateEffectively",
-          "description_pt": "O objetivo primário é facilitar a colaboração, partilhar informação e coordenar esforços com colegas ou parceiros."
-        }
-      },
-      "specific_dos_pt": [
-        "Partilhar informação e recursos de forma clara e atempada."
-      ],
-      "specific_donts_pt": [
-        "Não cumprir com as responsabilidades e prazos acordados."
-      ],
-      "sentiment_adaptation": {
-        "Urgente": {
-          "tone_adjustment": "direto_urgente",
-          "keywords": ["urgente", "prazo", "imediatamente"],
-          "guidance_notes_pt": "Priorizar respostas curtas e ações claras."
-        },
-        "Frustrado": {
-          "tone_adjustment": "empático_construtivo",
-          "keywords": ["problema", "dificuldade", "frustração"],
-          "guidance_notes_pt": "Usar tom acolhedor e oferecer ajuda."
-        },
-        "Neutro": {
-          "tone_adjustment": "padrão",
-          "keywords": [],
-          "guidance_notes_pt": "Manter tom padrão da persona."
-        },
-        "Positivo": {
-          "tone_adjustment": "encorajador",
-          "keywords": ["excelente", "bom trabalho"],
-          "guidance_notes_pt": "Reforçar positividade e motivar."
-        },
-        "Negativo": {
-          "tone_adjustment": "calmo_defensivo",
-          "keywords": ["erro", "insatisfeito"],
-          "guidance_notes_pt": "Manter calma e fornecer soluções."
-        }
+  "interlocutor_profiles": {
+    "prof_rocha_silva": {
+      "email_match": "rrochas@gmail.com",
+      "full_name": "Rodrigo Rocha Silva",
+      "linguistic_markers": {
+        "region": "pt-BR",
+        "formality_identifiers": [
+          "Atenciosamente,"
+        ]
       }
     }
   },
-  "global_ia_settings": {
-    "options": {
-      "handlingofmissinginfo": {
-        "option_label_pt": "Opção Info em Falta: Pedir Input",
-        "value": "ALWAYS_REQUEST_USER_INPUT_FIRST",
-        "description_pt": "IA sempre sinaliza à Persona a necessidade de input específico se suspeitar que falta info crítica.",
-        "options_list_description_pt": "LLM_BEST_EFFORT_WITH_EMAIL_ONLY: IA tenta responder da melhor forma apenas com o email original.\r\nPRIORITIZE_USER_DIRECT_INPUT_THEN_CAUTIOUS_SHORT_RESPONSE: IA prioriza input direto da Persona. Se ausente e info crítica parece faltar, IA gera resposta curta e cautelosa.\r\nALWAYS_REQUEST_USER_INPUT_FIRST: IA sempre sinaliza à Persona a necessidade de input específico antes de gerar um rascunho completo se suspeitar que falta info crítica."
-      },
-      "priorityofuserinput": {
-        "option_label_pt": "Opção Prioridade Input Utilizador: Muito Alta",
-        "value": "VERY_HIGH",
-        "description_pt": "Nível de importância a dar ao input explícito da Persona face à análise do email original.",
-        "options_list_description_pt": "LOW, MODERATE, HIGH, VERY_HIGH"
-      },
-      "expectediaautonomylevel": {
-        "option_label_pt": "Opção Autonomia IA: Sugerir e Aguardar",
-        "value": "SUGGEST_ACTIONS_AND_AWAIT_GUIDANCE",
-        "description_pt": "Nível de proatividade esperado da IA em sugerir elaborações, ações não explícitas, etc.",
-        "options_list_description_pt": "MINIMAL_AUTONOMY_STICK_TO_RULES_ONLY\r\nSUGGEST_ACTIONS_AND_AWAIT_GUIDANCE\r\nPROACTIVE_ELABORATION_WITH_CONFIRMATION_NEEDED"
-      },
-      "behaviorforunclearrequests": {
-        "option_label_pt": "Opção Pedidos Pouco Claros: Pedir Clarificação",
-        "value": "REQUEST_CLARIFICATION_FROM_USER",
-        "description_pt": "Como a IA deve proceder se partes do email do remetente forem ambíguas.",
-        "options_list_description_pt": "LLM_BEST_EFFORT_WITH_EMAIL_ONLY: IA tenta responder da melhor forma apenas com o email original.\r\nREQUEST_CLARIFICATION_FROM_USER: IA pede à Persona para clarificar a ambiguidade antes de tentar uma resposta.\r\nOFFER_MULTIPLE_INTERPRETATIONS_TO_USER: IA apresenta possíveis interpretações da ambiguidade à Persona para que esta escolha."
+  "adaptation_policies": {
+    "policy_formal_pt_pt_mirror_structure": {
+      "label": "Política Formal: PT-PT, Espelhar Estrutura",
+      "rules": {
+        "on_formality_identifier:Atenciosamente,": "ESPELHAR. Substituir o componente de despedida padrão pelo componente com ID 'close_pt_atenciosamente'."
       }
     },
-    "default_set_label_pt": "Predefinições Globais de Processo de IA"
+    "policy_informal_mirroring": {
+      "label": "Política Informal: Espelhar Tom",
+      "rules": {
+        "default": "ESPELHAR o tom, a estrutura e a linguagem do interlocutor para manter a conversa fluida e natural."
+      }
+    }
   },
-  "academic_email_categories": {
-    "FEEDBACK_REVISAO_DOCS": {
-      "category_id": "FEEDBACK_REVISAO_DOCS",
-      "display_name_pt": "Feedback, Revisão e Partilha de Documentos",
-      "description_pt": "Emails relacionados com a revisão de artigos, relatórios, código, pedidos de feedback."
+  "communication_components": {
+    "greetings": {
+      "greet_pt_formal_time_based": {
+        "label": "Saudação formal baseada na hora (pt-PT)",
+        "content": [
+          { "condition": "time_of_day:morning", "text": "Bom dia {{recipient_name}}," },
+          { "condition": "time_of_day:afternoon", "text": "Boa tarde {{recipient_name}}," },
+          { "condition": "time_of_day:evening", "text": "Boa noite {{recipient_name}}," }
+        ]
+      },
+      "greet_pt_informal_varied": {
+        "label": "Saudação informal variada (pt-PT)",
+        "content": [
+          { "text": "Boas {{recipient_name}}," },
+          { "text": "Hey {{recipient_name}}," },
+          { "text": "Boas," },
+          { "text": "Olá," }
+        ]
+      }
     },
-    "COURSE_ADMINISTRATION_QUERIES": {
-      "category_id": "COURSE_ADMINISTRATION_QUERIES",
-      "display_name_pt": "Questões Administrativas de Curso/UC",
-      "description_pt": "Emails sobre inscrições, horários, salas, avaliações, notas, pautas, prazos administrativos."
+    "closings": {
+      "close_pt_professional": { "label": "Despedida profissional padrão (pt-PT)", "content": [ { "text": "Com os melhores cumprimentos," } ] },
+      "close_pt_atenciosamente": { "label": "Despedida 'Atenciosamente'", "content": [ { "text": "Atenciosamente," } ] },
+      "close_pt_informal_contextual": {
+        "label": "Despedida informal contextual",
+        "content": [
+          { "text": "Abraço," },
+          { "text": "Até já," },
+          { "text": "Thanks," },
+          { "text": "" }
+        ]
+      }
     },
-    "LECTURE_MATERIAL_CLARIFICATION": {
-      "category_id": "LECTURE_MATERIAL_CLARIFICATION",
-      "display_name_pt": "Esclarecimento sobre Matéria Letiva",
-      "description_pt": "Perguntas sobre o conteúdo das aulas, slides, bibliografia recomendada."
-    },
-    "PROJECT_SUPERVISION_UPDATES_MEETINGS": {
-      "category_id": "PROJECT_SUPERVISION_UPDATES_MEETINGS",
-      "display_name_pt": "Supervisão de Projeto/Tese (Updates, Reuniões)",
-      "description_pt": "Comunicações entre orientador e orientado sobre progresso, dificuldades, agendamento de reuniões de orientação."
+    "signatures": {
+      "sig_rodrigo_full": { "label": "Assinatura completa de Rodrigo", "content": [ { "text": "Rodrigo Novelo" } ] },
+      "sig_rodrigo_short": { "label": "Assinatura curta de Rodrigo", "content": [ { "text": "Rodrigo" } ] }
     }
   }
 }

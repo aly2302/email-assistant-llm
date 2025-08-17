@@ -87,37 +87,90 @@
       "greet_pt_formal_time_based": {
         "label": "Saudação formal baseada na hora (pt-PT)",
         "content": [
-          { "condition": "time_of_day:morning", "text": "Bom dia {{recipient_name}}," },
-          { "condition": "time_of_day:afternoon", "text": "Boa tarde {{recipient_name}}," },
-          { "condition": "time_of_day:evening", "text": "Boa noite {{recipient_name}}," }
+          {
+            "condition": "time_of_day:morning",
+            "text": "Bom dia {{recipient_name}},"
+          },
+          {
+            "condition": "time_of_day:afternoon",
+            "text": "Boa tarde {{recipient_name}},"
+          },
+          {
+            "condition": "time_of_day:evening",
+            "text": "Boa noite {{recipient_name}},"
+          }
         ]
       },
       "greet_pt_informal_varied": {
         "label": "Saudação informal variada (pt-PT)",
         "content": [
-          { "text": "Boas {{recipient_name}}," },
-          { "text": "Hey {{recipient_name}}," },
-          { "text": "Boas," },
-          { "text": "Olá," }
+          {
+            "text": "Boas {{recipient_name}},"
+          },
+          {
+            "text": "Hey {{recipient_name}},"
+          },
+          {
+            "text": "Boas,"
+          },
+          {
+            "text": "Olá,"
+          }
         ]
       }
     },
     "closings": {
-      "close_pt_professional": { "label": "Despedida profissional padrão (pt-PT)", "content": [ { "text": "Com os melhores cumprimentos," } ] },
-      "close_pt_atenciosamente": { "label": "Despedida 'Atenciosamente'", "content": [ { "text": "Atenciosamente," } ] },
+      "close_pt_professional": {
+        "label": "Despedida profissional padrão (pt-PT)",
+        "content": [
+          {
+            "text": "Atenciosamente,"
+          }
+        ]
+      },
+      "close_pt_atenciosamente": {
+        "label": "Despedida 'Atenciosamente'",
+        "content": [
+          {
+            "text": "Atenciosamente,"
+          }
+        ]
+      },
       "close_pt_informal_contextual": {
         "label": "Despedida informal contextual",
         "content": [
-          { "text": "Abraço," },
-          { "text": "Até já," },
-          { "text": "Thanks," },
-          { "text": "" }
+          {
+            "text": "Abraço,"
+          },
+          {
+            "text": "Até já,"
+          },
+          {
+            "text": "Thanks,"
+          },
+          {
+            "text": ""
+          }
         ]
       }
     },
     "signatures": {
-      "sig_rodrigo_full": { "label": "Assinatura completa de Rodrigo", "content": [ { "text": "Rodrigo Novelo" } ] },
-      "sig_rodrigo_short": { "label": "Assinatura curta de Rodrigo", "content": [ { "text": "Rodrigo" } ] }
+      "sig_rodrigo_full": {
+        "label": "Assinatura completa de Rodrigo",
+        "content": [
+          {
+            "text": "Rodrigo Novelo"
+          }
+        ]
+      },
+      "sig_rodrigo_short": {
+        "label": "Assinatura curta de Rodrigo",
+        "content": [
+          {
+            "text": "Rodrigo"
+          }
+        ]
+      }
     }
   }
 }

@@ -36,9 +36,6 @@ const gmailErrorEl = document.getElementById('gmailError');
 const feedbackModalEl = document.getElementById('feedbackModal');
 const feedbackOriginalResponseEl = document.getElementById('feedbackOriginalResponse');
 const feedbackUserCorrectionEl = document.getElementById('feedbackUserCorrection');
-const feedbackTypeSelectEl = document.getElementById('feedbackTypeSelect');
-const feedbackUserExplanationEl = document.getElementById('feedbackUserExplanation');
-const submitFeedbackBtn = document.getElementById('submitFeedbackBtn');
 const feedbackErrorModalEl = document.getElementById('feedbackErrorModal');
 const feedbackSubmitSpinner = document.getElementById('feedbackSubmitSpinner');
 let feedbackModalInstance = null;
@@ -169,6 +166,11 @@ document.addEventListener('DOMContentLoaded', () => {
 function initializeMainApp() {
     if (feedbackModalEl) {
         feedbackModalInstance = new bootstrap.Modal(feedbackModalEl);
+        // NOVO: Adiciona o listener para o botão de submissão aqui
+        const submitFeedbackBtn = document.getElementById('submitFeedbackBtn');
+        if (submitFeedbackBtn) {
+            submitFeedbackBtn.addEventListener('click', submitFeedback);
+        }
     }
     if (sendEmailConfirmModalEl) {
         sendEmailConfirmModalInstance = new bootstrap.Modal(sendEmailConfirmModalEl);
@@ -181,10 +183,10 @@ function initializeMainApp() {
         deletePersonaConfirmModalInstance = new bootstrap.Modal(deletePersonaConfirmModalEl);
     }
 
-    populateFeedbackTypes();
+    // A chamada para populateFeedbackTypes() foi REMOVIDA daqui.
 
     // Adiciona todos os event listeners da aplicação principal
-    analyzeBtn.addEventListener('click', handleAnalysisAndAdvance); // Handler para o botão 'Processar & Próximo Passo'
+    analyzeBtn.addEventListener('click', handleAnalysisAndAdvance);
     draftBtn.addEventListener('click', handleDrafting);
     copyDraftBtn.addEventListener('click', handleCopy);
     userInputsSection.addEventListener('click', handleGuidanceSuggestion);
@@ -194,7 +196,7 @@ function initializeMainApp() {
     document.addEventListener('click', handleDeselection);
     refinementControlsEl.addEventListener('click', handleRefinement);
     feedbackBtn.addEventListener('click', openFeedbackModal);
-    submitFeedbackBtn.addEventListener('click', submitFeedback);
+    // O listener de submitFeedbackBtn foi movido para cima
     fetchEmailsBtn.addEventListener('click', fetchAndRenderEmails);
     emailListEl.addEventListener('click', handleEmailClick);
     sendEmailBtn.addEventListener('click', handleSendEmail);
@@ -202,17 +204,13 @@ function initializeMainApp() {
     // Event listeners para navegação entre passos
     backToSelectBtn.addEventListener('click', () => showStep(1));
     backToAnalysisBtn.addEventListener('click', () => showStep(2));
-    // NOVO: Navegação para o passo de gestão de personas
     document.getElementById('progress-step-4').addEventListener('click', () => showStep(4));
     document.getElementById('backToMainFlowBtn').addEventListener('click', () => showStep(1));
 
-
-    // Event listener para habilitar/desabilitar o botão de análise do Passo 1
     originalEmailEl.addEventListener('input', () => {
         analyzeBtn.disabled = originalEmailEl.value.trim() === '';
     });
 
-    // Event listeners para o novo modal de confirmação de envio
     confirmSendBtn.addEventListener('click', () => {
         if (resolveSendConfirmation) {
             resolveSendConfirmation(true);
@@ -229,8 +227,8 @@ function initializeMainApp() {
     // --- NOVOS Event Listeners para Gestão de Personas ---
     createPersonaBtn.addEventListener('click', openCreatePersonaModal);
     personaForm.addEventListener('submit', submitPersonaForm);
-    addFewShotExampleBtn.addEventListener('click', () => addFewShotExampleField('', '')); // Adiciona um campo vazio
-    fewShotExamplesContainer.addEventListener('click', (event) => { // Delegação para remover exemplos
+    addFewShotExampleBtn.addEventListener('click', () => addFewShotExampleField('', ''));
+    fewShotExamplesContainer.addEventListener('click', (event) => {
         if (event.target.classList.contains('remove-few-shot-example')) {
             event.target.closest('.few-shot-example-group').remove();
             updateFewShotExampleLabels();
@@ -240,13 +238,10 @@ function initializeMainApp() {
     personasTableBody.addEventListener('click', handlePersonaTableClick);
     confirmDeletePersonaBtn.addEventListener('click', deletePersona);
 
-    // Inicia a aplicação no primeiro passo
     showStep(1);
     fetchAndRenderEmails();
-    // Carrega as personas no select (se já não estiverem carregadas pelo Jinja)
-    // E também carrega na tabela de gestão
     fetchAndRenderPersonas(); 
-    populatePersonaSelect(); // Garante que o select está atualizado
+    populatePersonaSelect();
 }
 
 /**
@@ -675,31 +670,6 @@ async function handleRefinement(event) {
     }
 }
 
-function populateFeedbackTypes() {
-    const feedbackTypes = [
-        { value: "", text: "Selecione o tipo de feedback..." },
-        { value: "ERRO_FACTUAL", text: "Erro Factual na Resposta" },
-        { value: "TOM_ESTILO_INADEQUADO", text: "Tom/Estilo Inadequado para o Contexto" },
-        { value: "INFORMACAO_IMPORTANTE_OMITIDA", text: "Informação Importante Foi Omitida" },
-        { value: "INFORMACAO_EXCESSIVA_IRRELEVANTE", text: "Informação Excessiva ou Irrelevante" },
-        { value: "MA_INTERPRETACAO_PEDIDO_ORIGINAL", text: "Má Interpretação do Pedido do Remetente" },
-        { value: "PREFERENCIA_FORMATO_RESPOSTA", text: "Preferência de Formato da Resposta" },
-        { value: "FALHA_NA_APLICACAO_DIRETRIZ", text: "Não Seguiu Bem Minhas Diretrizes" },
-        { value: "COMPORTAMENTO_IA_INESPERADO", text: "Comportamento da IA Inesperado/Não Ideal" },
-        { value: "SUGESTAO_MELHORIA_PROCESSO_IA", text: "Sugestão para Melhorar Processo Geral da IA" },
-        { value: "OUTRO", text: "Outro (detalhar na explicação)" }
-    ];
-    if (feedbackTypeSelectEl) {
-        feedbackTypeSelectEl.innerHTML = '';
-        feedbackTypes.forEach(type => {
-            const option = document.createElement('option');
-            option.value = type.value;
-            option.textContent = type.text;
-            feedbackTypeSelectEl.appendChild(option);
-        });
-    }
-}
-
 function openFeedbackModal() {
     if (!lastGeneratedDraftForFeedback.trim()) {
         showError(draftErrorEl, "Não há rascunho gerado para fornecer feedback.");
@@ -709,10 +679,9 @@ function openFeedbackModal() {
     if(feedbackSuccessMessageEl) feedbackSuccessMessageEl.style.display = 'none';
     if(sendEmailSuccessMessageEl) sendEmailSuccessMessageEl.style.display = 'none';
 
+    // Apenas os campos que ainda existem são preenchidos
     feedbackOriginalResponseEl.value = lastGeneratedDraftForFeedback;
-    feedbackUserCorrectionEl.value = '';
-    feedbackTypeSelectEl.value = '';
-    feedbackUserExplanationEl.value = '';
+    feedbackUserCorrectionEl.value = ''; // Limpa a caixa de texto para o utilizador
 
     if (feedbackModalInstance) {
         feedbackModalInstance.show();
@@ -722,22 +691,22 @@ function openFeedbackModal() {
 async function submitFeedback() {
     const selectedPersona = personaSelect.value;
     const userCorrection = feedbackUserCorrectionEl.value.trim();
-    const feedbackCategory = feedbackTypeSelectEl.value;
 
+    // Validação Simplificada
     if (!selectedPersona) { showError(feedbackErrorModalEl, "Nenhuma persona selecionada. Não é possível submeter feedback."); return; }
-    if (!userCorrection) { showError(feedbackErrorModalEl, "Por favor, forneça a sua versão correta ou o que esperava."); feedbackUserCorrectionEl.focus(); return; }
-    if (!feedbackCategory) { showError(feedbackErrorModalEl, "Por favor, selecione um tipo de feedback."); feedbackTypeSelectEl.focus(); return; }
+    if (!userCorrection) { showError(feedbackErrorModalEl, "Por favor, forneça a sua versão correta para que a IA possa aprender."); feedbackUserCorrectionEl.focus(); return; }
+    
     hideError(feedbackErrorModalEl);
     showSpinner(feedbackSubmitSpinner);
     submitFeedbackBtn.disabled = true;
 
+    // Payload simplificado, apenas com o essencial
     const payload = {
         persona_name: selectedPersona,
         ai_original_response: feedbackOriginalResponseEl.value,
         user_corrected_output: userCorrection,
-        feedback_category: feedbackCategory,
-        user_explanation: feedbackUserExplanationEl.value.trim(),
-        interaction_context: currentDraftContext
+        // O contexto da interação é a parte mais importante para a IA aprender
+        interaction_context: currentDraftContext 
     };
 
     try {
@@ -746,13 +715,23 @@ async function submitFeedback() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
+        
+        // Verificação robusta da resposta do servidor
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: `Erro HTTP ${response.status}` }));
+            throw new Error(errorData.error || "O servidor respondeu com um erro.");
+        }
+        
         const data = await response.json();
-        if (!response.ok || data.error) {
-            throw new Error(data.error || `Erro HTTP ${response.status}`);
+
+        if (data.error) { // Verifica se o JSON de resposta contém um erro
+             throw new Error(data.error);
         }
 
         if(feedbackModalInstance) feedbackModalInstance.hide();
-        showSuccessMessage(feedbackSuccessMessageEl, "Feedback submetido com sucesso! A IA agradece a sua ajuda para aprender.");
+        // Mensagem de sucesso mais informativa
+        const successMsg = `Feedback submetido! Nova regra aprendida: "${data.inferred_rule || 'Regra geral'}"`;
+        showSuccessMessage(feedbackSuccessMessageEl, successMsg, 6000); // Mostra por 6 segundos
 
     } catch (error) {
         console.error("Erro ao submeter feedback:", error);

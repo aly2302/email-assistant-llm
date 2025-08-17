@@ -58,24 +58,23 @@ ontology_file_lock = threading.Lock()
 def load_ontology_file():
     """Carrega de forma segura o conteúdo do ficheiro da ontologia."""
     try:
-        with ontology_file_lock:
-            with open(ONTOLOGY_FILE, 'r', encoding='utf-8') as f:
-                ontology_data = json.load(f)
+        with open(ONTOLOGY_FILE, 'r', encoding='utf-8') as f:
+            ontology_data = json.load(f)
         logging.info(f"Ontologia carregada com sucesso do ficheiro: {ONTOLOGY_FILE}")
         return ontology_data
     except Exception as e:
         logging.error(f"ERRO CRÍTICO ao carregar a ontologia: {e}\n{traceback.format_exc()}")
         return {}
-
+    
 def save_ontology_file(data):
     """Salva os dados da ontologia de forma segura."""
     try:
-        with ontology_file_lock:
-            with open(ONTOLOGY_FILE, 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
+        with open(ONTOLOGY_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        logging.info(f"Ontologia salva com sucesso em {ONTOLOGY_FILE}")
         return True
     except Exception as e:
-        logging.error(f"Erro ao salvar o ficheiro de ontologia: {e}")
+        logging.error(f"ERRO AO SALVAR O FICHEIRO DE ONTOLOGIA: {e}\n{traceback.format_exc()}")
         return False
 
 ONTOLOGY_DATA = load_ontology_file()
@@ -499,35 +498,107 @@ def refine_text_route():
 
 @app.route('/submit_feedback', methods=['POST'])
 def submit_feedback_route():
+    logging.info("A rota /submit_feedback foi chamada.")
     data = request.json
     persona_name = data.get('persona_name')
     if not persona_name:
+        logging.error("Pedido de feedback recebido sem 'persona_name'.")
         return jsonify({"error": "Nome da persona é obrigatório."}), 400
 
-    with ontology_file_lock:
-        current_data = load_ontology_file()
-        persona_obj = current_data.get("personas", {}).get(persona_name)
-        if not persona_obj:
-            return jsonify({"error": f"Persona '{persona_name}' não encontrada."}), 404
-        
-        persona_obj.setdefault('learned_knowledge_base', [])
-        
-        feedback_entry = {
-            "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            "feedback_category_pt": data.get('feedback_category'),
-            "ai_original_response_text": data.get('ai_original_response'),
-            "user_corrected_output_text": data.get('user_corrected_output'),
-            "user_explanation_text_pt": data.get('user_explanation', ''),
-            "interaction_context_snapshot": data.get('interaction_context', {})
-        }
-        persona_obj['learned_knowledge_base'].append(feedback_entry)
-        
-        if not save_ontology_file(current_data):
-            return jsonify({"error": "Falha ao salvar feedback."}), 500
-        
-        global ONTOLOGY_DATA
-        ONTOLOGY_DATA = current_data
-    return jsonify({"message": "Feedback submetido com sucesso!"})
+    ai_original_response = data.get('ai_original_response', '')
+    user_corrected_output = data.get('user_corrected_output', '')
+    interaction_context = data.get('interaction_context', {})
+    original_email = interaction_context.get('original_email_text', 'N/A')
+
+    logging.info("A iniciar a inferência de regra a partir do feedback.")
+    inference_prompt = f"""
+    Analise a seguinte interação de email para extrair um princípio de aprendizagem.
+    Um assistente de IA, agindo como a persona '{persona_name}', produziu uma "Resposta Original".
+    O utilizador corrigiu-a com uma "Versão Melhorada".
+    A sua tarefa é identificar a principal diferença e formular uma regra concisa e acionável em português (pt-PT) que a IA deve seguir no futuro para se alinhar melhor com a preferência do utilizador.
+
+    --- CONTEXTO DO EMAIL ORIGINAL QUE O UTILIZADOR RECEBEU ---
+    {original_email}
+
+    --- RESPOSTA ORIGINAL DA IA (INCORRETA/MELHORÁVEL) ---
+    {ai_original_response}
+
+    --- VERSÃO MELHORADA FORNECIDA PELO UTILIZADOR (CORRETA) ---
+    {user_corrected_output}
+
+    --- ANÁLISE E TAREFA ---
+    1. Compare a "Resposta Original da IA" com a "Versão Melhorada do Utilizador".
+    2. Identifique a mudança mais significativa: foi no tom, na formalidade, na estrutura, na adição/remoção de informação, ou na eficiência?
+    3. Com base nesta diferença, formule uma única regra imperativa e geral. A regra deve ser curta, clara e começar com um verbo.
+    
+    Exemplos de boas regras:
+    - "Evitar usar a palavra 'ansiosamente' e manter um tom mais neutro."
+    - "Confirmar sempre a receção do pedido antes de dar a resposta."
+    - "Manter as respostas a notificações simples extremamente curtas, como 'Recebido, obrigado.'."
+    - "Usar sempre a saudação 'Bom dia,' sem o nome do destinatário para emails de equipas."
+
+    --- SAÍDA ---
+    Produza APENAS um objeto JSON com uma única chave "inferred_rule".
+    {{
+      "inferred_rule": "Sua regra inferida aqui."
+    }}
+    """
+
+    inferred_rule = "Não foi possível inferir uma regra específica."
+    llm_response = call_gemini(inference_prompt, temperature=0.3)
+    
+    if "error" in llm_response:
+        logging.warning(f"Falha na inferência da regra para o feedback: {llm_response['error']}")
+    else:
+        try:
+            json_str_match = re.search(r'\{.*\}', llm_response.get("text", ""), re.DOTALL)
+            if json_str_match:
+                rule_data = json.loads(json_str_match.group(0))
+                inferred_rule = rule_data.get("inferred_rule", inferred_rule)
+                logging.info(f"Regra inferida com sucesso: '{inferred_rule}'")
+            else:
+                 logging.warning(f"A resposta da inferência de regra não continha JSON válido. Resposta: {llm_response.get('text', '')}")
+        except Exception as e:
+            logging.error(f"Erro ao analisar o JSON da regra inferida: {e}")
+
+    try:
+        with ontology_file_lock:
+            logging.info("A adquirir lock para modificar o ficheiro de ontologia.")
+            current_data = load_ontology_file()
+            persona_obj = current_data.get("personas", {}).get(persona_name)
+            
+            if not persona_obj:
+                logging.error(f"Persona '{persona_name}' não encontrada no ficheiro ao tentar salvar.")
+                return jsonify({"error": f"Persona '{persona_name}' não encontrada no ficheiro."}), 404
+            
+            persona_obj.setdefault('learned_knowledge_base', [])
+            
+            feedback_entry = {
+                "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                "inferred_rule_pt": inferred_rule,
+                "ai_original_response_text": ai_original_response,
+                "user_corrected_output_text": user_corrected_output,
+                "interaction_context_snapshot": interaction_context
+            }
+            persona_obj['learned_knowledge_base'].append(feedback_entry)
+            
+            logging.info("A tentar salvar os dados no ficheiro JSON...")
+            if not save_ontology_file(current_data):
+                raise IOError("A função save_ontology_file retornou 'False'. Verifique os logs para o erro de escrita.")
+            
+            global ONTOLOGY_DATA
+            ONTOLOGY_DATA = current_data
+            logging.info("Ficheiro salvo e ontologia em memória atualizada. A enviar resposta de sucesso.")
+
+        return jsonify({
+            "message": "Feedback submetido e nova regra aprendida com sucesso!",
+            "inferred_rule": inferred_rule
+        }), 200
+
+    except Exception as e:
+        logging.error(f"ERRO CRÍTICO na rota /submit_feedback ao tentar salvar: {e}\n{traceback.format_exc()}")
+        return jsonify({"error": f"Ocorreu um erro no servidor ao salvar o feedback: {e}"}), 500
+
 
 @app.route('/api/personas', methods=['GET', 'POST'])
 def personas_api_route():

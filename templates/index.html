@@ -248,41 +248,34 @@
 
     <!-- Modal de Feedback (EXISTENTE) -->
     <div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="feedbackModalLabel"><i class="fas fa-lightbulb me-2"></i>Fornecer Feedback para a IA</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="feedbackModalLabel"><i class="fas fa-lightbulb me-2"></i>Ensinar a IA com um Exemplo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-secondary">Se a resposta da IA não foi a ideal, escreva abaixo a versão que você teria enviado. A IA irá analisar a diferença e aprender uma nova regra para o futuro.</p>
+                <div id="feedbackErrorModal" class="error-message mb-3" style="display: none;"></div>
+                <div class="mb-3">
+                    <label for="feedbackOriginalResponse" class="form-label">Resposta Original da IA (para contexto):</label>
+                    <textarea class="form-control" id="feedbackOriginalResponse" rows="4" readonly style="background-color: var(--point-text-bg); opacity: 0.8;"></textarea>
                 </div>
-                <div class="modal-body">
-                    <div id="feedbackErrorModal" class="error-message mb-3" style="display: none;"></div>
-                    <div class="mb-3">
-                        <label for="feedbackOriginalResponse" class="form-label">Resposta Original da IA (ou trecho):</label>
-                        <textarea class="form-control" id="feedbackOriginalResponse" rows="4" readonly style="background-color: var(--point-text-bg); opacity: 0.8;"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label for="feedbackUserCorrection" class="form-label">Minha Versão Correta / O que eu queria:</label>
-                        <textarea class="form-control" id="feedbackUserCorrection" rows="5" placeholder="Descreva ou cole aqui a resposta/comportamento que esperava..."></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label for="feedbackTypeSelect" class="form-label">Tipo de Correção/Feedback:</label>
-                        <select class="form-select" id="feedbackTypeSelect"></select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="feedbackUserExplanation" class="form-label">Explicação Adicional (Opcional):</label>
-                        <textarea class="form-control" id="feedbackUserExplanation" rows="3" placeholder="Porquê esta correção é melhor? Que princípio a IA deve aprender?"></textarea>
-                    </div>
+                <div class="mb-3">
+                    <label for="feedbackUserCorrection" class="form-label"><strong>A Minha Versão Correta:</strong></label>
+                    <textarea class="form-control" id="feedbackUserCorrection" rows="6" placeholder="Escreva ou cole aqui a resposta exata que você esperava..."></textarea>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" id="submitFeedbackBtn">
-                        Submeter Feedback
-                        <div class="spinner-border spinner-border-sm loading-spinner" role="status" id="feedbackSubmitSpinner"></div>
-                    </button>
-                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="submitFeedbackBtn">
+                    Submeter e Ensinar
+                    <div class="spinner-border spinner-border-sm loading-spinner" role="status" id="feedbackSubmitSpinner"></div>
+                </button>
             </div>
         </div>
     </div>
+</div>
 
     <!-- Modal de Confirmação de Envio de Email (EXISTENTE) -->
     <div class="modal fade" id="sendEmailConfirmModal" tabindex="-1" aria-labelledby="sendEmailConfirmModalLabel" aria-hidden="true">

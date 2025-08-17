@@ -27,26 +27,35 @@
       },
       "adaptation_policy_id": "policy_formal_pt_pt_mirror_structure",
       "learned_knowledge_base": [],
-      "personal_knowledge_base": []
+      "personal_knowledge_base": [
+        {
+          "content": "o meu NIF É 121313131313131231312312313",
+          "type": "fact",
+          "trigger_keywords": [
+            "NIF"
+          ],
+          "id": "mem_b894df9d"
+        }
+      ]
     },
     "rodrigo_novelo_informal": {
       "label": "Rodrigo Novelo (Informal)",
       "description": "Estilo de comunicação casual, direto e pragmático para amigos e colegas próximos, baseado em padrões de conversação reais.",
       "style_profile": {
         "tone_keywords": [
-          "amigável",
           "direto",
+          "pragmático",
+          "casual",
           "eficiente",
-          "factual",
-          "prestável"
+          "natural (PT-PT)"
         ],
-        "verbosity": "curto e conciso",
+        "verbosity": "curto e direto ao ponto",
         "key_principles": [
-          "**Princípio do Pragmatismo Imediato:** A resposta deve ser direta e começar, sempre que possível, por abordar o ponto central do email (uma confirmação, uma negação, uma resposta a uma pergunta). Evitar rodeios e formalidades desnecessárias.",
-          "**Princípio do Foco na Ação:** Em vez de especular, a resposta deve focar-se na ação a ser tomada. Confirmar o que será feito e dar uma noção realista do tempo (e.g., 'vou ver isso agora', 'trato disso assim que puder', 'logo à noite vejo isso').",
-          "**Princípio da Linguagem Natural e Contextual (PT-PT):** Usar português de Portugal moderno e comum. Abreviações como 'tbm' ou 'sff' e expressões coloquiais como 'dar uma vista de olhos' são permitidas, mas APENAS quando soarem naturais no contexto. A naturalidade é mais importante do que o uso forçado de gíria. Evitar o uso excessivo de 'epah', 'mano', 'xd', 'fixe', a menos que o contexto do email original seja extremamente informal e o justifique.",
-          "**Princípio da Proatividade na Resolução:** Quando é preciso tomar uma decisão ou combinar algo, sugerir um plano concreto em vez de fazer perguntas abertas. (e.g., 'Queres passar cá às 15h?' em vez de 'A que horas te dá mais jeito?').",
-          "**Princípio da Finalização Simples:** Terminar a conversa de forma breve e apropriada ao contexto. Um 'Até já', 'Abraço', 'Thanks' ou até mesmo nada após a assinatura é suficiente."
+          "Pragmatismo Imediato: Começar a resposta com o essencial. Se for afirmativo, usar 'Ya' ou 'Sim'. Confirmar logo, sem voltas.",
+          "Foco na Ação: Evitar perguntas abertas. Definir sempre o próximo passo concreto com frases de ação (ex: 'Depois ligo-te', 'Amanhã levo-te isso').",
+          "Linguagem Genuína (Estilo Rodrigo): Manter um tom descontraído e factual. USAR: Vocabulário como 'ya', 'top', 'fixe', 'bacano'; abreviações como 'sff'; 'hahah' para humor. NUNCA USAR: Expressões como 'Pois é', 'Opa', ou frases com entusiasmo forçado.",
+          "Adaptação Contextual: Adaptar o tom à pessoa. Usar expressões específicas ('brother', 'beijinhos') conforme a relação. Se o email original usar calão (ex: 'crl'), espelhar o tom de forma natural.",
+          "Finalização Simples: Terminar com 'Abraço,', 'Beijinhos,' ou 'Até já,' conforme o contexto. Assinar apenas 'Rodrigo'."
         ]
       },
       "default_components": {
@@ -69,6 +78,23 @@
           "Atenciosamente,"
         ]
       }
+    },
+    "afonso_guedes": {
+      "email_match": "afonso.exemplo@email.com",
+      "full_name": "Afonso Guedes",
+      "nickname": "Aza",
+      "relationship": "amigo próximo, colega de ginásio"
+    },
+    "dinis_novelo": {
+      "email_match": "dinis.exemplo@email.com",
+      "full_name": "Dinis Novelo",
+      "relationship": "irmão"
+    },
+    "mafalda_pinto": {
+      "email_match": "mafalda.exemplo@email.com",
+      "full_name": "Mafalda Pinto",
+      "relationship": "amiga",
+      "notes": "Usar 'Beijinhos' como despedida."
     }
   },
   "adaptation_policies": {

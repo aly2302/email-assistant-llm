@@ -28,7 +28,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - [%
 APP_HOST = os.environ.get('APP_HOST', '127.0.0.1')
 APP_PORT = int(os.environ.get('APP_PORT', 5001))
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
-GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-1.5-flash-latest')
+GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-2.5-flash-lite')
 DEBUG_MODE = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -171,6 +171,7 @@ def find_relevant_knowledge(new_email_text, personal_knowledge, learned_correcti
 
     scored_memories.sort(key=lambda x: x[0], reverse=True)
     top_memories = [mem.get("content") for score, mem in scored_memories[:top_n] if mem.get("content")]
+    #top_memories = [mem for score, mem in scored_memories[:top_n]] # Devolve a memória completa
 
     # 2. Busca nas Correções Implícitas (learned_knowledge_base)
     top_corrections = calculate_relevance_for_corrections(new_email_words, learned_corrections, top_n=2)
@@ -346,6 +347,28 @@ def draft_response_route():
     
     sender_name, sender_email = parse_sender_info(original_email)
     
+    # --- NOVO BLOCO DE CÓDIGO PARA CONTEXTO DO INTERLOCUTOR ---
+    interlocutor_context = ""
+    if sender_email:
+        profiles = ONTOLOGY_DATA.get("interlocutor_profiles", {})
+        for key, profile in profiles.items():
+            if profile.get("email_match", "").lower() == sender_email.lower():
+                logging.info(f"Interlocutor '{sender_email}' identificado como '{key}'.")
+                context_parts = []
+                if name := profile.get("full_name"):
+                    context_parts.append(f"Nome: {name}")
+                if nickname := profile.get("nickname"):
+                    context_parts.append(f"Alcunha/Como tratar: {nickname}")
+                if rel := profile.get("relationship"):
+                    context_parts.append(f"Relação: {rel}")
+                if notes := profile.get("notes"):
+                    context_parts.append(f"Notas: {notes}")
+                
+                if context_parts:
+                    interlocutor_context = f"<contexto_interlocutor>{' | '.join(context_parts)}</contexto_interlocutor>"
+                break
+    # --- FIM DO NOVO BLOCO ---
+
     monologue = ["<monologo>"]
     persona = ONTOLOGY_DATA.get("personas", {}).get(persona_id)
     if not persona: return jsonify({"error": f"Persona '{persona_id}' não encontrada."}), 404
@@ -388,6 +411,7 @@ A sua tarefa é gerar uma resposta de email COMPLETA e natural.
 
 --- MONÓLOGO DE RACIOCÍNIO (O seu contexto interno. NÃO inclua no rascunho final) ---
 {''.join(monologue)}
+{interlocutor_context}
 
 --- DIRETRIZES ABSOLUTAS DO UTILIZADOR (OBRIGATÓRIO CUMPRIR) ---
 {guidance_summary or "Nenhuma diretriz específica. Siga a lógica do seu raciocínio."}
@@ -413,9 +437,23 @@ A sua tarefa é gerar uma resposta de email COMPLETA e natural.
     if "error" in llm_response: return jsonify({"error": llm_response["error"], "monologue": "\n".join(monologue)}), 500
 
     raw_draft = llm_response.get("text", "").strip()
-    final_draft = raw_draft.split("---RASCUNHO-FINAL---")[-1].strip()
-    return jsonify({"draft": final_draft, "monologue": "\n".join(monologue)})
+    
+    draft_section = raw_draft.split("---RASCUNHO-FINAL---")[-1].strip()
+    if '</monologo>' in draft_section:
+        final_draft = draft_section.split('</monologo>')[-1].strip()
+    else:
+        final_draft = draft_section
+    final_draft = final_draft.replace('[CORPO DO EMAIL AQUI]', '').strip()
+    final_draft = re.sub(r'\n{3,}', '\n\n', final_draft)
 
+    # --- ALTERAÇÃO AQUI: Loop de substituição agora usa enumerate para MEMORY_1, MEMORY_2, etc. ---
+    if relevant_memories:
+        for i, memory in enumerate(relevant_memories):
+            placeholder = f"{{{{MEMORY_{i+1}}}}}"
+            content_to_inject = memory.get('content', '')
+            final_draft = final_draft.replace(placeholder, content_to_inject)
+
+    return jsonify({"draft": final_draft, "monologue": "\n".join(monologue)})
 
 # --- ROTAS ADICIONAIS (Feedback, Refine, etc.) ---
 # (As rotas /suggest_guidance, /refine_text, /submit_feedback permanecem as mesmas)

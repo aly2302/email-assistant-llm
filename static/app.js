@@ -314,13 +314,21 @@ function createUserInputFields(points) {
         const div = document.createElement('div');
         div.className = 'point-input-group';
         const inputId = isGeneral ? 'userInput-general' : `userInput-${index}`;
-        const labelText = isGeneral ? '<strong>Diretriz Geral:</strong>' : `<strong>Ponto ${index + 1}:</strong>`;
+        const pointIdentifier = isGeneral ? "N/A" : (point || "N/A");
+        const labelText = isGeneral ? '<strong>Diretriz Geral:</strong> <span class="form-label-sm">(Opcional - instrução global para este rascunho)</span>' : `<strong>Ponto ${index + 1}:</strong>`;
         const pointDisplay = !isGeneral ? `<p class="point-text">"${escapeHtml(point)}"</p>` : '';
-        div.innerHTML = `<label for="${inputId}" class="form-label">${labelText}</label>${pointDisplay}<textarea class="form-control user-guidance" id="${inputId}" data-point="${escapeHtml(point || 'N/A')}" rows="2" placeholder="Insira a sua diretriz..."></textarea>`;
+        
+        // Lógica dos botões de rádio e do botão de sugestão
+        const directionRadiosHTML = !isGeneral ? `<div class="mb-2 guidance-direction-group"><span class="form-label-sm d-block mb-1">Vetor de Resposta Rápida:</span><div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="direction-${index}" id="direction-${index}-sim" value="sim"><label class="form-check-label" for="direction-${index}-sim">Afirmativo</label></div><div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="direction-${index}" id="direction-${index}-nao" value="nao"><label class="form-check-label" for="direction-${index}-nao">Negativo</label></div><div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="direction-${index}" id="direction-${index}-outro" value="outro" checked><label class="form-check-label" for="direction-${index}-outro">Detalhado</label></div></div>` : '';
+        const suggestButtonHTML = !isGeneral ? `<button class="btn btn-sm btn-outline-secondary suggest-btn" data-target-textarea="${inputId}" data-point-index="${index}" type="button" title="Gerar sugestão de diretriz via IA, usando o Vetor de Resposta">Sugerir Diretriz<div class="spinner-border spinner-border-sm loading-spinner" role="status" style="display: none;"></div></button>` : '';
+        
+        div.innerHTML = `<div class="d-flex justify-content-between align-items-start mb-1 flex-wrap"><label for="${inputId}" class="form-label mb-0 me-2">${labelText}</label>${suggestButtonHTML}</div>${pointDisplay}${directionRadiosHTML}<textarea class="form-control user-guidance" id="${inputId}" data-point="${escapeHtml(pointIdentifier)}" rows="3" placeholder="Insira a sua diretriz para este ponto..."></textarea>`;
         userInputsSection.appendChild(div);
     };
-    if (points && points.length > 0) {
-        points.forEach((point, index) => createGroup(point, index));
+
+    const hasRealPoints = points && points.length > 0 && !(points.length === 1 && points[0].toLowerCase().includes("nenhum ponto"));
+    if (hasRealPoints) {
+        points.forEach((point, index) => createGroup(point, index, false));
     }
     createGroup(null, 'general', true);
 }
@@ -376,8 +384,109 @@ function handleDeselection(event) {
         refinementControlsEl.style.display = 'none';
     }
 }
-async function handleRefinement(event) { /* ... Lógica de refinamento ... */ }
-async function handleGuidanceSuggestion(event) { /* ... Lógica de sugestão ... */ }
+
+async function handleRefinement(event) {
+    const button = event.target.closest('.refine-btn');
+    if (button && !isRefining) {
+        const action = button.dataset.action;
+        const spinner = button.querySelector('.loading-spinner');
+        const selectedText = generatedDraftEl.value.substring(generatedDraftEl.selectionStart, generatedDraftEl.selectionEnd);
+        const fullContext = generatedDraftEl.value;
+        const selectedPersonaName = personaSelect.value;
+        const start = generatedDraftEl.selectionStart;
+        const end = generatedDraftEl.selectionEnd;
+
+        if (!selectedText) {
+            refinementControlsEl.style.display = 'none';
+            return;
+        }
+        if (!selectedPersonaName) {
+            showError(draftErrorEl, "Selecione uma persona para o refinamento.");
+            return;
+        }
+
+        isRefining = true;
+        if (spinner) showSpinner(spinner);
+        refinementControlsEl.querySelectorAll('.refine-btn').forEach(btn => btn.disabled = true);
+        hideError(draftErrorEl);
+
+        try {
+            const response = await fetch('/refine_text', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    selected_text: selectedText,
+                    full_context: fullContext,
+                    action: action,
+                    persona_name: selectedPersonaName
+                })
+            });
+            const data = await response.json();
+            if (!response.ok || data.error) { throw new Error(data.error || `Erro HTTP ${response.status}`); }
+
+            const before = fullContext.substring(0, start);
+            const after = fullContext.substring(end);
+            const refinedText = data.refined_text || "";
+            generatedDraftEl.value = before + refinedText + after;
+            lastGeneratedDraftForFeedback = generatedDraftEl.value; // Atualiza para feedback
+            generatedDraftEl.focus();
+            const newCursorPos = start + refinedText.length;
+            generatedDraftEl.setSelectionRange(newCursorPos, newCursorPos);
+        } catch (error) {
+            showError(draftErrorEl, `Erro no refinamento (${action}): ${error.message}`);
+        } finally {
+            if (spinner) hideSpinner(spinner);
+            refinementControlsEl.querySelectorAll('.refine-btn').forEach(btn => btn.disabled = false);
+            isRefining = false;
+        }
+    }
+}
+
+async function handleGuidanceSuggestion(event) {
+    const button = event.target.closest('.suggest-btn');
+    if (button && !button.disabled) {
+        const spinner = button.querySelector('.loading-spinner');
+        const targetTextareaId = button.dataset.targetTextarea;
+        const pointIndex = parseInt(button.dataset.pointIndex, 10);
+        const targetTextarea = document.getElementById(targetTextareaId);
+        const originalEmail = originalEmailEl.value.trim();
+        const selectedPersonaName = personaSelect.value;
+        const radioGroupName = `direction-${pointIndex}`;
+        const checkedRadio = userInputsSection.querySelector(`input[name="${radioGroupName}"]:checked`);
+        const selectedDirection = checkedRadio ? checkedRadio.value : "outro";
+        const pointToAddress = (currentAnalysisPoints && pointIndex >= 0 && pointIndex < currentAnalysisPoints.length) ? currentAnalysisPoints[pointIndex] : null;
+
+        if (!targetTextarea || !originalEmail || !pointToAddress || !selectedPersonaName || pointToAddress === 'N/A') {
+            showError(draftErrorEl, "Erro interno: Dados insuficientes para sugestão.");
+            return;
+        }
+        if (spinner) showSpinner(spinner);
+        button.disabled = true;
+        hideError(draftErrorEl);
+
+        try {
+            const response = await fetch('/suggest_guidance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    original_email: originalEmail,
+                    point_to_address: pointToAddress,
+                    persona_name: selectedPersonaName,
+                    direction: selectedDirection
+                })
+            });
+            const data = await response.json();
+            if (!response.ok || data.error) { throw new Error(data.error || `Erro HTTP ${response.status}`); }
+            targetTextarea.value = data.suggestion || '';
+            targetTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+        } catch (error) {
+            showError(draftErrorEl, `Erro na sugestão: ${error.message}`);
+        } finally {
+            if (spinner) hideSpinner(spinner);
+            button.disabled = false;
+        }
+    }
+}
 
 // --- Lógica de Feedback ---
 function openFeedbackModal() {

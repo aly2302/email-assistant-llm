@@ -54,7 +54,6 @@
                     <div class="progress-step-circle">3</div>
                     <span class="progress-step-label">Compor & Enviar</span>
                 </div>
-                <!-- NOVO PASSO: Gerir Personas -->
                 <div class="progress-step" id="progress-step-4" data-step="4">
                     <div class="progress-step-circle">4</div>
                     <span class="progress-step-label">Gerir Personas</span>
@@ -109,23 +108,12 @@
                     </div>
                     <div class="mt-4 mb-3">
                         <label for="personaSelect" class="form-label">Protocolo de Persona (Voz):</label>
-                        <select class="form-select" id="personaSelect" {% if error_loading_personas %}disabled{% endif %}>
-                            {% if error_loading_personas %}
-                                <option value="">Erro: Protocolos indisponíveis</option>
-                            {% elif personas_dict %}
-                                {% for key, persona in personas_dict.items() %}
-                                    <option value="{{ key }}">{{ persona.name }}</option>
-                                {% endfor %}
-                            {% else %}
-                                <option value="">Nenhum protocolo de persona carregado</option>
-                            {% endif %}
+                        <select class="form-select" id="personaSelect">
+                            <!-- Options will be populated by JS -->
                         </select>
-                        {% if error_loading_personas %}
-                            <div class="text-danger small mt-1">Falha ao carregar 'personas.json'. Verifique a integridade dos dados.</div>
-                        {% endif %}
                     </div>
                     <div class="mt-3 text-center">
-                        <button id="draftBtn" class="btn btn-success" {% if error_loading_personas or not personas_dict %}disabled{% endif %}>
+                        <button id="draftBtn" class="btn btn-success" disabled>
                             Gerar Composição
                             <div class="spinner-border spinner-border-sm loading-spinner" role="status" id="draftSpinner"></div>
                         </button>
@@ -181,21 +169,20 @@
                 </section>
             </div>
 
-            <!-- NOVO PASSO: Gestão de Personas -->
+            <!-- PASSO 4: Gestão de Personas -->
             <div id="step-4" class="wizard-step">
                 <h2 class="wizard-step-title"><i class="fas fa-users-cog"></i> 4. Gerir Personas</h2>
                 <div class="d-flex justify-content-start mb-4">
                     <button id="backToMainFlowBtn" class="btn btn-secondary btn-sm">
                         <i class="fas fa-arrow-left"></i> Voltar ao Fluxo Principal
                      </button>
-                
                 </div>
-                <p class="lead text-secondary">Cria novas personas.</p>
+                <p class="lead text-secondary">Crie, edite e ensine as suas personas de comunicação.</p>
 
                 <section id="personaManagementSection" class="mb-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h4 class="mt-0">Personas Ativas</h4>
-                        <button id="createPersonaBtn" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#personaFormModal">
+                        <button id="createPersonaBtn" class="btn btn-primary btn-sm">
                             <i class="fas fa-plus-circle"></i> Nova Persona
                         </button>
                     </div>
@@ -212,7 +199,6 @@
                             </thead>
                             <tbody id="personasTableBody">
                                 <!-- Personas serão carregadas aqui via JS -->
-                                <tr><td colspan="4" class="text-center text-secondary">A carregar personas...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -246,38 +232,40 @@
     </div>
     {% endif %}
 
-    <!-- Modal de Feedback (EXISTENTE) -->
+    <!-- MODAIS -->
+
+    <!-- Modal de Feedback -->
     <div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="feedbackModalLabel"><i class="fas fa-lightbulb me-2"></i>Ensinar a IA com um Exemplo</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p class="text-secondary">Se a resposta da IA não foi a ideal, escreva abaixo a versão que você teria enviado. A IA irá analisar a diferença e aprender uma nova regra para o futuro.</p>
-                <div id="feedbackErrorModal" class="error-message mb-3" style="display: none;"></div>
-                <div class="mb-3">
-                    <label for="feedbackOriginalResponse" class="form-label">Resposta Original da IA (para contexto):</label>
-                    <textarea class="form-control" id="feedbackOriginalResponse" rows="4" readonly style="background-color: var(--point-text-bg); opacity: 0.8;"></textarea>
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="feedbackModalLabel"><i class="fas fa-lightbulb me-2"></i>Ensinar a IA com um Exemplo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="mb-3">
-                    <label for="feedbackUserCorrection" class="form-label"><strong>A Minha Versão Correta:</strong></label>
-                    <textarea class="form-control" id="feedbackUserCorrection" rows="6" placeholder="Escreva ou cole aqui a resposta exata que você esperava..."></textarea>
+                <div class="modal-body">
+                    <p class="text-secondary">Se a resposta da IA não foi a ideal, escreva abaixo a versão que você teria enviado. A IA irá analisar a diferença e aprender uma nova regra para o futuro.</p>
+                    <div id="feedbackErrorModal" class="error-message mb-3" style="display: none;"></div>
+                    <div class="mb-3">
+                        <label for="feedbackOriginalResponse" class="form-label">Resposta Original da IA (para contexto):</label>
+                        <textarea class="form-control" id="feedbackOriginalResponse" rows="4" readonly style="background-color: var(--point-text-bg); opacity: 0.8;"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="feedbackUserCorrection" class="form-label"><strong>A Minha Versão Correta:</strong></label>
+                        <textarea class="form-control" id="feedbackUserCorrection" rows="6" placeholder="Escreva ou cole aqui a resposta exata que você esperava..."></textarea>
+                    </div>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" id="submitFeedbackBtn">
-                    Submeter e Ensinar
-                    <div class="spinner-border spinner-border-sm loading-spinner" role="status" id="feedbackSubmitSpinner"></div>
-                </button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="submitFeedbackBtn">
+                        Submeter e Ensinar
+                        <div class="spinner-border spinner-border-sm loading-spinner" role="status" id="feedbackSubmitSpinner"></div>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-    <!-- Modal de Confirmação de Envio de Email (EXISTENTE) -->
+    <!-- Modal de Confirmação de Envio de Email -->
     <div class="modal fade" id="sendEmailConfirmModal" tabindex="-1" aria-labelledby="sendEmailConfirmModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -315,93 +303,15 @@
                         <div class="mb-3">
                             <label for="personaKeyInput" class="form-label">Chave da Persona (ID Único):</label>
                             <input type="text" class="form-control" id="personaKeyInput" required pattern="[a-z0-9_]+" title="Apenas letras minúsculas, números e sublinhados." placeholder="Ex: meu_perfil_profissional">
-                            <div class="form-text text-secondary">Identificador único para a persona (apenas letras minúsculas, números e sublinhados).</div>
                         </div>
                         <div class="mb-3">
-                            <label for="personaLabelPtInput" class="form-label">Nome da Persona (Exibição):</label>
-                            <input type="text" class="form-control" id="personaLabelPtInput" required placeholder="Ex: Meu Perfil Profissional">
+                            <label for="personaLabelInput" class="form-label">Nome da Persona (Exibição):</label>
+                            <input type="text" class="form-control" id="personaLabelInput" required placeholder="Ex: Meu Perfil Profissional">
                         </div>
                         <div class="mb-3">
-                            <label for="personaDescriptionPtInput" class="form-label">Descrição da Persona:</label>
-                            <textarea class="form-control" id="personaDescriptionPtInput" rows="3" placeholder="Breve descrição do estilo e propósito da persona."></textarea>
+                            <label for="personaDescriptionInput" class="form-label">Descrição da Persona:</label>
+                            <textarea class="form-control" id="personaDescriptionInput" rows="2" placeholder="Breve descrição do estilo e propósito da persona."></textarea>
                         </div>
-                        <div class="mb-3">
-                            <label for="personaRoleTemplateInput" class="form-label">Modelo de Papel (Role Template):</label>
-                            <input type="text" class="form-control" id="personaRoleTemplateInput" placeholder="Ex: Estudante de [NomeDoCurso]">
-                            <div class="form-text text-secondary">Como a IA deve se identificar (ex: 'Professor de [Disciplina]').</div>
-                        </div>
-                        
-                        <!-- Atributos de Comunicação -->
-                        <h6 class="mt-4 mb-3 text-secondary">Atributos de Comunicação Padrão</h6>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="commLanguageInput" class="form-label">Idioma:</label>
-                                <input type="text" class="form-control" id="commLanguageInput" value="pt-PT" placeholder="Ex: pt-PT">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="commVerbosityInput" class="form-label">Verbosidade:</label>
-                                <input type="text" class="form-control" id="commVerbosityInput" placeholder="Ex: Equilibrado">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="commSentenceStructureInput" class="form-label">Estrutura Frásica:</label>
-                                <input type="text" class="form-control" id="commSentenceStructureInput" placeholder="Ex: ClaraConcisa">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="commVocabularyPreferenceInput" class="form-label">Vocabulário:</label>
-                                <input type="text" class="form-control" id="commVocabularyPreferenceInput" placeholder="Ex: AdequadoAoContexto">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="commEmojiUsageInput" class="form-label">Uso de Emojis:</label>
-                                <input type="text" class="form-control" id="commEmojiUsageInput" placeholder="Ex: raro_ou_nenhum_formal">
-                            </div>
-                        </div>
-
-                        <!-- Perfil de Estilo Base -->
-                        <h6 class="mt-4 mb-3 text-secondary">Perfil de Estilo Base (Tom e Formalidade)</h6>
-                        <div class="mb-3">
-                            <label for="styleToneLabelInput" class="form-label">Tom (Label):</label>
-                            <input type="text" class="form-control" id="styleToneLabelInput" placeholder="Ex: SemiFormalColaborativo">
-                        </div>
-                        <div class="mb-3">
-                            <label for="styleToneKeywordsInput" class="form-label">Tom (Palavras-chave):</label>
-                            <textarea class="form-control" id="styleToneKeywordsInput" rows="2" placeholder="separar por vírgulas, ex: claro, profissional"></textarea>
-                            <div class="form-text text-secondary">Palavras-chave que definem o tom (separadas por vírgulas).</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="styleFormalityLabelInput" class="form-label">Formalidade (Label):</label>
-                            <input type="text" class="form-control" id="styleFormalityLabelInput" placeholder="Ex: Media">
-                        </div>
-                        <div class="mb-3">
-                            <label for="styleFormalityNumericInput" class="form-label">Formalidade (Nível Numérico):</label>
-                            <input type="number" class="form-control" id="styleFormalityNumericInput" min="1" max="5" placeholder="Ex: 3">
-                            <div class="form-text text-secondary">Nível de 1 (muito casual) a 5 (muito formal).</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="styleFormalityGuidanceInput" class="form-label">Formalidade (Notas de Orientação):</label>
-                            <textarea class="form-control" id="styleFormalityGuidanceInput" rows="2" placeholder="Instruções para o nível de formalidade."></textarea>
-                        </div>
-
-                        <!-- Regras Gerais (Dos & Don'ts) -->
-                        <h6 class="mt-4 mb-3 text-secondary">Regras Gerais (Opcional)</h6>
-                        <div class="mb-3">
-                            <label for="generalDosInput" class="form-label">A Fazer (Dos):</label>
-                            <textarea class="form-control" id="generalDosInput" rows="3" placeholder="Regras gerais a seguir (uma por linha)."></textarea>
-                            <div class="form-text text-secondary">Instruções gerais que a IA deve seguir (uma por linha).</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="generalDontsInput" class="form-label">A Não Fazer (Don'ts):</label>
-                            <textarea class="form-control" id="generalDontsInput" rows="3" placeholder="Regras gerais a evitar (uma por linha)."></textarea>
-                            <div class="form-text text-secondary">Instruções gerais que a IA deve evitar (uma por linha).</div>
-                        </div>
-
-                        <!-- Few-shot Examples (Simplificado para UI) -->
-                        <h6 class="mt-4 mb-3 text-secondary">Exemplos de Few-shot (Opcional)</h6>
-                        <div id="fewShotExamplesContainer">
-                            <!-- Exemplos serão adicionados aqui via JS -->
-                            <!-- Um exemplo vazio é adicionado por padrão via JS -->
-                        </div>
-                        <button type="button" class="btn btn-secondary btn-sm" id="addFewShotExampleBtn"><i class="fas fa-plus"></i> Adicionar Exemplo</button>
-
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -438,6 +348,75 @@
         </div>
     </div>
 
+    <!-- NOVO: Modal de Gestão da Memória da Persona -->
+    <div class="modal fade" id="memoryManagementModal" tabindex="-1" aria-labelledby="memoryManagementModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl"> <!-- Modal Extra Largo para mais espaço -->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="memoryManagementModalLabel"><i class="fas fa-brain me-2"></i> Memória Central da Persona: <span id="memoryPersonaName"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- Coluna do Formulário -->
+                        <div class="col-lg-4">
+                            <h6 id="memoryFormTitle">Adicionar Nova Memória</h6>
+                            <form id="memoryForm">
+                                <div id="memoryFormError" class="error-message mb-3" style="display: none;"></div>
+                                <input type="hidden" id="currentMemoryId">
+                                <input type="hidden" id="currentMemoryPersonaKey">
+
+                                <div class="mb-3">
+                                    <label for="memoryContentInput" class="form-label">Conteúdo do Conhecimento:</label>
+                                    <textarea class="form-control" id="memoryContentInput" rows="5" required placeholder="Ex: O meu NIF é 123456789."></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="memoryTypeSelect" class="form-label">Tipo de Conhecimento:</label>
+                                    <select class="form-select" id="memoryTypeSelect" required>
+                                        <option value="fact">Facto (dados objetivos)</option>
+                                        <option value="process">Processo (um workflow)</option>
+                                        <option value="preference">Preferência (uma nuance de estilo)</option>
+                                        <option value="contact_context">Contexto de Contacto</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="memoryTriggersInput" class="form-label">Palavras-chave de Ativação:</label>
+                                    <input type="text" class="form-control" id="memoryTriggersInput" placeholder="Ex: nif, fiscal, fatura, telemovel">
+                                    <div class="form-text text-secondary">Separadas por vírgulas. Ajuda a IA a encontrar esta memória.</div>
+                                </div>
+                                <button type="submit" class="btn btn-primary" id="saveMemoryBtn">
+                                    <div class="spinner-border spinner-border-sm loading-spinner" role="status" id="saveMemorySpinner"></div>
+                                    Guardar Memória
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="cancelEditMemoryBtn" style="display: none;">Cancelar Edição</button>
+                            </form>
+                        </div>
+
+                        <!-- Coluna da Lista de Memórias -->
+                        <div class="col-lg-8">
+                            <h6>Memórias Guardadas</h6>
+                            <div id="memoryListError" class="error-message" style="display: none;"></div>
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Tipo</th>
+                                            <th>Conteúdo</th>
+                                            <th>Palavras-chave</th>
+                                            <th>Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="memoryTableBody">
+                                        <!-- Memórias serão carregadas aqui via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
     <script src="{{ url_for('static', filename='app.js') }}"></script>

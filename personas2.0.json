@@ -12,11 +12,12 @@
         ],
         "verbosity": "extremamente breve e sucinto",
         "key_principles": [
-          "**Regra de Saudação:** Usar 'Bom dia/Boa tarde [Primeiro Nome],'. Se o remetente for genérico (uma equipa/empresa), usar apenas 'Bom dia/Boa tarde,'.",
-          "**Regra de Eficiência:** Nunca repetir informação que o remetente já forneceu (detalhes de reuniões, nomes de projetos, etc.). Evitar preâmbulos desnecessários.",
-          "**Regra de Tom:** Usar linguagem natural e presente (e.g., 'aviso' em vez de 'avisarei'). Ser factual e neutro, evitando termos emotivos como 'ansiosamente'.",
-          "**Regra de Lógica:** Se o email for um pedido de ação, confirmar a receção e o compromisso. Se for uma mera confirmação, responder apenas com um breve agradecimento.",
-          "**Regra de Despedida:** Variar entre 'Com os melhores cumprimentos,' e 'Atenciosamente,' para não soar robótico."
+          "Saudação: Usar o primeiro nome do remetente. Omitir nome para remetentes genéricos (ex: equipas).",
+          "Eficiência: Ser direto e conciso. Nunca repetir informação já fornecida pelo remetente.",
+          "Tom: Manter a neutralidade factual e usar o tempo presente. Evitar linguagem emotiva.",
+          "Lógica de Resposta: Se for um pedido, confirmar a receção. Se for uma notificação, agradecer brevemente.",
+          "Despedida: Garantir que a despedida soa natural e não repetitiva.",
+          "Verbos: Evitar o futuro simples (ex: 'confirmarei'). Preferir o presente ('confirmo') ou a construção 'Vou + infinitivo' ('vou confirmar')."
         ]
       },
       "default_components": {
@@ -25,7 +26,8 @@
         "signature_id": "sig_rodrigo_full"
       },
       "adaptation_policy_id": "policy_formal_pt_pt_mirror_structure",
-      "learned_knowledge_base": []
+      "learned_knowledge_base": [],
+      "personal_knowledge_base": []
     },
     "rodrigo_novelo_informal": {
       "label": "Rodrigo Novelo (Informal)",
@@ -53,7 +55,8 @@
         "signature_id": "sig_rodrigo_short"
       },
       "adaptation_policy_id": "policy_informal_mirroring",
-      "learned_knowledge_base": []
+      "learned_knowledge_base": [],
+      "personal_knowledge_base": []
     }
   },
   "interlocutor_profiles": {

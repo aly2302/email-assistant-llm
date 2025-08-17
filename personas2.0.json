@@ -27,16 +27,7 @@
       },
       "adaptation_policy_id": "policy_formal_pt_pt_mirror_structure",
       "learned_knowledge_base": [],
-      "personal_knowledge_base": [
-        {
-          "content": "o meu NIF É 121313131313131231312312313",
-          "type": "fact",
-          "trigger_keywords": [
-            "NIF"
-          ],
-          "id": "mem_b894df9d"
-        }
-      ]
+      "personal_knowledge_base": []
     },
     "rodrigo_novelo_informal": {
       "label": "Rodrigo Novelo (Informal)",

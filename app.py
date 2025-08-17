@@ -18,6 +18,9 @@ from google_auth_oauthlib.flow import Flow
 import google.oauth2.credentials
 import googleapiclient.discovery
 import google.auth.transport.requests # Necessário para refresh de tokens
+# NEW IMPORTS FOR AUTOMATION
+from database import get_pending_draft, update_draft_status, save_user_credentials, get_user_credentials
+
 
 # --- CONFIGURAÇÃO INICIAL E CONSTANTES ---
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -197,12 +200,26 @@ def authorize():
     try:
         flow.fetch_token(authorization_response=request.url)
         credentials = flow.credentials
-        session['credentials'] = {
+        
+        # Get user's email to use as a primary key
+        service = googleapiclient.discovery.build('oauth2', 'v2', credentials=credentials)
+        user_info = service.userinfo().get().execute()
+        user_email = user_info['email']
+        
+        creds_data = {
             'token': credentials.token, 'refresh_token': credentials.refresh_token,
             'token_uri': credentials.token_uri, 'client_id': credentials.client_id,
             'client_secret': credentials.client_secret, 'scopes': credentials.scopes
         }
+        
+        # Save the credentials to the database, linked to the email
+        save_user_credentials(user_email, creds_data)
+        logging.info(f"Credentials saved to database for {user_email}")
+
+        # Keep the credentials in the session for the web UI to work
+        session['credentials'] = creds_data 
         return redirect(url_for('index_route'))
+        
     except Exception as e:
         logging.error(f"Erro durante a autorização OAuth: {e}")
         return "Erro na autorização.", 500
@@ -627,6 +644,128 @@ def memory_detail_api_route(persona_key, memory_id):
             if not save_ontology_file(current_data): return jsonify({"error": "Falha ao apagar."}), 500
             ONTOLOGY_DATA = current_data
             return jsonify({"message": "Memória apagada."})
+        
+
+# --- AUTOMATION APPROVAL ROUTES ---
+
+@app.route('/approve/<draft_id>')
+def approve_draft_route(draft_id):
+    # This route is triggered when you tap the "Approve" link
+    
+    # 1. Get the draft details from our database
+    draft = get_pending_draft(draft_id)
+    if not draft:
+        return "<h1>Draft Not Found</h1><p>This draft may have already been processed or does not exist.</p>", 404
+    
+    # 2. Get the Gmail service to send the email
+    service = get_gmail_service()
+    if not service:
+        # If not logged in, we can't send. Redirect to login.
+        return redirect(url_for('login'))
+
+    try:
+        # 3. Create and send the email (similar to your existing send_email_route)
+        message = MIMEText(draft['body'], _charset='utf-8')
+        message['to'] = draft['recipient']
+        message['subject'] = draft['subject']
+        raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+        
+        send_options = {'raw': raw_message, 'threadId': draft['thread_id']}
+        service.users().messages().send(userId='me', body=send_options).execute()
+        
+        # 4. Update the draft's status in the database to 'approved'
+        update_draft_status(draft_id, 'approved')
+        
+        logging.info(f"Draft {draft_id} approved and sent successfully.")
+        return "<h1>Email Approved & Sent!</h1><p>The response has been sent successfully. You can close this window.</p>"
+
+    except Exception as e:
+        logging.error(f"Failed to send approved email for draft {draft_id}: {e}")
+        return f"<h1>Error</h1><p>An error occurred while trying to send the email: {e}</p>", 500
+
+
+@app.route('/reject/<draft_id>')
+def reject_draft_route(draft_id):
+    # This route is triggered when you tap the "Reject" link
+    
+    # We just need to update the status in the database. We don't send anything.
+    if update_draft_status(draft_id, 'rejected'):
+        logging.info(f"Draft {draft_id} was rejected by the user.")
+        return "<h1>Draft Rejected</h1><p>The draft has been cancelled and will not be sent. You can close this window.</p>"
+    else:
+        return "<h1>Draft Not Found</h1><p>This draft may have already been processed or does not exist.</p>", 404
+    
+# --- AUTOMATION TRIGGER & SETUP ---
+
+@app.route('/gmail-webhook', methods=['POST'])
+def gmail_webhook_route():
+    """Receives push notifications from Google Cloud Pub/Sub."""
+    if 'message' not in request.json:
+        return "Bad Request: No message data", 400
+
+    try:
+        # Decode the incoming message from Google
+        message_data = base64.b64decode(request.json['message']['data']).decode('utf-8')
+        message_json = json.loads(message_data)
+        
+        user_email = message_json['emailAddress']
+        history_id = message_json['historyId']
+        
+        # Look up credentials in the database using the email from the notification
+        user_credentials = get_user_credentials(user_email)
+        
+        if not user_credentials:
+            logging.warning(f"Received webhook for {user_email}, but no credentials found in database. Skipping.")
+            return "OK", 200
+
+        # Build a temporary service instance to look up the thread ID
+        creds = google.oauth2.credentials.Credentials(**user_credentials)
+        service = googleapiclient.discovery.build('gmail', 'v1', credentials=creds)
+        history = service.users().history().list(userId='me', startHistoryId=history_id).execute()
+        
+        if 'history' in history:
+            for item in history['history']:
+                if 'messagesAdded' in item:
+                    # We'll process the first new message we find.
+                    thread_id = item['messagesAdded'][0]['message']['threadId']
+                    
+                    # Hand off the job to our Celery worker, passing the credentials
+                    process_new_email.delay(thread_id, user_credentials)
+                    
+                    logging.info(f"Webhook received. Queued processing for thread {thread_id}.")
+                    break # Stop after queuing the first new message
+
+    except Exception as e:
+        logging.error(f"Error processing webhook: {e}", exc_info=True)
+
+    # Always return a success status code to Google to prevent retries.
+    return "OK", 200
+
+
+@app.route('/start-watch')
+def start_watch_route():
+    """Tells Gmail to start sending notifications for the logged-in user."""
+    service = get_gmail_service()
+    if not service:
+        return redirect(url_for('login'))
+
+    try:
+        # Get the full topic name from your Google Cloud Project ID
+        PROJECT_ID = "emailllm-463115" 
+        topic_name = f"projects/{PROJECT_ID}/topics/gmail-inbox-updates"
+        
+        request_body = {
+            'labelIds': ['INBOX'],
+            'topicName': topic_name
+        }
+        
+        response = service.users().watch(userId='me', body=request_body).execute()
+        logging.info(f"Successfully started watching inbox. Response: {response}")
+        return f"<h1>Success!</h1><p>Your inbox is now being watched. Expiration: {response.get('expiration')}</p>"
+
+    except Exception as e:
+        logging.error(f"Failed to start watch: {e}")
+        return f"<h1>Error</h1><p>Could not start watch: {e}</p>", 500
 
 # --- PONTO DE ENTRADA DA APLICAÇÃO ---
 if __name__ == '__main__':

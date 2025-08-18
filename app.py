@@ -20,7 +20,7 @@ import googleapiclient.discovery
 import google.auth.transport.requests # Necessário para refresh de tokens
 # NEW IMPORTS FOR AUTOMATION
 import sqlite3
-from automation.database import get_pending_draft, update_draft_status, save_user_credentials, get_user_credentials, is_thread_processed, mark_thread_as_processed
+from automation.database import get_pending_draft, update_draft_status, save_user_credentials, get_user_credentials, is_thread_processed, mark_thread_as_processed, get_dashboard_stats
 
 # --- CONFIGURAÇÃO INICIAL E CONSTANTES ---
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -304,16 +304,29 @@ def get_thread_route(thread_id):
 
 @app.route('/api/send_email', methods=['POST'])
 def send_email_route():
+    """Envia um e-mail a partir do fluxo MANUAL."""
     service = get_gmail_service()
     if not service: return jsonify({"error": "Não autenticado."}), 401
+    
     data = request.json
     try:
         message = MIMEText(data['body'], _charset='utf-8')
         message['to'] = data['recipient']
         message['subject'] = data['subject']
+        
+        # Nota: Não adicionamos cabeçalhos de threading aqui porque este é o fluxo
+        # manual. Se o utilizador colar uma thread inteira, podemos adicionar
+        # os cabeçalhos se o threadId for fornecido.
+        
         raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
         send_options = {'raw': raw_message}
-        if data.get('thread_id'): send_options['threadId'] = data['thread_id']
+        
+        # Se for uma resposta manual a um e-mail carregado, ele terá um threadId.
+        if data.get('thread_id'):
+            send_options['threadId'] = data['thread_id']
+            # Numa versão futura, poderíamos também extrair o Message-ID para adicionar aqui.
+            # Por agora, confiar no threadId é suficiente para o fluxo manual.
+
         sent_message = service.users().messages().send(userId='me', body=send_options).execute()
         return jsonify({"message": "Email enviado com sucesso!", "id": sent_message['id']})
     except Exception as e:
@@ -362,116 +375,106 @@ def draft_response_route():
     original_email = data.get('original_email', '')
     persona_id = data.get('persona_name')
     user_inputs = data.get('user_inputs', [])
-    
+
+    persona = ONTOLOGY_DATA.get("personas", {}).get(persona_id)
+    if not persona:
+        return jsonify({"error": f"Persona '{persona_id}' não encontrada."}), 404
+
     sender_name, sender_email = parse_sender_info(original_email)
+
+    # --- LÓGICA DO PROMPT RECONSTRUÍDA PARA MÁXIMA QUALIDADE ---
+
+    # 1. Obter todo o conhecimento disponível
+    personal_knowledge = persona.get("personal_knowledge_base", [])
+    learned_corrections = persona.get("learned_knowledge_base", [])
+    relevant_memories, relevant_corrections = find_relevant_knowledge(
+        original_email, personal_knowledge, learned_corrections
+    )
+
+    # 2. Construir um bloco de contexto limpo e dinâmico
+    prompt_context_parts = []
     
-    # --- NOVO BLOCO DE CÓDIGO PARA CONTEXTO DO INTERLOCUTOR ---
+    # Adiciona sempre os princípios chave, que são a base da persona
+    style_profile = persona.get("style_profile", {})
+    key_principles = style_profile.get('key_principles', [])
+    if key_principles:
+        prompt_context_parts.append("--- Princípios Chave da Persona (Regras Base) ---\n- " + "\n- ".join(key_principles))
+
+    # Adiciona contexto do interlocutor, se existir
     interlocutor_context = ""
     if sender_email:
         profiles = ONTOLOGY_DATA.get("interlocutor_profiles", {})
         for key, profile in profiles.items():
             if profile.get("email_match", "").lower() == sender_email.lower():
-                logging.info(f"Interlocutor '{sender_email}' identificado como '{key}'.")
-                context_parts = []
-                if name := profile.get("full_name"):
-                    context_parts.append(f"Nome: {name}")
-                if nickname := profile.get("nickname"):
-                    context_parts.append(f"Alcunha/Como tratar: {nickname}")
-                if rel := profile.get("relationship"):
-                    context_parts.append(f"Relação: {rel}")
-                if notes := profile.get("notes"):
-                    context_parts.append(f"Notas: {notes}")
-                
-                if context_parts:
-                    interlocutor_context = f"<contexto_interlocutor>{' | '.join(context_parts)}</contexto_interlocutor>"
+                context_parts = [f"Nome: {profile.get('full_name')}", f"Relação: {profile.get('relationship')}", f"Notas: {profile.get('notes')}"]
+                interlocutor_context = "--- Contexto Sobre o Interlocutor ---\n" + " | ".join(filter(None, context_parts))
+                prompt_context_parts.append(interlocutor_context)
                 break
-    # --- FIM DO NOVO BLOCO ---
-
-    monologue = ["<monologo>"]
-    persona = ONTOLOGY_DATA.get("personas", {}).get(persona_id)
-    if not persona: return jsonify({"error": f"Persona '{persona_id}' não encontrada."}), 404
-
-    # --- LÓGICA DE CONHECIMENTO ATUALIZADA ---
-    personal_knowledge = persona.get("personal_knowledge_base", [])
-    learned_corrections = persona.get("learned_knowledge_base", [])
     
-    relevant_memories, relevant_corrections = find_relevant_knowledge(
-        original_email, personal_knowledge, learned_corrections
-    )
-    # --- FIM DA LÓGICA DE CONHECIMENTO ---
-
-    monologue.append("  <fase_0_analise_perfil_e_conhecimento>")
-    style_profile = persona.get("style_profile", {})
-    monologue.append(f"    <principios_chave>{' '.join(style_profile.get('key_principles', ['N/A']))}</principios_chave>")
-    
+    # Adiciona memórias relevantes, APENAS se existirem
     if relevant_memories:
         formatted_memories = "\n- ".join(relevant_memories)
-        monologue.append(f"    <informacao_relevante_da_minha_memoria>\n- {formatted_memories}\n    </informacao_relevante_da_minha_memoria>")
+        prompt_context_parts.append(f"--- Informação Relevante da Memória (Usar no conteúdo) ---\n- {formatted_memories}")
 
+    # Adiciona correções aprendidas, APENAS se existirem
     if relevant_corrections:
         formatted_corrections = "\n- ".join(relevant_corrections)
-        monologue.append(f"    <principios_aprendidos_relevantes>\n- {formatted_corrections}\n    </principios_aprendidos_relevantes>")
+        prompt_context_parts.append(f"--- Regras Aprendidas (Sobrepõem-se aos Princípios Chave) ---\n- {formatted_corrections}")
 
-    monologue.append("  </fase_0_analise_perfil_e_conhecimento>")
+    # Junta todas as partes do contexto numa única variável
+    final_context_block = "\n\n".join(prompt_context_parts)
 
+    # 3. Obter as diretrizes do utilizador
     guidance_summary = "\n- ".join([item.get('guidance', '').strip() for item in user_inputs if item.get('guidance', '').strip()])
-    if guidance_summary: guidance_summary = "\n- " + guidance_summary
+    if not guidance_summary:
+        guidance_summary = "Nenhuma. Seguir o contexto e as regras da persona."
+    else:
+        guidance_summary = "- " + guidance_summary
 
-    monologue.append(f"  <fase_1_diretrizes_utilizador>\n    <diretrizes>{guidance_summary or 'Nenhuma.'}</diretrizes>\n  </fase_1_diretrizes_utilizador>")
 
+    # 4. Construir o prompt final, agora muito mais limpo e direto
     default_ids = persona.get("default_components", {})
     greeting_text = resolve_component(get_component("greetings", default_ids.get("greeting_id")), sender_name.split()[0])
     closing_text = resolve_component(get_component("closings", default_ids.get("closing_id")))
     signature_text = resolve_component(get_component("signatures", default_ids.get("signature_id")))
-    
-    prompt = f"""Atue como um assistente de escrita de emails que personifica '{persona.get('label', persona_id)}'.
-A sua tarefa é gerar uma resposta de email COMPLETA e natural.
 
---- MONÓLOGO DE RACIOCÍNIO (O seu contexto interno. NÃO inclua no rascunho final) ---
-{''.join(monologue)}
-{interlocutor_context}
+    prompt = f"""
+Você é um assistente de escrita que encarna a persona '{persona.get('label', persona_id)}'.
+A sua tarefa é escrever um rascunho de e-mail completo e natural.
 
---- DIRETRIZES ABSOLUTAS DO UTILIZADOR (OBRIGATÓRIO CUMPRIR) ---
-{guidance_summary or "Nenhuma diretriz específica. Siga a lógica do seu raciocínio."}
+{final_context_block}
 
---- EMAIL ORIGINAL A RESPONDER ---
+--- E-mail Original a Responder ---
 {original_email}
 
---- TAREFA ---
-1.  **PRIORIDADE MÁXIMA:** Cumpra as 'Diretrizes Absolutas do Utilizador'.
-2.  **PRIORIDADE ALTA:** Use a 'Informação Relevante da Minha Memória' e os 'Princípios Aprendidos Relevantes' para guiar o conteúdo e o tom. Eles sobrepõem-se aos 'Princípios Chave' genéricos.
-3.  Use os componentes (saudação, etc.) para a estrutura.
-4.  Escreva o CORPO do email. Seja breve e eficiente.
+--- Instruções do Utilizador (Seguir à risca) ---
+{guidance_summary}
 
----RASCUNHO-FINAL---
+--- Rascunho Final (Comece aqui) ---
 {greeting_text}
 
-[CORPO DO EMAIL AQUI]
+[ESCREVA O CORPO DO E-MAIL AQUI]
 
 {closing_text}
 {signature_text}
 """
+
     llm_response = call_gemini(prompt, temperature=0.5)
-    if "error" in llm_response: return jsonify({"error": llm_response["error"], "monologue": "\n".join(monologue)}), 500
+    if "error" in llm_response:
+        # Para debugging, podemos devolver o prompt que foi gerado
+        return jsonify({"error": llm_response["error"], "prompt_sent": prompt}), 500
 
     raw_draft = llm_response.get("text", "").strip()
     
-    draft_section = raw_draft.split("---RASCUNHO-FINAL---")[-1].strip()
-    if '</monologo>' in draft_section:
-        final_draft = draft_section.split('</monologo>')[-1].strip()
-    else:
-        final_draft = draft_section
-    final_draft = final_draft.replace('[CORPO DO EMAIL AQUI]', '').strip()
-    final_draft = re.sub(r'\n{3,}', '\n\n', final_draft)
+    # Limpeza da resposta da IA para garantir que não inclui texto extra
+    if "--- Rascunho Final (Comece aqui) ---" in raw_draft:
+        raw_draft = raw_draft.split("--- Rascunho Final (Comece aqui) ---")[-1]
 
-    # --- ALTERAÇÃO AQUI: Loop de substituição agora usa enumerate para MEMORY_1, MEMORY_2, etc. ---
-    if relevant_memories:
-        for i, memory in enumerate(relevant_memories):
-            placeholder = f"{{{{MEMORY_{i+1}}}}}"
-            content_to_inject = memory.get('content', '')
-            final_draft = final_draft.replace(placeholder, content_to_inject)
+    final_draft = raw_draft.replace('[ESCREVA O CORPO DO E-MAIL AQUI]', '').strip()
+    final_draft = re.sub(r'\n{3,}', '\n\n', final_draft).strip()
 
-    return jsonify({"draft": final_draft, "monologue": "\n".join(monologue)})
+    # Devolvemos também o prompt para fins de depuração, se necessário
+    return jsonify({"draft": final_draft, "prompt_sent_for_debug": prompt})
 
 # --- ROTAS ADICIONAIS (Feedback, Refine, etc.) ---
 # (As rotas /suggest_guidance, /refine_text, /submit_feedback permanecem as mesmas)
@@ -648,17 +651,13 @@ def memory_detail_api_route(persona_key, memory_id):
         
 
 # --- AUTOMATION APPROVAL ROUTES ---
-
 @app.route('/approve/<draft_id>')
 def approve_draft_route(draft_id):
-    """This route is triggered when you tap the 'Approve' link."""
-
-    # 1. Get the draft details from our database
+    """Esta rota é acionada pelo link do Pushover."""
     draft = get_pending_draft(draft_id)
     if not draft:
-        return "<h1>Draft Not Found</h1><p>This draft may have already been processed or does not exist.</p>", 404
+        return "<h1>Rascunho Não Encontrado</h1><p>Este rascunho pode já ter sido processado ou não existe.</p>", 404
 
-    # 2. Get credentials from the database (assuming a single user)
     conn = sqlite3.connect(DATABASE_FILE)
     cursor = conn.cursor()
     cursor.execute("SELECT email FROM user_credentials LIMIT 1")
@@ -666,37 +665,38 @@ def approve_draft_route(draft_id):
     conn.close()
 
     if not user_row:
-        return "<h1>Error</h1><p>No user credentials found in the database.</p>", 500
+        return "<h1>Erro</h1><p>Nenhuma credencial de utilizador encontrada na base de dados.</p>", 500
 
     user_email = user_row[0]
     user_credentials = get_user_credentials(user_email)
 
     if not user_credentials:
-        return "<h1>Error</h1><p>Could not load credentials for the user.</p>", 500
+        return "<h1>Erro</h1><p>Não foi possível carregar as credenciais para o utilizador.</p>", 500
 
     try:
-        # 3. Build the Gmail service using the database credentials
         creds = google.oauth2.credentials.Credentials(**user_credentials)
         service = googleapiclient.discovery.build('gmail', 'v1', credentials=creds)
 
-        # 4. Create and send the email
         message = MIMEText(draft['body'], _charset='utf-8')
         message['to'] = draft['recipient']
         message['subject'] = draft['subject']
+        
+        # --- ADICIONAR CABEÇALHOS DE THREADING ---
+        if draft.get('original_message_id'):
+            message['In-Reply-To'] = draft['original_message_id']
+            message['References'] = draft['original_message_id']
+        
         raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
-
         send_options = {'raw': raw_message, 'threadId': draft['thread_id']}
         service.users().messages().send(userId='me', body=send_options).execute()
 
-        # 5. Update the draft's status in the database to 'approved'
         update_draft_status(draft_id, 'approved')
-
-        logging.info(f"Draft {draft_id} approved and sent successfully.")
-        return "<h1>Email Approved & Sent!</h1><p>The response has been sent successfully. You can close this window.</p>"
+        logging.info(f"Pushover: Rascunho {draft_id} aprovado e enviado com sucesso.")
+        return "<h1>E-mail Aprovado & Enviado!</h1><p>A resposta foi enviada com sucesso. Pode fechar esta janela.</p>"
 
     except Exception as e:
-        logging.error(f"Failed to send approved email for draft {draft_id}: {e}")
-        return f"<h1>Error</h1><p>An error occurred while trying to send the email: {e}</p>", 500
+        logging.error(f"Falha ao enviar e-mail aprovado para o rascunho {draft_id}: {e}")
+        return f"<h1>Erro</h1><p>Ocorreu um erro ao tentar enviar o e-mail: {e}</p>", 500
 
 @app.route('/reject/<draft_id>')
 def reject_draft_route(draft_id):
@@ -779,6 +779,99 @@ def start_watch_route():
     except Exception as e:
         logging.error(f"Failed to start watch: {e}")
         return f"<h1>Error</h1><p>Could not start watch: {e}</p>", 500
+
+# --- NOVAS ROTAS PARA O DASHBOARD ---
+
+@app.route('/api/dashboard_stats')
+def dashboard_stats_route():
+    """Fornece todas as estatísticas necessárias para o dashboard."""
+    if 'credentials' not in session:
+        return jsonify({"error": "Não autenticado."}), 401
+    try:
+        stats = get_dashboard_stats()
+        return jsonify(stats)
+    except Exception as e:
+        logging.error(f"Erro ao obter estatísticas do dashboard: {e}")
+        return jsonify({"error": "Erro interno ao buscar dados."}), 500
+
+@app.route('/api/draft/<draft_id>/status', methods=['POST'])
+def update_draft_status_route(draft_id):
+    """Atualiza o status de um rascunho (aprovado/rejeitado) a partir do dashboard."""
+    if 'credentials' not in session:
+        return jsonify({"error": "Não autenticado."}), 401
+    
+    data = request.json
+    new_status = data.get('status')
+
+    if new_status not in ['approved', 'rejected']:
+        return jsonify({"error": "Status inválido."}), 400
+
+    try:
+        if new_status == 'approved':
+            # A lógica de aprovação real (envio de email) é tratada pela rota /approve/<id>
+            # Aqui, apenas simulamos a atualização para o frontend, ou poderíamos chamar essa lógica.
+            # Por simplicidade, vamos apenas atualizar a base de dados.
+            # A notificação Pushover já envia para a rota /approve que faz o trabalho.
+            # Esta rota é para o clique direto no dashboard.
+            if update_draft_status(draft_id, 'approved'):
+                 # AQUI você poderia adicionar a lógica para enviar o e-mail se necessário
+                return jsonify({"message": f"Rascunho {draft_id} marcado como aprovado."})
+            else:
+                return jsonify({"error": "Rascunho não encontrado."}), 404
+
+        elif new_status == 'rejected':
+            if update_draft_status(draft_id, 'rejected'):
+                return jsonify({"message": f"Rascunho {draft_id} rejeitado."})
+            else:
+                return jsonify({"error": "Rascunho não encontrado."}), 404
+                
+    except Exception as e:
+        logging.error(f"Erro ao atualizar o status do rascunho {draft_id}: {e}")
+        return jsonify({"error": "Erro interno do servidor."}), 500
+    
+@app.route('/api/draft/<draft_id>/send', methods=['POST'])
+def send_draft_from_dashboard_route(draft_id):
+    """Envia um e-mail aprovado diretamente a partir de um pedido da API do dashboard."""
+    if 'credentials' not in session:
+        return jsonify({"error": "Não autenticado."}), 401
+
+    draft = get_pending_draft(draft_id)
+    if not draft:
+        return jsonify({"error": "Rascunho não encontrado ou já processado."}), 404
+
+    try:
+        creds = google.oauth2.credentials.Credentials(**session['credentials'])
+        if creds.expired and creds.refresh_token:
+            creds.refresh(google.auth.transport.requests.Request())
+            session['credentials'] = {
+                'token': creds.token, 'refresh_token': creds.refresh_token,
+                'token_uri': creds.token_uri, 'client_id': creds.client_id,
+                'client_secret': creds.client_secret, 'scopes': creds.scopes
+            }
+
+        service = googleapiclient.discovery.build('gmail', 'v1', credentials=creds)
+
+        message = MIMEText(draft['body'], _charset='utf-8')
+        message['to'] = draft['recipient']
+        message['subject'] = draft['subject']
+
+        # --- ADICIONAR CABEÇALHOS DE THREADING ---
+        if draft.get('original_message_id'):
+            message['In-Reply-To'] = draft['original_message_id']
+            message['References'] = draft['original_message_id']
+
+        raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+        send_options = {'raw': raw_message, 'threadId': draft['thread_id']}
+        service.users().messages().send(userId='me', body=send_options).execute()
+
+        update_draft_status(draft_id, 'approved')
+        logging.info(f"Dashboard: Rascunho {draft_id} aprovado e enviado com sucesso.")
+        return jsonify({"message": "Email enviado com sucesso!"})
+
+    except Exception as e:
+        logging.error(f"Dashboard: Falha ao enviar e-mail para o rascunho {draft_id}: {e}")
+        return jsonify({"error": f"Ocorreu um erro ao tentar enviar o e-mail: {e}"}), 500
+
 
 # --- PONTO DE ENTRADA DA APLICAÇÃO ---
 if __name__ == '__main__':

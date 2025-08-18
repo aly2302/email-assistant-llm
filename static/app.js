@@ -69,7 +69,7 @@ const confirmDeletePersonaBtn = document.getElementById('confirmDeletePersonaBtn
 const deletePersonaSpinner = document.getElementById('deletePersonaSpinner');
 const currentPersonaKeyInput = document.getElementById('currentPersonaKey');
 
-// --- NOVOS Seletores para Gestão de Memória ---
+// --- Seletores para Gestão de Memória ---
 const memoryManagementModalEl = document.getElementById('memoryManagementModal');
 const memoryPersonaNameEl = document.getElementById('memoryPersonaName');
 const memoryFormTitleEl = document.getElementById('memoryFormTitle');
@@ -86,12 +86,20 @@ const cancelEditMemoryBtn = document.getElementById('cancelEditMemoryBtn');
 const memoryListErrorEl = document.getElementById('memoryListError');
 const memoryTableBody = document.getElementById('memoryTableBody');
 
+// --- Seletores para Dashboard ---
+const navButtons = document.querySelectorAll('.nav-btn');
+const views = document.querySelectorAll('.view');
+const draftsTableBody = document.getElementById('draftsTableBody');
+const statusChartCanvas = document.getElementById('statusChart');
+const kpiValues = document.querySelectorAll('.kpi-value');
+const chartCenterMetric = document.getElementById('chartCenterMetric');
+
 // --- Instâncias de Modais ---
 let feedbackModalInstance = null;
 let sendEmailConfirmModalInstance = null;
 let personaFormModalInstance = null;
 let deletePersonaConfirmModalInstance = null;
-let memoryManagementModalInstance = null; // NOVO
+let memoryManagementModalInstance = null;
 
 // --- Estado da Aplicação ---
 let currentStep = 1;
@@ -104,6 +112,8 @@ let currentOriginalSubject = "";
 let currentThreadId = "";
 let resolveSendConfirmation;
 let personaToDeleteKey = null;
+let statusChart = null;
+let currentView = 'dashboard';
 
 // --- Funções Auxiliares ---
 function showSpinner(spinner) { if (spinner) spinner.style.display = 'inline-block'; }
@@ -146,7 +156,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (isLoggedIn) {
         initializeMainApp();
+        fetchDashboardData();  // Load dashboard data on start
     }
+
+    // View Switching
+    navButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            navButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentView = btn.dataset.view;
+            views.forEach(view => view.classList.toggle('active', view.id === `${currentView}-view`));
+            if (currentView === 'dashboard') fetchDashboardData();
+            if (currentView === 'manual') showStep(1);
+        });
+    });
 });
 
 function initializeMainApp() {
@@ -155,7 +178,7 @@ function initializeMainApp() {
     if (sendEmailConfirmModalEl) sendEmailConfirmModalInstance = new bootstrap.Modal(sendEmailConfirmModalEl);
     if (personaFormModalEl) personaFormModalInstance = new bootstrap.Modal(personaFormModalEl);
     if (deletePersonaConfirmModalEl) deletePersonaConfirmModalInstance = new bootstrap.Modal(deletePersonaConfirmModalEl);
-    if (memoryManagementModalEl) memoryManagementModalInstance = new bootstrap.Modal(memoryManagementModalEl); // NOVO
+    if (memoryManagementModalEl) memoryManagementModalInstance = new bootstrap.Modal(memoryManagementModalEl);
 
     // Adiciona Event Listeners
     analyzeBtn.addEventListener('click', handleAnalysisAndAdvance);
@@ -189,12 +212,15 @@ function initializeMainApp() {
     personasTableBody.addEventListener('click', handlePersonaTableClick);
     confirmDeletePersonaBtn.addEventListener('click', deletePersona);
 
-    // NOVOS Event Listeners para Gestão de Memória
+    // Event Listeners para Gestão de Memória
     memoryForm.addEventListener('submit', handleMemoryFormSubmit);
     cancelEditMemoryBtn.addEventListener('click', clearMemoryForm);
     memoryTableBody.addEventListener('click', handleMemoryTableClick);
 
-    // Funções de inicialização
+    // Draft Actions for Dashboard
+    draftsTableBody.addEventListener('click', handleDraftAction);
+
+    // Funções de inicialização for Manual Flow
     showStep(1);
     fetchAndRenderEmails();
     fetchAndRenderPersonas();
@@ -253,7 +279,7 @@ async function handleEmailClick(event) {
     analyzeBtn.disabled = true;
     try {
         const response = await fetch(`/api/thread/${threadId}`);
-        if (!response.ok) throw new Error(`Falha ao carregar a thread.`);
+        if (!response.ok) throw new Error('Falha ao carregar a thread.');
         const data = await response.json();
         if (data.error) throw new Error(data.error);
         originalEmailEl.value = data.thread_text;
@@ -318,7 +344,6 @@ function createUserInputFields(points) {
         const labelText = isGeneral ? '<strong>Diretriz Geral:</strong> <span class="form-label-sm">(Opcional - instrução global para este rascunho)</span>' : `<strong>Ponto ${index + 1}:</strong>`;
         const pointDisplay = !isGeneral ? `<p class="point-text">"${escapeHtml(point)}"</p>` : '';
         
-        // Lógica dos botões de rádio e do botão de sugestão
         const directionRadiosHTML = !isGeneral ? `<div class="mb-2 guidance-direction-group"><span class="form-label-sm d-block mb-1">Vetor de Resposta Rápida:</span><div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="direction-${index}" id="direction-${index}-sim" value="sim"><label class="form-check-label" for="direction-${index}-sim">Afirmativo</label></div><div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="direction-${index}" id="direction-${index}-nao" value="nao"><label class="form-check-label" for="direction-${index}-nao">Negativo</label></div><div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="direction-${index}" id="direction-${index}-outro" value="outro" checked><label class="form-check-label" for="direction-${index}-outro">Detalhado</label></div></div>` : '';
         const suggestButtonHTML = !isGeneral ? `<button class="btn btn-sm btn-outline-secondary suggest-btn" data-target-textarea="${inputId}" data-point-index="${index}" type="button" title="Gerar sugestão de diretriz via IA, usando o Vetor de Resposta">Sugerir Diretriz<div class="spinner-border spinner-border-sm loading-spinner" role="status" style="display: none;"></div></button>` : '';
         
@@ -369,16 +394,17 @@ async function handleDrafting() {
     }
 }
 
-// --- Funções de UI (Copiar, Refinar, etc.) ---
 function handleCopy() {
     navigator.clipboard.writeText(generatedDraftEl.value).then(() => {
         copyDraftBtn.innerHTML = '<i class="fas fa-check"></i> Copiado!';
         setTimeout(() => { copyDraftBtn.innerHTML = '<i class="fas fa-copy"></i> Copiar'; }, 2000);
     });
 }
+
 function handleTextSelection() {
     refinementControlsEl.style.display = generatedDraftEl.selectionStart !== generatedDraftEl.selectionEnd ? 'flex' : 'none';
 }
+
 function handleDeselection(event) {
     if (!generatedDraftEl.contains(event.target) && !refinementControlsEl.contains(event.target)) {
         refinementControlsEl.style.display = 'none';
@@ -428,7 +454,7 @@ async function handleRefinement(event) {
             const after = fullContext.substring(end);
             const refinedText = data.refined_text || "";
             generatedDraftEl.value = before + refinedText + after;
-            lastGeneratedDraftForFeedback = generatedDraftEl.value; // Atualiza para feedback
+            lastGeneratedDraftForFeedback = generatedDraftEl.value;
             generatedDraftEl.focus();
             const newCursorPos = start + refinedText.length;
             generatedDraftEl.setSelectionRange(newCursorPos, newCursorPos);
@@ -696,7 +722,7 @@ async function deletePersona() {
     }
 }
 
-// --- NOVAS Funções para Gestão de Memória ---
+// --- Funções para Gestão de Memória ---
 async function openMemoryManagementModal(personaKey, personaName) {
     memoryPersonaNameEl.textContent = personaName;
     currentMemoryPersonaKeyInput.value = personaKey;
@@ -829,5 +855,160 @@ async function handleMemoryTableClick(event) {
                 showError(memoryListErrorEl, `Erro ao apagar: ${error.message}`);
             }
         }
+    }
+}
+
+// --- Dashboard Functions ---
+async function fetchDashboardData() {
+    try {
+        const response = await fetch('/api/dashboard_stats');
+        if (!response.ok) throw new Error('Falha ao carregar estatísticas.');
+        const data = await response.json();
+        if(data.error) throw new Error(data.error);
+        updateKPICards(data);
+        updateDraftsTable(data.drafts);
+        updateStatusChart(data);
+        const sentPercentage = data.total > 0 ? Math.round(((data.sent || 0) / data.total) * 100) : 0;
+        chartCenterMetric.textContent = `${sentPercentage}%`;
+    } catch (error) {
+        console.error('Erro ao carregar dados do dashboard:', error);
+        // Opcional: mostrar um erro no UI
+    }
+}
+
+function updateKPICards(data) {
+    const animateCount = (element, endValue) => {
+        const startValue = parseInt(element.dataset.count, 10) || 0;
+        if (startValue === endValue) return;
+
+        let current = startValue;
+        const increment = endValue > startValue ? 1 : -1;
+        const stepTime = Math.abs(Math.floor(1000 / (endValue - startValue))) || 50;
+
+        const timer = setInterval(() => {
+            current += increment;
+            element.textContent = current;
+            if (current == endValue) {
+                clearInterval(timer);
+            }
+        }, stepTime);
+    };
+
+    kpiValues.forEach(card => {
+        // CORREÇÃO: Usar dataset.status do elemento pai (o .kpi-card)
+        const status = card.parentElement.dataset.status; 
+        const count = data[status] || 0;
+        animateCount(card, count);
+        card.dataset.count = count; // Atualiza o valor para a próxima animação
+    });
+}
+
+
+function updateDraftsTable(drafts) {
+    draftsTableBody.innerHTML = '';
+    if (!drafts || drafts.length === 0) {
+        draftsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-secondary p-4">Nenhum rascunho pendente.</td></tr>';
+        return;
+    }
+    drafts.forEach(draft => {
+        const tr = document.createElement('tr');
+        tr.dataset.draftId = draft.id;
+        tr.innerHTML = `
+            <td>${escapeHtml(draft.recipient)}</td>
+            <td>${escapeHtml(draft.subject)}</td>
+            <td>${new Date(draft.created_at).toLocaleDateString('pt-PT')}</td>
+            <td>
+                <button class="action-btn approve" data-draft-id="${draft.id}" title="Aprovar">✓</button>
+                <button class="action-btn reject" data-draft-id="${draft.id}" title="Rejeitar">✗</button>
+            </td>
+        `;
+        draftsTableBody.appendChild(tr);
+    });
+}
+
+function updateStatusChart(data) {
+    if (!statusChartCanvas) return;
+    const ctx = statusChartCanvas.getContext('2d');
+    const sentValue = data.sent || 0;
+    const rejectedValue = data.rejected || 0;
+    const pendingValue = data.pending || 0;
+
+    if (statusChart) statusChart.destroy();
+    
+    statusChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Enviadas', 'Rejeitados', 'Pendente'],
+            datasets: [{
+                data: [sentValue, rejectedValue, pendingValue],
+                backgroundColor: ['#20c997', '#dc3545', '#ffc107'],
+                borderWidth: 0,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    enabled: true,
+                    backgroundColor: 'rgba(0,0,0,0.7)',
+                    titleFont: { size: 14 },
+                    bodyFont: { size: 12 },
+                    padding: 10,
+                    cornerRadius: 4
+                }
+            }
+        }
+    });
+}
+
+async function handleDraftAction(event) {
+    const btn = event.target.closest('.action-btn');
+    if (!btn || btn.disabled) return;
+
+    btn.disabled = true; // Desativa o botão para evitar cliques duplos
+    const draftId = btn.dataset.draftId;
+    const action = btn.classList.contains('approve') ? 'approved' : 'rejected';
+    const row = btn.closest('tr');
+    
+    let url = `/api/draft/${draftId}/status`;
+    let options = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: action })
+    };
+
+    // Se a ação for "approve", usamos a nova rota de envio
+    if (action === 'approved') {
+        url = `/api/draft/${draftId}/send`;
+        options.body = null; // Não precisamos de corpo para este pedido
+    }
+
+    try {
+        const response = await fetch(url, options);
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Falha ao processar o pedido.');
+        }
+
+        // Se tudo correu bem, anima a remoção da linha e atualiza os dados
+        if (row) {
+            row.classList.add('fade-out');
+            setTimeout(() => {
+                row.remove();
+                // Verifica se a tabela ficou vazia
+                if (draftsTableBody.children.length === 0) {
+                    draftsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-secondary p-4">Nenhum rascunho pendente.</td></tr>';
+                }
+                fetchDashboardData(); // Atualiza os contadores KPI e o gráfico
+            }, 500);
+        }
+    } catch (error) {
+        console.error(`Erro ao ${action} rascunho:`, error);
+        alert(`Não foi possível processar o rascunho: ${error.message}`);
+        btn.disabled = false; // Reativa o botão se houver erro
     }
 }

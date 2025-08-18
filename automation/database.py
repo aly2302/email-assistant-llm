@@ -10,7 +10,7 @@ def init_db():
     conn = sqlite3.connect(DATABASE_FILE)
     cursor = conn.cursor()
     
-    # Table to store drafts waiting for approval
+    # Schema includes the 'original_message_id' column for correct email threading.
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS pending_drafts (
             id TEXT PRIMARY KEY,
@@ -18,12 +18,12 @@ def init_db():
             recipient TEXT NOT NULL,
             subject TEXT NOT NULL,
             body TEXT NOT NULL,
-            status TEXT NOT NULL DEFAULT 'pending', -- 'pending', 'approved', 'rejected'
-            created_at TIMESTAMP NOT NULL
+            status TEXT NOT NULL DEFAULT 'pending',
+            created_at TIMESTAMP NOT NULL,
+            original_message_id TEXT 
         )
     ''')
     
-    # Table to store user credentials persistently
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS user_credentials (
             email TEXT PRIMARY KEY,
@@ -31,7 +31,6 @@ def init_db():
         )
     ''')
     
-    # Table to prevent processing the same email thread twice
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS processed_threads (
             thread_id TEXT PRIMARY KEY,
@@ -41,26 +40,24 @@ def init_db():
     
     conn.commit()
     conn.close()
-    print("Database initialized successfully.")
+    print("Database initialized successfully with the new schema.")
 
-# --- Functions for pending_drafts table ---
-
-def add_pending_draft(thread_id, recipient, subject, body):
-    """Adds a new generated draft to the database and returns its unique ID."""
+def add_pending_draft(thread_id, recipient, subject, body, original_message_id):
+    """Adds a new draft to the database, including the ID of the message being replied to."""
     conn = sqlite3.connect(DATABASE_FILE)
     cursor = conn.cursor()
     new_id = str(uuid.uuid4())
     created_time = datetime.now()
     cursor.execute(
-        "INSERT INTO pending_drafts (id, thread_id, recipient, subject, body, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-        (new_id, thread_id, recipient, subject, body, created_time)
+        "INSERT INTO pending_drafts (id, thread_id, recipient, subject, body, created_at, original_message_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (new_id, thread_id, recipient, subject, body, created_time, original_message_id)
     )
     conn.commit()
     conn.close()
     return new_id
 
 def get_pending_draft(draft_id):
-    """Retrieves a pending draft by its ID."""
+    """Retrieves a single pending draft by its ID."""
     conn = sqlite3.connect(DATABASE_FILE)
     conn.row_factory = sqlite3.Row 
     cursor = conn.cursor()
@@ -70,7 +67,7 @@ def get_pending_draft(draft_id):
     return dict(draft) if draft else None
 
 def update_draft_status(draft_id, status):
-    """Updates the status of a draft (e.g., to 'approved' or 'rejected')."""
+    """Updates the status of a draft (e.g., 'approved', 'rejected')."""
     conn = sqlite3.connect(DATABASE_FILE)
     cursor = conn.cursor()
     cursor.execute("UPDATE pending_drafts SET status = ? WHERE id = ?", (status, draft_id))
@@ -79,10 +76,38 @@ def update_draft_status(draft_id, status):
     conn.close()
     return updated_rows > 0
 
-# --- Functions for user_credentials table ---
+def get_dashboard_stats():
+    """Gathers statistics for the automation dashboard."""
+    conn = sqlite3.connect(DATABASE_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT COUNT(*) as count FROM pending_drafts WHERE status = 'pending'")
+    pending = cursor.fetchone()['count']
+    
+    cursor.execute("SELECT COUNT(*) as count FROM pending_drafts WHERE status = 'approved'")
+    sent = cursor.fetchone()['count']
+    
+    cursor.execute("SELECT COUNT(*) as count FROM pending_drafts WHERE status = 'rejected'")
+    rejected = cursor.fetchone()['count']
+    
+    cursor.execute("SELECT COUNT(*) as count FROM pending_drafts")
+    total = cursor.fetchone()['count']
+    
+    cursor.execute("SELECT id, recipient, subject, created_at FROM pending_drafts WHERE status = 'pending' ORDER BY created_at DESC")
+    drafts = [dict(row) for row in cursor.fetchall()]
+    
+    conn.close()
+    return {
+        'pending': pending,
+        'sent': sent,
+        'rejected': rejected,
+        'total': total,
+        'drafts': drafts
+    }
 
 def save_user_credentials(email, credentials):
-    """Saves or updates a user's credentials in the database."""
+    """Saves or updates a user's OAuth credentials in the database."""
     conn = sqlite3.connect(DATABASE_FILE)
     cursor = conn.cursor()
     credentials_json = json.dumps(credentials)
@@ -91,7 +116,7 @@ def save_user_credentials(email, credentials):
     conn.close()
 
 def get_user_credentials(email):
-    """Retrieves a user's credentials from the database by email."""
+    """Retrieves a user's OAuth credentials from the database."""
     conn = sqlite3.connect(DATABASE_FILE)
     cursor = conn.cursor()
     cursor.execute("SELECT credentials_json FROM user_credentials WHERE email = ?", (email,))
@@ -99,10 +124,8 @@ def get_user_credentials(email):
     conn.close()
     return json.loads(row[0]) if row else None
 
-# --- Functions for processed_threads table ---
-
 def is_thread_processed(thread_id):
-    """Checks if a thread has already been processed."""
+    """Checks if a thread has already been processed to prevent duplicates."""
     conn = sqlite3.connect(DATABASE_FILE)
     cursor = conn.cursor()
     cursor.execute("SELECT 1 FROM processed_threads WHERE thread_id = ?", (thread_id,))
@@ -111,13 +134,12 @@ def is_thread_processed(thread_id):
     return result is not None
 
 def mark_thread_as_processed(thread_id):
-    """Adds a thread_id to the database to mark it as processed."""
+    """Marks a thread as processed."""
     conn = sqlite3.connect(DATABASE_FILE)
     cursor = conn.cursor()
     cursor.execute("REPLACE INTO processed_threads (thread_id, processed_at) VALUES (?, ?)", (thread_id, datetime.now()))
     conn.commit()
     conn.close()
 
-# --- Optional: Main block to initialize DB from command line ---
 if __name__ == '__main__':
     init_db()

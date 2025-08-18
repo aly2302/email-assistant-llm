@@ -1,17 +1,22 @@
 import os
+from dotenv import load_dotenv
+
+# Ensure environment variables are loaded when the worker starts
+load_dotenv()
+
 from celery import Celery
 import logging
 import base64
 import google.oauth2.credentials
 import googleapiclient.discovery
+from bs4 import BeautifulSoup
 
-# Import the Flask app and necessary functions from your existing files
+# Import from our other project files
 from app import app, parse_sender_info, find_relevant_knowledge, call_gemini, ONTOLOGY_DATA, resolve_component, get_component
 from database import add_pending_draft
 from notifications import send_approval_notification
 
 # --- Celery Configuration ---
-# The broker is the Redis message board.
 celery = Celery(
     app.import_name,
     backend='redis://localhost:6379/1',
@@ -20,54 +25,72 @@ celery = Celery(
 celery.conf.update(app.config)
 
 
+# --- Helper Function to Extract Email Body ---
+def get_email_body(payload):
+    """Recursively search for the best text body in an email payload."""
+    if "parts" in payload:
+        # First, search for a text/plain part
+        for part in payload['parts']:
+            if part['mimeType'] == 'text/plain':
+                data = part['body'].get('data')
+                if data:
+                    return base64.urlsafe_b64decode(data).decode('utf-8')
+        # If no plain text, fall back to HTML
+        for part in payload['parts']:
+            if part['mimeType'] == 'text/html':
+                data = part['body'].get('data')
+                if data:
+                    html_content = base64.urlsafe_b64decode(data).decode('utf-8')
+                    soup = BeautifulSoup(html_content, "html.parser")
+                    return soup.get_text(separator='\n', strip=True)
+    # Handle non-multipart emails
+    elif 'data' in payload.get('body', {}):
+        data = payload['body']['data']
+        if payload['mimeType'] == 'text/html':
+            html_content = base64.urlsafe_b64decode(data).decode('utf-8')
+            soup = BeautifulSoup(html_content, "html.parser")
+            return soup.get_text(separator='\n', strip=True)
+        elif payload['mimeType'] == 'text/plain':
+            return base64.urlsafe_b64decode(data).decode('utf-8')
+    return "" # Return empty string if no body found
+
+
 # --- The Main Background Task ---
 @celery.task
 def process_new_email(thread_id, user_credentials):
     """
-    This is the main background job. It takes a thread_id and user credentials,
-    fetches the email, generates a draft, saves it, and sends a notification.
+    Fetches an email, generates a draft, saves it, and sends a notification.
     """
     logging.info(f"Starting to process new email thread: {thread_id}")
     
     try:
-        # The Celery worker is a separate process, so it doesn't have the web session.
-        # We must rebuild the gmail service using the credentials passed into the task.
         creds = google.oauth2.credentials.Credentials(**user_credentials)
         service = googleapiclient.discovery.build('gmail', 'v1', credentials=creds)
 
         # 1. Fetch the full email thread
         thread = service.users().threads().get(userId='me', id=thread_id, format='full').execute()
         
-        # We'll process the last message in the thread.
         last_message = thread['messages'][-1]
         payload = last_message.get('payload', {})
         headers = payload.get('headers', [])
         
         original_subject = next((h['value'] for h in headers if h['name'].lower() == 'subject'), '')
-        full_conversation_text = ""
         
-        # Extract the plain text body from the email
-        if 'parts' in payload:
-            for part in payload['parts']:
-                if part['mimeType'] == 'text/plain':
-                    data = part['body'].get('data')
-                    if data:
-                        full_conversation_text = base64.urlsafe_b64decode(data).decode('utf-8')
-                        break
+        # Use the robust helper function to get the email body
+        full_conversation_text = get_email_body(payload)
         
         if not full_conversation_text:
-            logging.warning(f"Could not extract plain text from email thread {thread_id}. Skipping.")
+            logging.warning(f"Could not extract a usable text or HTML body from email thread {thread_id}. Skipping.")
             return
 
         # 2. Run the headless drafting logic
-        # For automation, we'll use a default persona. This could be made configurable later.
         persona_id = 'rodrigo_novelo_formal'
         persona = ONTOLOGY_DATA.get("personas", {}).get(persona_id)
         if not persona:
             logging.error(f"Default persona '{persona_id}' not found. Cannot process email.")
             return
 
-        sender_name, sender_email = parse_sender_info(full_conversation_text)
+        sender_name, sender_email = parse_sender_info(str(headers))
         
         relevant_memories, relevant_corrections = find_relevant_knowledge(
             full_conversation_text, 
@@ -75,7 +98,6 @@ def process_new_email(thread_id, user_credentials):
             persona.get("learned_knowledge_base", [])
         )
         
-        # Build a simplified prompt for the headless worker
         prompt_context = [f"Persona Principles: {' '.join(persona.get('style_profile', {}).get('key_principles', []))}"]
         if relevant_memories:
             prompt_context.append(f"Relevant Memory: {', '.join(relevant_memories)}")
@@ -103,8 +125,7 @@ def process_new_email(thread_id, user_credentials):
             return
 
         generated_body = llm_response.get("text", "").strip()
-
-        # Add default components (greeting, closing, etc.)
+        
         default_ids = persona.get("default_components", {})
         greeting = resolve_component(get_component("greetings", default_ids.get("greeting_id")), sender_name.split()[0])
         closing = resolve_component(get_component("closings", default_ids.get("closing_id")))
@@ -121,7 +142,7 @@ def process_new_email(thread_id, user_credentials):
         )
         logging.info(f"Successfully generated and saved draft {new_draft_id} for thread {thread_id}.")
         
-        # 4. SEND THE NOTIFICATION!
+        # 4. Send the notification for approval
         draft_details = {
             "recipient": sender_email,
             "subject": f"Re: {original_subject}",

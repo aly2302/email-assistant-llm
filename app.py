@@ -19,8 +19,8 @@ import google.oauth2.credentials
 import googleapiclient.discovery
 import google.auth.transport.requests # Necessário para refresh de tokens
 # NEW IMPORTS FOR AUTOMATION
-from database import get_pending_draft, update_draft_status, save_user_credentials, get_user_credentials
-
+from database import get_pending_draft, update_draft_status, save_user_credentials, get_user_credentials, is_thread_processed, mark_thread_as_processed
+import sqlite3
 
 # --- CONFIGURAÇÃO INICIAL E CONSTANTES ---
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -37,6 +37,7 @@ DEBUG_MODE = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ONTOLOGY_FILE = os.path.join(BASE_DIR, 'personas2.0.json')
 CLIENT_SECRETS_FILE = os.path.join(BASE_DIR, 'client_secret.json')
+DATABASE_FILE = os.path.join(BASE_DIR, 'automation.db')
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'uma-chave-secreta-para-sessoes')
@@ -650,39 +651,52 @@ def memory_detail_api_route(persona_key, memory_id):
 
 @app.route('/approve/<draft_id>')
 def approve_draft_route(draft_id):
-    # This route is triggered when you tap the "Approve" link
-    
+    """This route is triggered when you tap the 'Approve' link."""
+
     # 1. Get the draft details from our database
     draft = get_pending_draft(draft_id)
     if not draft:
         return "<h1>Draft Not Found</h1><p>This draft may have already been processed or does not exist.</p>", 404
-    
-    # 2. Get the Gmail service to send the email
-    service = get_gmail_service()
-    if not service:
-        # If not logged in, we can't send. Redirect to login.
-        return redirect(url_for('login'))
+
+    # 2. Get credentials from the database (assuming a single user)
+    conn = sqlite3.connect(DATABASE_FILE)
+    cursor = conn.cursor()
+    cursor.execute("SELECT email FROM user_credentials LIMIT 1")
+    user_row = cursor.fetchone()
+    conn.close()
+
+    if not user_row:
+        return "<h1>Error</h1><p>No user credentials found in the database.</p>", 500
+
+    user_email = user_row[0]
+    user_credentials = get_user_credentials(user_email)
+
+    if not user_credentials:
+        return "<h1>Error</h1><p>Could not load credentials for the user.</p>", 500
 
     try:
-        # 3. Create and send the email (similar to your existing send_email_route)
+        # 3. Build the Gmail service using the database credentials
+        creds = google.oauth2.credentials.Credentials(**user_credentials)
+        service = googleapiclient.discovery.build('gmail', 'v1', credentials=creds)
+
+        # 4. Create and send the email
         message = MIMEText(draft['body'], _charset='utf-8')
         message['to'] = draft['recipient']
         message['subject'] = draft['subject']
         raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
-        
+
         send_options = {'raw': raw_message, 'threadId': draft['thread_id']}
         service.users().messages().send(userId='me', body=send_options).execute()
-        
-        # 4. Update the draft's status in the database to 'approved'
+
+        # 5. Update the draft's status in the database to 'approved'
         update_draft_status(draft_id, 'approved')
-        
+
         logging.info(f"Draft {draft_id} approved and sent successfully.")
         return "<h1>Email Approved & Sent!</h1><p>The response has been sent successfully. You can close this window.</p>"
 
     except Exception as e:
         logging.error(f"Failed to send approved email for draft {draft_id}: {e}")
         return f"<h1>Error</h1><p>An error occurred while trying to send the email: {e}</p>", 500
-
 
 @app.route('/reject/<draft_id>')
 def reject_draft_route(draft_id):
@@ -699,46 +713,45 @@ def reject_draft_route(draft_id):
 
 @app.route('/gmail-webhook', methods=['POST'])
 def gmail_webhook_route():
+    from celery_worker import process_new_email
     """Receives push notifications from Google Cloud Pub/Sub."""
     if 'message' not in request.json:
         return "Bad Request: No message data", 400
 
     try:
-        # Decode the incoming message from Google
         message_data = base64.b64decode(request.json['message']['data']).decode('utf-8')
         message_json = json.loads(message_data)
-        
         user_email = message_json['emailAddress']
-        history_id = message_json['historyId']
         
-        # Look up credentials in the database using the email from the notification
         user_credentials = get_user_credentials(user_email)
-        
         if not user_credentials:
             logging.warning(f"Received webhook for {user_email}, but no credentials found in database. Skipping.")
             return "OK", 200
 
-        # Build a temporary service instance to look up the thread ID
+        # --- FINAL, MOST ROBUST LOGIC ---
         creds = google.oauth2.credentials.Credentials(**user_credentials)
         service = googleapiclient.discovery.build('gmail', 'v1', credentials=creds)
-        history = service.users().history().list(userId='me', startHistoryId=history_id).execute()
         
-        if 'history' in history:
-            for item in history['history']:
-                if 'messagesAdded' in item:
-                    # We'll process the first new message we find.
-                    thread_id = item['messagesAdded'][0]['message']['threadId']
-                    
-                    # Hand off the job to our Celery worker, passing the credentials
-                    process_new_email.delay(thread_id, user_credentials)
-                    
-                    logging.info(f"Webhook received. Queued processing for thread {thread_id}.")
-                    break # Stop after queuing the first new message
-
+        # Directly ask for the most recent thread in the inbox
+        response = service.users().threads().list(userId='me', labelIds=['INBOX'], maxResults=1).execute()
+        
+        if 'threads' in response and response['threads']:
+            latest_thread_id = response['threads'][0]['id']
+            
+            # Check if we've already processed this thread
+            if is_thread_processed(latest_thread_id):
+                logging.info(f"Webhook: Thread {latest_thread_id} has already been processed. Skipping.")
+            else:
+                # Mark it as processed now to prevent duplicates, then start the job
+                mark_thread_as_processed(latest_thread_id)
+                process_new_email.delay(latest_thread_id, user_credentials)
+                logging.info(f"Webhook: Found new thread {latest_thread_id}. Queued for processing.")
+        else:
+            logging.info("Webhook received, but no threads found in inbox. Skipping.")
+            
     except Exception as e:
         logging.error(f"Error processing webhook: {e}", exc_info=True)
 
-    # Always return a success status code to Google to prevent retries.
     return "OK", 200
 
 

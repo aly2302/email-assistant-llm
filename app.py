@@ -19,8 +19,8 @@ import google.oauth2.credentials
 import googleapiclient.discovery
 import google.auth.transport.requests # Necessário para refresh de tokens
 # NEW IMPORTS FOR AUTOMATION
-from database import get_pending_draft, update_draft_status, save_user_credentials, get_user_credentials, is_thread_processed, mark_thread_as_processed
 import sqlite3
+from automation.database import get_pending_draft, update_draft_status, save_user_credentials, get_user_credentials, is_thread_processed, mark_thread_as_processed
 
 # --- CONFIGURAÇÃO INICIAL E CONSTANTES ---
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -713,7 +713,7 @@ def reject_draft_route(draft_id):
 
 @app.route('/gmail-webhook', methods=['POST'])
 def gmail_webhook_route():
-    from celery_worker import process_new_email
+    from automation.celery_worker import process_new_email
     """Receives push notifications from Google Cloud Pub/Sub."""
     if 'message' not in request.json:
         return "Bad Request: No message data", 400

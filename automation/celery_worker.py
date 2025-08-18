@@ -13,8 +13,8 @@ from bs4 import BeautifulSoup
 
 # Import from our other project files
 from app import app, parse_sender_info, find_relevant_knowledge, call_gemini, ONTOLOGY_DATA, resolve_component, get_component
-from database import add_pending_draft
-from notifications import send_approval_notification
+from .database import add_pending_draft
+from .notifications import send_approval_notification
 
 # --- Celery Configuration ---
 celery = Celery(

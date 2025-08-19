@@ -27,8 +27,28 @@
         "signature_id": "sig_rodrigo_full"
       },
       "adaptation_policy_id": "policy_formal_pt_pt_mirror_structure",
-      "learned_knowledge_base": [],
-      "personal_knowledge_base": []
+      "learned_knowledge_base": [
+          {
+          "timestamp_utc": "2025-08-18T10:00:00Z",
+          "inferred_rule_pt": "Quando me pedem uma reunião, propor sempre duas datas e horas específicas em vez de perguntar 'quando dá jeito'.",
+          "interaction_context_snapshot": {
+            "original_email_text": "podemos marcar uma reunião para falar sobre o projeto?"
+          }
+        }
+      ],
+      "personal_knowledge_base": [
+        {
+          "content": "O meu projeto de licenciatura foca-se na otimização de prompts para LLMs e chama-se 'A Literature Review of Personalized Large Language Models\nfor Email Automation'.",
+          "type": "fact",
+          "trigger_keywords": [
+            "licenciatura",
+            "curso",
+            "tese",
+            "projeto"
+          ],
+          "id": "mem_9498dfca"
+        }
+      ]
     },
     "rodrigo_novelo_informal": {
       "label": "Rodrigo Novelo (Informal)",
@@ -65,29 +85,44 @@
     "prof_rocha_silva": {
       "email_match": "rrochas@gmail.com",
       "full_name": "Rodrigo Rocha Silva",
+      "relationship": "Professor (orientador)",
       "linguistic_markers": {
-        "region": "pt-BR",
-        "formality_identifiers": [
-          "Atenciosamente,"
-        ]
-      }
+        "region": "pt-BR"
+      },
+      "personalization_rules": [
+        "Tratamento: Usar sempre 'Professor Rodrigo'.",
+        "Linguagem: Utilizar 'você' e a norma culta do português do Brasil.",
+        "Tom: Manter a máxima formalidade e respeito."
+      ]
     },
     "afonso_guedes": {
-      "email_match": "afonso.exemplo@email.com",
-      "full_name": "Afonso Guedes",
+      "email_match": "afonso.azaruja@mailbox.org",
+      "full_name": "Afonso Azaruja",
       "nickname": "Aza",
-      "relationship": "amigo próximo, colega de ginásio"
+      "relationship": "amigo próximo, colega de escola",
+      "personalization_rules": [
+        "Tratamento OBRIGATÓRIO: Tratar sempre por 'Boas aza' na saudação.",
+        "Tom: Usar um tom extremamente casual e direto, como numa conversa falada.",
+        "Contexto: Fazer piadas ou referências mais cómicas se apropriado, sem exageros"
+      ]
     },
     "dinis_novelo": {
-      "email_match": "dinis.exemplo@email.com",
+      "email_match": "rodrigo.c.novelo2302@gmail.com",
       "full_name": "Dinis Novelo",
-      "relationship": "irmão"
+      "relationship": "irmão",
+      "personalization_rules": [
+        "Tratamento: Usar 'Mano'.",
+        "Tom: Responder de forma curta, direta e familiar.",
+        "Contexto: A resposta pode ser apenas a informação pedida, sem formalidades."
+      ]
     },
     "mafalda_pinto": {
       "email_match": "mafalda.exemplo@email.com",
       "full_name": "Mafalda Pinto",
       "relationship": "amiga",
-      "notes": "Usar 'Beijinhos' como despedida."
+      "personalization_rules": [
+        "Despedida: Terminar sempre com 'Beijinhos,'."
+      ]
     }
   },
   "adaptation_policies": {

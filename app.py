@@ -418,15 +418,22 @@ def draft_response_route():
         prompt_context_parts.append("--- Princípios Chave da Persona (Regras Base) ---\n- " + "\n- ".join(key_principles))
 
     # Adiciona contexto do interlocutor, se existir
-    interlocutor_context = ""
     if sender_email:
         profiles = ONTOLOGY_DATA.get("interlocutor_profiles", {})
         for key, profile in profiles.items():
             if profile.get("email_match", "").lower() == sender_email.lower():
-                context_parts = [f"Nome: {profile.get('full_name')}", f"Relação: {profile.get('relationship')}", f"Notas: {profile.get('notes')}"]
+                # Adiciona o contexto geral como antes
+                context_parts = [f"Nome: {profile.get('full_name')}", f"Relação: {profile.get('relationship')}"]
                 interlocutor_context = "--- Contexto Sobre o Interlocutor ---\n" + " | ".join(filter(None, context_parts))
                 prompt_context_parts.append(interlocutor_context)
-                break
+
+                # NOVA PARTE: Adiciona as regras de personalização com prioridade máxima
+                personalization_rules = profile.get("personalization_rules", [])
+                if personalization_rules:
+                    formatted_rules = "\n- ".join(personalization_rules)
+                    override_rules_context = f"--- Regras Específicas Para Este Contacto (Prioridade Máxima) ---\n- {formatted_rules}"
+                    prompt_context_parts.append(override_rules_context)
+                break # Sai do loop assim que encontra o perfil
     
     # Adiciona memórias relevantes, APENAS se existirem
     if relevant_memories:
@@ -528,10 +535,14 @@ def suggest_guidance_route():
 def refine_text_route():
     data = request.json
     action_instructions = {
-        "make_formal": "Reescreva para ser mais formal.", "make_casual": "Reescreva para ser mais casual.",
-        "shorten": "Condense ao máximo.", "expand": "Elabore sobre o texto.",
+        "make_formal": "Reescreva para ser mais formal em PT-PT", "make_casual": "Reescreva para ser mais casual em PT-PT",
+        "shorten": "Condense ao máximo em PT-PT.", "expand": "Elabore sobre o texto em PT-PT.",
         "simplify": "Reescreva com linguagem mais simples.", "improve_flow": "Melhore o fluxo e a coesão.",
-        "rephrase": "Refraseie o texto.", "translate_en": "Traduza para inglês profissional."
+        "rephrase": "Refraseie o texto em PT-PT.", "translate_en": "Traduza para inglês profissional.",
+        "find_synonym": "Sugira um sinónimo para a palavra ou frase selecionada. Devolva apenas a palavra ou frase sinónima em PT-PT.",
+        "correct_grammar": "Corrija a gramática e a ortografia do texto, mantendo o significado original, usa português europeu.",
+        "change_to_active_voice": "Reescreva o texto na voz ativa, tornando-o mais direto em PT-PT.",
+        "make_more_polite": "insultos pesados com contexto no texto selecionado em PT-PT!!!"
     }
     instruction = action_instructions.get(data['action'], "Modifique o texto.")
     prompt = f"Ação: {instruction}\nContexto: {data['full_context']}\n---\nTexto a Modificar: {data['selected_text']}\n---\nSaída: APENAS o texto modificado."

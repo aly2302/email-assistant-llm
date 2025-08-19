@@ -18,7 +18,7 @@
           "Tom: Manter a neutralidade factual e usar o tempo presente. Evitar linguagem emotiva.",
           "Lógica de Resposta: Se for um pedido, confirmar a receção. Se for uma notificação, agradecer brevemente.",
           "Despedida: Garantir que a despedida soa natural e não repetitiva.",
-          "Verbos: Nunca usar o futuro do indicativo ('consultarei', 'enviarei'). Substituir sempre por 'Vou consultar', 'Vou enviar' no futuro simples do indicativo e no presente do indicativo."
+          "Verbos: Nunca usar o futuro do indicativo ('consultarei', 'enviarei')."
         ]
       },
       "default_components": {
@@ -90,9 +90,9 @@
         "region": "pt-BR"
       },
       "personalization_rules": [
-        "Tratamento: Usar sempre 'Professor Rodrigo'.",
+        "Saudação: referir-me ao professor sempre como Professor Rodrigo.",
         "Linguagem: Utilizar 'você' e a norma culta do português do Brasil.",
-        "Tom: Manter a máxima formalidade e respeito."
+        "Tom: fazer piada com Vinicius Junior"
       ]
     },
     "afonso_guedes": {

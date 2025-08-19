@@ -105,9 +105,17 @@ def parse_sender_info(original_email_text):
     match = re.search(r"(?:From|De):\s*['\"]?(.*?)['\"]?\s*<(.*?)>", original_email_text, re.IGNORECASE)
     if match:
         name, email = match.group(1).strip().replace('"', ''), match.group(2).strip()
-        if '@' in name: name = email.split('@')[0].replace('.', ' ').replace('_', ' ').title()
+        
+        # Lista de palavras-chave que indicam um remetente genérico
+        generic_keywords = ['secretariado', 'organização', 'equipa', 'serviços', 'departamento', 'noreply', 'info@']
+        
+        # Se o nome contiver uma keyword genérica ou se o nome for parte do email (ex: "info"), considera-se genérico
+        if any(keyword in name.lower() for keyword in generic_keywords) or '@' in name:
+            return None, email # Retorna None para o nome para que seja omitido
+            
         return name, email
-    return "Equipa", ""
+        
+    return None, "" # Fallback principal também retorna None
 
 # --- COMUNICAÇÃO COM A API GEMINI ---
 def call_gemini(prompt, model=GEMINI_MODEL, temperature=0.6):
@@ -345,9 +353,18 @@ def index_route():
 def analyze_email_route():
     email_text = request.json.get('email_text', '')
     if not email_text.strip(): return jsonify({"error": "O texto do email não pode estar vazio."}), 400
-    prompt = f"""Analise o email e classifique a sua intenção principal. Extraia também os pontos que necessitam de uma resposta.
+    
+    # --- PROMPT ATUALIZADO COM FOCO NO CONTEXTO ---
+    prompt = f"""
+Analise o seguinte email. A sua tarefa é identificar as perguntas diretas ou pedidos de ação que exigem uma resposta do destinatário.
+Para cada ponto, reescreva-o de forma a incluir o contexto essencial para que seja compreensível isoladamente.
+Ignore informações gerais e notificações. A sua saída deve ser APENAS um objeto JSON.
+
+Exemplo:
+- Email Original: "Podes, por favor, clarificar este ponto? Refiro-me à duração da apresentação."
+- Ponto Extraído Correto: "Clarificar se os 15 minutos da apresentação incluem o tempo para perguntas e respostas."
+
 Intenções Válidas: 'confirmation', 'call_to_action', 'direct_question', 'generic_notification'.
-Formato: APENAS um objeto JSON.
 ---
 Email:
 {email_text}
@@ -425,16 +442,33 @@ def draft_response_route():
     final_context_block = "\n\n".join(prompt_context_parts)
 
     # 3. Obter as diretrizes do utilizador
-    guidance_summary = "\n- ".join([item.get('guidance', '').strip() for item in user_inputs if item.get('guidance', '').strip()])
-    if not guidance_summary:
-        guidance_summary = "Nenhuma. Seguir o contexto e as regras da persona."
+    guidance_parts = []
+    for item in user_inputs:
+        point = item.get('point', '').strip()      # O ponto original extraído pela análise
+        guidance = item.get('guidance', '').strip()  # A resposta que inseriu
+
+        if guidance: # Apenas processa se deu uma resposta
+            # Criamos uma instrução explícita que liga a sua resposta ao ponto de ação
+            instruction = f"Relativamente à questão '{point}', a informação a transmitir é: '{guidance}'."
+            guidance_parts.append(instruction)
+
+    if not guidance_parts:
+        guidance_summary = "Nenhuma instrução específica. Gerar uma resposta com base no contexto do email e na persona."
     else:
-        guidance_summary = "- " + guidance_summary
+        guidance_summary = "\n- ".join(guidance_parts)
 
 
     # 4. Construir o prompt final, agora muito mais limpo e direto
     default_ids = persona.get("default_components", {})
-    greeting_text = resolve_component(get_component("greetings", default_ids.get("greeting_id")), sender_name.split()[0])
+
+    recipient_first_name = ""
+    if sender_name:  # This checks if sender_name is not None
+        recipient_first_name = sender_name.split()[0]
+
+    greeting_text = resolve_component(get_component("greetings", default_ids.get("greeting_id")), recipient_first_name)
+
+
+            
     closing_text = resolve_component(get_component("closings", default_ids.get("closing_id")))
     signature_text = resolve_component(get_component("signatures", default_ids.get("signature_id")))
 

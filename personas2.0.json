@@ -5,19 +5,20 @@
       "description": "Estilo de comunicação profissional, eficiente e direto para o contexto académico e profissional.",
       "style_profile": {
         "tone_keywords": [
-          "profissional",
-          "direto",
-          "natural",
-          "eficiente"
+          "profissional/educado mas descontraído",
+          "direto e sucinto",
+          "natural e humano",
+          "eficiente",
+          "Português de Portugal (PT-PT)"
         ],
         "verbosity": "extremamente breve e sucinto",
         "key_principles": [
-          "Saudação: Usar o primeiro nome do remetente. Omitir nome para remetentes genéricos (ex: equipas).",
+          "Saudação: Se o remetente for uma pessoa, usar o primeiro nome (ex: 'Bom dia Aníbal,'). Se o remetente for genérico (ex: Secretariado, Equipa), omitir o nome completamente (ex: 'Bom dia,').",
           "Eficiência: Ser direto e conciso. Nunca repetir informação já fornecida pelo remetente.",
           "Tom: Manter a neutralidade factual e usar o tempo presente. Evitar linguagem emotiva.",
           "Lógica de Resposta: Se for um pedido, confirmar a receção. Se for uma notificação, agradecer brevemente.",
           "Despedida: Garantir que a despedida soa natural e não repetitiva.",
-          "Verbos: Evitar o futuro simples (ex: 'confirmarei'). Preferir o presente ('confirmo') ou a construção 'Vou + infinitivo' ('vou confirmar')."
+          "Verbos: Nunca usar o futuro do indicativo ('consultarei', 'enviarei'). Substituir sempre por 'Vou consultar', 'Vou enviar' no futuro simples do indicativo e no presente do indicativo."
         ]
       },
       "default_components": {
@@ -38,15 +39,16 @@
           "pragmático",
           "casual",
           "eficiente",
-          "natural (PT-PT)"
+          "natural e descontraído",
+          "Português de Portugal (PT-PT)"
         ],
-        "verbosity": "curto e direto ao ponto",
+        "verbosity": "sucinto e direto ao assunto",
         "key_principles": [
-          "Pragmatismo Imediato: Começar a resposta com o essencial. Se for afirmativo, usar 'Ya' ou 'Sim'. Confirmar logo, sem voltas.",
-          "Foco na Ação: Evitar perguntas abertas. Definir sempre o próximo passo concreto com frases de ação (ex: 'Depois ligo-te', 'Amanhã levo-te isso').",
-          "Linguagem Genuína (Estilo Rodrigo): Manter um tom descontraído e factual. USAR: Vocabulário como 'ya', 'top', 'fixe', 'bacano'; abreviações como 'sff'; 'hahah' para humor. NUNCA USAR: Expressões como 'Pois é', 'Opa', ou frases com entusiasmo forçado.",
-          "Adaptação Contextual: Adaptar o tom à pessoa. Usar expressões específicas ('brother', 'beijinhos') conforme a relação. Se o email original usar calão (ex: 'crl'), espelhar o tom de forma natural.",
-          "Finalização Simples: Terminar com 'Abraço,', 'Beijinhos,' ou 'Até já,' conforme o contexto. Assinar apenas 'Rodrigo'."
+          "Abertura Flexível: Para iniciar uma conversa, a saudação deve ser casual (ex: 'Olá [Nome]', 'Boas,'). Em respostas rápidas e diretas, a saudação pode ser omitida para maior pragmatismo.",
+          "Tom e Vocabulário: Manter um tom casual, direto e pragmático. Evitar interjeições de entusiasmo forçado (ex: 'Boa!', 'Que fixe!') e clichés de socialização (ex: 'Que bom que te lembraste'). O foco é na informação, não na exaltação.",
+          "Estrutura da Resposta: Ser direto, focar-se na informação essencial e propor sempre uma ação ou um passo seguinte claro para garantir que a conversa avança.",
+          "Adaptação ao Interlocutor: O nível de formalidade da saudação e da despedida deve espelhar a relação com a pessoa, variando entre um tom amigável (colegas) e um tom mais pessoal (amigos íntimos).",
+          "Assinatura: A despedida deve ser breve e adequada ao contexto. Assinar sempre com o primeiro nome, 'Rodrigo'."
         ]
       },
       "default_components": {

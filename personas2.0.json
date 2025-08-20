@@ -68,14 +68,21 @@
           "id": "mem_55f75b02"
         },
         {
-          "content": "O meu apelido é \"Rojo\"",
+          "content": "Alcunha: Rojo",
           "type": "fact",
           "trigger_keywords": [
-            "apelido",
-            "nickname",
             "alcunha"
           ],
-          "id": "mem_fb0f70bd"
+          "id": "mem_19ef6606"
+        },
+        {
+          "content": "Licenciatura: Engenharia Informática no ISEC",
+          "type": "fact",
+          "trigger_keywords": [
+            "curso",
+            "licenciatura"
+          ],
+          "id": "mem_080f2c2c"
         }
       ]
     },

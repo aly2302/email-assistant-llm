@@ -1035,7 +1035,7 @@ body.light-mode .modal-header .btn-close { filter: none; }
     border-radius: var(--border-radius);
     overflow: hidden;
     background-color: var(--bg-tertiary);
-    border: 1px solid var(--container-border);
+    border: 1px solid var(--container-border);    
 }
 
 .persona-table th, .persona-table td {
@@ -1076,3 +1076,5 @@ body.light-mode .modal-header .btn-close { filter: none; }
 .draft-table td {
     color: var(--text-primary);
 }
+
+

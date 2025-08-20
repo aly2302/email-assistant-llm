@@ -1043,6 +1043,7 @@ body.light-mode .modal-header .btn-close { filter: none; }
     text-align: left;
     border-bottom: 1px solid var(--list-item-border);
     color: var(--text-primary);
+    background-color: transparent;
 }
 
 .persona-table th {

@@ -535,14 +535,16 @@ def suggest_guidance_route():
 def refine_text_route():
     data = request.json
     action_instructions = {
-        "make_formal": "Reescreva para ser mais formal em PT-PT", "make_casual": "Reescreva para ser mais casual em PT-PT",
-        "shorten": "Condense ao máximo em PT-PT.", "expand": "Elabore sobre o texto em PT-PT.",
-        "simplify": "Reescreva com linguagem mais simples.", "improve_flow": "Melhore o fluxo e a coesão.",
-        "rephrase": "Refraseie o texto em PT-PT.", "translate_en": "Traduza para inglês profissional.",
+        "make_formal": "Reescreva o texto para ser mais formal, usando vocabulário profissional. Usa PT-PT.",
+        "make_casual": "Reescreva o texto com um tom mais casual e descontraído. Usa PT-PT.",
+        "shorten": "Condense o texto ao máximo, mantendo apenas a informação essencial. Usa PT-PT.",
+        "expand": "Elabore sobre o texto, adicionando mais detalhes e contexto para o enriquecer. Usa PT-PT.",
+        "simplify": "Reescreva o texto com linguagem mais simples e frases mais curtas para ser fácil de entender. Usa PT-PT.",
+        "rephrase": "Refraseie o texto com palavras diferentes, mantendo o significado e o tom originais. Usa PT-PT.",
+        "translate_en": "Traduza o seguinte texto para inglês profissional e natural.",
         "find_synonym": "Sugira um sinónimo para a palavra ou frase selecionada. Devolva apenas a palavra ou frase sinónima em PT-PT.",
-        "correct_grammar": "Corrija a gramática e a ortografia do texto, mantendo o significado original, usa português europeu.",
-        "change_to_active_voice": "Reescreva o texto na voz ativa, tornando-o mais direto em PT-PT.",
-        "make_more_polite": "insultos pesados com contexto no texto selecionado em PT-PT!!!"
+        "correct_grammar": "Corrija a gramática e a ortografia do texto, mantendo o significado original. Usa português europeu.",
+        "make_persuasive": "Altera o texto para um tom mais persuasivo e convincente, ideal para propostas ou marketing. Usa PT-PT"
     }
     instruction = action_instructions.get(data['action'], "Modifique o texto.")
     prompt = f"Ação: {instruction}\nContexto: {data['full_context']}\n---\nTexto a Modificar: {data['selected_text']}\n---\nSaída: APENAS o texto modificado."

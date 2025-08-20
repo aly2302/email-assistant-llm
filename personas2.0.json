@@ -119,7 +119,7 @@
   },
   "interlocutor_profiles": {
     "prof_rocha_silva": {
-      "email_match": "rodrigo.c.novelo2302@gmail.com",
+      "email_match": "rrochas@gmail.com",
       "full_name": "Rodrigo Rocha Silva",
       "relationship": "Professor (orientador)",
       "linguistic_markers": {
@@ -127,7 +127,7 @@
       },
       "personalization_rules": [
         "Saudação: referir-me ao professor sempre como Professor Rodrigo.",
-        "Linguagem: Utilizar 'você' e a norma culta do português do Brasil.",
+        "Linguagem: Utilizar 'você'",
         "Tom: ser respeitoso, educado e usar bullet-points"
       ]
     },

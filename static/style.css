@@ -13,7 +13,7 @@
     --error-accent: #F85149; /* Coral Red */
 
     /* --- Text Colors --- */
-    --text-primary: #C9D1D9;
+    --text-primary: #FFFFFF;
     --text-secondary: #8B949E;
     --text-dark: #0D1117; /* For light buttons */
     --text-on-accent: #FFFFFF;
@@ -369,7 +369,7 @@ body.light-mode .kpi-card {
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    background: transparent; /* Override original */
+    background: transparent; 
 }
 
 .draft-table tbody tr {
@@ -1071,4 +1071,8 @@ body.light-mode .modal-header .btn-close { filter: none; }
     padding: 5px 10px;
     font-size: 0.8rem;
     margin-right: 5px;
+}
+
+.draft-table td {
+    color: var(--text-primary);
 }

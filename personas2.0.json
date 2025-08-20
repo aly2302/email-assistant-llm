@@ -28,7 +28,7 @@
       },
       "adaptation_policy_id": "policy_formal_pt_pt_mirror_structure",
       "learned_knowledge_base": [
-          {
+        {
           "timestamp_utc": "2025-08-18T10:00:00Z",
           "inferred_rule_pt": "Quando me pedem uma reunião, propor sempre duas datas e horas específicas em vez de perguntar 'quando dá jeito'.",
           "interaction_context_snapshot": {
@@ -47,6 +47,35 @@
             "projeto"
           ],
           "id": "mem_9498dfca"
+        },
+        {
+          "content": "O meu NIF é 16316313623",
+          "type": "fact",
+          "trigger_keywords": [
+            "nif",
+            "numero identificação fiscal"
+          ],
+          "id": "mem_1418268c"
+        },
+        {
+          "content": "O meu número de aluno é 2021137254",
+          "type": "fact",
+          "trigger_keywords": [
+            "numero",
+            "aluno",
+            "estudante"
+          ],
+          "id": "mem_55f75b02"
+        },
+        {
+          "content": "O meu apelido é \"Rojo\"",
+          "type": "fact",
+          "trigger_keywords": [
+            "apelido",
+            "nickname",
+            "alcunha"
+          ],
+          "id": "mem_fb0f70bd"
         }
       ]
     },
@@ -83,7 +112,7 @@
   },
   "interlocutor_profiles": {
     "prof_rocha_silva": {
-      "email_match": "rrochas@gmail.com",
+      "email_match": "rodrigo.c.novelo2302@gmail.com",
       "full_name": "Rodrigo Rocha Silva",
       "relationship": "Professor (orientador)",
       "linguistic_markers": {
@@ -92,7 +121,7 @@
       "personalization_rules": [
         "Saudação: referir-me ao professor sempre como Professor Rodrigo.",
         "Linguagem: Utilizar 'você' e a norma culta do português do Brasil.",
-        "Tom: fazer piada com Vinicius Junior"
+        "Tom: ser respeitoso, educado e usar bullet-points"
       ]
     },
     "afonso_guedes": {
@@ -102,8 +131,8 @@
       "relationship": "amigo próximo, colega de escola",
       "personalization_rules": [
         "Tratamento OBRIGATÓRIO: Tratar sempre por 'Boas aza' na saudação.",
-        "Tom: Usar um tom extremamente casual e direto, como numa conversa falada.",
-        "Contexto: Fazer piadas ou referências mais cómicas se apropriado, sem exageros"
+        "Tom: Usar um tom extremamente casual e direto, como numa conversa falada em PT-PT",
+        "Contexto: Fazer piadas pesadas em PT-PT"
       ]
     },
     "dinis_novelo": {

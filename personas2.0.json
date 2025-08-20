@@ -139,7 +139,7 @@
       "personalization_rules": [
         "Tratamento OBRIGATÓRIO: Tratar sempre por 'Boas aza' na saudação.",
         "Tom: Usar um tom extremamente casual e direto, como numa conversa falada em PT-PT",
-        "Contexto: Fazer piadas pesadas em PT-PT"
+        "Contexto: Fazer piadas quando o contexto é apropriado"
       ]
     },
     "dinis_novelo": {
@@ -217,7 +217,7 @@
         "label": "Despedida profissional padrão (pt-PT)",
         "content": [
           {
-            "text": "Atenciosamente,"
+            "text": "Com os melhores cumprimentos,"
           }
         ]
       },

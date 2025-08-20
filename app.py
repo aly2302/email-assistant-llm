@@ -918,7 +918,7 @@ def send_draft_from_dashboard_route(draft_id):
     except Exception as e:
         logging.error(f"Dashboard: Falha ao enviar e-mail para o rascunho {draft_id}: {e}")
         return jsonify({"error": f"Ocorreu um erro ao tentar enviar o e-mail: {e}"}), 500
-
+    
 
 # --- PONTO DE ENTRADA DA APLICAÇÃO ---
 if __name__ == '__main__':

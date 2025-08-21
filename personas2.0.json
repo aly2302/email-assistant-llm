@@ -114,7 +114,48 @@
       },
       "adaptation_policy_id": "policy_informal_mirroring",
       "learned_knowledge_base": [],
-      "personal_knowledge_base": []
+      "personal_knowledge_base": [
+        {
+          "content": "nickname no discord é #Alyrik2302",
+          "type": "fact",
+          "trigger_keywords": [
+            "discord",
+            "nicknam",
+            "username",
+            "nome discord"
+          ],
+          "id": "mem_66947868"
+        },
+        {
+          "content": "aniversário dia: 23 de fevereiro",
+          "type": "fact",
+          "trigger_keywords": [
+            "aniversário",
+            "dia de anos",
+            "anos",
+            "idade"
+          ],
+          "id": "mem_dc2f6d84"
+        },
+        {
+          "content": "idade: 22 anos",
+          "type": "fact",
+          "trigger_keywords": [
+            "idade",
+            "anos"
+          ],
+          "id": "mem_915ae4b2"
+        },
+        {
+          "content": "não sou casado",
+          "type": "fact",
+          "trigger_keywords": [
+            "casado",
+            "casamento"
+          ],
+          "id": "mem_b6902545"
+        }
+      ]
     }
   },
   "interlocutor_profiles": {

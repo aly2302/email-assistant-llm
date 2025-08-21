@@ -159,33 +159,28 @@ def calculate_relevance_for_corrections(new_email_words, learned_corrections, to
     scored_rules.sort(key=lambda x: x[0], reverse=True)
     return [rule_text for score, rule_text in scored_rules[:top_n] if rule_text]
 
-def find_relevant_knowledge(new_email_text, personal_knowledge, learned_corrections, top_n=3):
-    """Encontra o conhecimento mais relevante usando pré-filtragem por keywords para eficiência."""
-    if not new_email_text: return [], []
+def find_relevant_knowledge(new_email_text, personal_knowledge, learned_corrections, top_n=10): # Aumentamos o top_n por segurança
+    """
+    Encontra o conhecimento relevante de forma mais robusta, confiando na pré-filtragem por keywords.
+    """
+    if not new_email_text: 
+        return [], []
 
     stopwords = set(['a', 'o', 'e', 'de', 'do', 'da', 'em', 'um', 'uma', 'com', 'por', 'para'])
     new_email_words = set(re.sub(r'[^\w\s]', '', unidecode.unidecode(new_email_text.lower())).split()) - stopwords
 
-    # 1. Busca na Memória Explícita (personal_knowledge_base) com pré-filtragem
-    candidate_memories = [
-        mem for mem in personal_knowledge 
-        if not set(mem.get("trigger_keywords", [])).isdisjoint(new_email_words)
+    # 1. Busca na Memória Explícita (personal_knowledge_base)
+    # A lógica foi simplificada: se uma keyword corresponde, a memória é relevante.
+    # O cálculo complexo de Jaccard foi removido por ser ineficaz para factos curtos.
+    relevant_memories = [
+        mem.get("content") for mem in personal_knowledge
+        if mem.get("content") and not set(mem.get("trigger_keywords", [])).isdisjoint(new_email_words)
     ]
     
-    scored_memories = []
-    for memory in candidate_memories:
-        content_words = set(re.sub(r'[^\w\s]', '', unidecode.unidecode(memory.get("content", "").lower())).split())
-        intersection = len(new_email_words.intersection(content_words))
-        union = len(new_email_words.union(content_words))
-        score = intersection / union if union > 0 else 0
-        if score > 0.05:
-            scored_memories.append((score, memory))
+    # Limita o número de memórias para evitar sobrecarregar o prompt, mas com um limite mais generoso.
+    top_memories = relevant_memories[:top_n]
 
-    scored_memories.sort(key=lambda x: x[0], reverse=True)
-    top_memories = [mem.get("content") for score, mem in scored_memories[:top_n] if mem.get("content")]
-    #top_memories = [mem for score, mem in scored_memories[:top_n]] # Devolve a memória completa
-
-    # 2. Busca nas Correções Implícitas (learned_knowledge_base)
+    # 2. Busca nas Correções Implícitas (learned_knowledge_base) - Lógica inalterada
     top_corrections = calculate_relevance_for_corrections(new_email_words, learned_corrections, top_n=2)
     
     if top_memories or top_corrections:

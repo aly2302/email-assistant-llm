@@ -397,10 +397,14 @@ def draft_response_route():
     # --- LÓGICA DO PROMPT RECONSTRUÍDA PARA MÁXIMA QUALIDADE ---
 
     # 1. Obter todo o conhecimento disponível
-    personal_knowledge = persona.get("personal_knowledge_base", [])
+
+    base_knowledge = ONTOLOGY_DATA.get("base_knowledge", [])
+    persona_specific_knowledge = persona.get("personal_knowledge_base", [])
+    combined_knowledge = base_knowledge + persona_specific_knowledge # Juntamos as duas fontes!
+
     learned_corrections = persona.get("learned_knowledge_base", [])
     relevant_memories, relevant_corrections = find_relevant_knowledge(
-        original_email, personal_knowledge, learned_corrections
+        original_email, combined_knowledge, learned_corrections
     )
 
     # 2. Construir um bloco de contexto limpo e dinâmico
@@ -530,16 +534,23 @@ def suggest_guidance_route():
 def refine_text_route():
     data = request.json
     action_instructions = {
-        "make_formal": "Reescreva o texto para ser mais formal, usando vocabulário profissional. Usa PT-PT.",
-        "make_casual": "Reescreva o texto com um tom mais casual e descontraído. Usa PT-PT.",
+        # Estrutura e Conteúdo
         "shorten": "Condense o texto ao máximo, mantendo apenas a informação essencial. Usa PT-PT.",
         "expand": "Elabore sobre o texto, adicionando mais detalhes e contexto para o enriquecer. Usa PT-PT.",
+        "organize_paragraph": "Reescreve o texto selecionado para melhorar a sua estrutura e fluidez, otimizando a organização das ideias. Mantém o significado original. Usa PT-PT.",        
+        # Tom e Estilo
+        "make_formal": "Reescreva o texto para ser mais formal, usando vocabulário profissional. Usa PT-PT.",
+        "make_casual": "Reescreva o texto com um tom mais casual e descontraído. Usa PT-PT.",
+        "make_persuasive": "Altera o texto para um tom mais persuasivo e convincente, ideal para propostas ou marketing. Usa PT-PT.",
+
+        # Clareza e Vocabulário
         "simplify": "Reescreva o texto com linguagem mais simples e frases mais curtas para ser fácil de entender. Usa PT-PT.",
         "rephrase": "Refraseie o texto com palavras diferentes, mantendo o significado e o tom originais. Usa PT-PT.",
-        "translate_en": "Traduza o seguinte texto para inglês profissional e natural.",
         "find_synonym": "Sugira um sinónimo para a palavra ou frase selecionada. Devolva apenas a palavra ou frase sinónima em PT-PT.",
+
+        # Correção e Tradução
         "correct_grammar": "Corrija a gramática e a ortografia do texto, mantendo o significado original. Usa português europeu.",
-        "make_persuasive": "Altera o texto para um tom mais persuasivo e convincente, ideal para propostas ou marketing. Usa PT-PT"
+        "translate_en": "Traduza o seguinte texto para inglês profissional e natural."
     }
     instruction = action_instructions.get(data['action'], "Modifique o texto.")
     prompt = f"Ação: {instruction}\nContexto: {data['full_context']}\n---\nTexto a Modificar: {data['selected_text']}\n---\nSaída: APENAS o texto modificado."
@@ -656,8 +667,20 @@ def memories_api_route(persona_key):
         current_data = load_ontology_file()
         persona = current_data.get("personas", {}).get(persona_key)
         if not persona: return jsonify({"error": "Persona não encontrada."}), 404
+
         if request.method == 'GET':
-            return jsonify(persona.get("personal_knowledge_base", []))
+            # LÓGICA ATUALIZADA PARA DEVOLVER MEMÓRIA HÍBRIDA
+            base_knowledge = current_data.get("base_knowledge", [])
+            # Adicionamos uma chave 'source' para o frontend saber a origem
+            for mem in base_knowledge:
+                mem['source'] = 'Base'
+
+            persona_knowledge = persona.get("personal_knowledge_base", [])
+            for mem in persona_knowledge:
+                mem['source'] = 'Persona'
+
+            combined_knowledge = base_knowledge + persona_knowledge
+            return jsonify(combined_knowledge)
         if request.method == 'POST':
             new_memory = request.json
             if not new_memory or 'content' not in new_memory: return jsonify({"error": "Conteúdo obrigatório."}), 400
@@ -688,6 +711,57 @@ def memory_detail_api_route(persona_key, memory_id):
         if request.method == 'DELETE':
             persona["personal_knowledge_base"] = [mem for mem in knowledge_base if mem.get("id") != memory_id]
             if not save_ontology_file(current_data): return jsonify({"error": "Falha ao apagar."}), 500
+            ONTOLOGY_DATA = current_data
+            return jsonify({"message": "Memória apagada."})
+
+@app.route('/api/base_knowledge', methods=['GET', 'POST'])
+def base_knowledge_api_route():
+    """Lida com a listagem e criação de memórias na base partilhada."""
+    global ONTOLOGY_DATA
+    with ontology_file_lock:
+        current_data = load_ontology_file()
+        base_knowledge = current_data.setdefault("base_knowledge", [])
+        
+        if request.method == 'GET':
+            return jsonify(base_knowledge)
+        
+        if request.method == 'POST':
+            new_memory = request.json
+            if not new_memory or 'content' not in new_memory:
+                return jsonify({"error": "Conteúdo obrigatório."}), 400
+            new_memory['id'] = f"mem_{uuid.uuid4().hex[:8]}"
+            base_knowledge.append(new_memory)
+            if not save_ontology_file(current_data):
+                return jsonify({"error": "Falha ao salvar."}), 500
+            ONTOLOGY_DATA = current_data
+            return jsonify(new_memory), 201
+
+@app.route('/api/base_knowledge/<memory_id>', methods=['PUT', 'DELETE'])
+def base_knowledge_detail_api_route(memory_id):
+    """Lida com a atualização e eliminação de memórias na base partilhada."""
+    global ONTOLOGY_DATA
+    with ontology_file_lock:
+        current_data = load_ontology_file()
+        base_knowledge = current_data.get("base_knowledge", [])
+        memory_to_modify = next((mem for mem in base_knowledge if mem.get("id") == memory_id), None)
+        
+        if not memory_to_modify:
+            return jsonify({"error": "Memória não encontrada."}), 404
+            
+        if request.method == 'PUT':
+            updated_data = request.json
+            if not updated_data or 'content' not in updated_data:
+                return jsonify({"error": "Conteúdo obrigatório."}), 400
+            memory_to_modify.update(updated_data)
+            if not save_ontology_file(current_data):
+                return jsonify({"error": "Falha ao atualizar."}), 500
+            ONTOLOGY_DATA = current_data
+            return jsonify(memory_to_modify)
+            
+        if request.method == 'DELETE':
+            current_data["base_knowledge"] = [mem for mem in base_knowledge if mem.get("id") != memory_id]
+            if not save_ontology_file(current_data):
+                return jsonify({"error": "Falha ao apagar."}), 500
             ONTOLOGY_DATA = current_data
             return jsonify({"message": "Memória apagada."})
         

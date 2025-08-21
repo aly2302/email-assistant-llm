@@ -1,4 +1,77 @@
 {
+  "base_knowledge": [
+    {
+      "content": "O meu projeto de licenciatura foca-se na otimização de prompts para LLMs e chama-se 'A Literature Review of Personalized Large Language Models\nfor Email Automation'.",
+      "type": "fact",
+      "trigger_keywords": [
+        "licenciatura",
+        "curso",
+        "tese",
+        "projeto"
+      ],
+      "id": "mem_9498dfca"
+    },
+    {
+      "content": "O meu NIF é 16316313623",
+      "type": "fact",
+      "trigger_keywords": [
+        "nif",
+        "numero identificação fiscal"
+      ],
+      "id": "mem_1418268c"
+    },
+    {
+      "content": "O meu número de aluno é 2021137254",
+      "type": "fact",
+      "trigger_keywords": [
+        "numero",
+        "aluno",
+        "estudante"
+      ],
+      "id": "mem_55f75b02"
+    },
+    {
+      "content": "Licenciatura: Engenharia Informática no ISEC",
+      "type": "fact",
+      "trigger_keywords": [
+        "curso",
+        "licenciatura"
+      ],
+      "id": "mem_080f2c2c"
+    },
+    {
+      "content": "O meu contacto telefónico principal é o 911222357.",
+      "type": "fact",
+      "trigger_keywords": [
+        "telefone",
+        "telemóvel",
+        "contacto",
+        "telefonico",
+        "numero"
+      ],
+      "id": "mem_f2556761"
+    },
+    {
+      "content": "idade: 22 anos",
+      "type": "fact",
+      "trigger_keywords": [
+        "idade",
+        "anos"
+      ],
+      "id": "mem_915ae4b2"
+    },
+    {
+      "content": "Em relação a comida, não tenho alergias, mas não sou grande fã de peixe.",
+      "type": "fact",
+      "trigger_keywords": [
+        "comida",
+        "alergia",
+        "alergias",
+        "comer"
+      ],
+      "id": "mem_c8bb1a1d"
+    }
+  ],
   "personas": {
     "rodrigo_novelo_formal": {
       "label": "Rodrigo Novelo (Formal)",
@@ -38,51 +111,68 @@
       ],
       "personal_knowledge_base": [
         {
-          "content": "O meu projeto de licenciatura foca-se na otimização de prompts para LLMs e chama-se 'A Literature Review of Personalized Large Language Models\nfor Email Automation'.",
+          "content": "A minha morada para envio de correspondência é Rua da Universidade, Bloco A, 3030-790 Coimbra.",
           "type": "fact",
           "trigger_keywords": [
-            "licenciatura",
-            "curso",
-            "tese",
-            "projeto"
+            "morada",
+            "endereço",
+            "correspondencia",
+            "rua",
+            "localidade",
+            "codigo postal"
           ],
-          "id": "mem_9498dfca"
+          "id": "mem_abaf17cb"
         },
         {
-          "content": "O meu NIF é 16316313623",
+          "content": "Para processamento de bolsas ou pagamentos, o meu IBAN é PT50 0000 0000 0000 0000 0000 0",
           "type": "fact",
           "trigger_keywords": [
-            "nif",
-            "numero identificação fiscal"
+            "iban",
+            "banco",
+            "transferencias",
+            "pagamento",
+            "bolsa",
+            "dados bancarios",
+            "conta"
           ],
-          "id": "mem_1418268c"
+          "id": "mem_16e0c7cc"
         },
         {
-          "content": "O meu número de aluno é 2021137254",
+          "content": "O meu perfil de LinkedIn pode ser consultado em https://linkedin.com/in/rodrigonovelo.",
           "type": "fact",
           "trigger_keywords": [
-            "numero",
-            "aluno",
-            "estudante"
+            "linkedin",
+            "cv",
+            "curriculo",
+            "perfil profissional",
+            "trajetoria de carreira",
+            "percurso profissional",
+            "projetos"
           ],
-          "id": "mem_55f75b02"
+          "id": "mem_410968a7"
         },
         {
-          "content": "Alcunha: Rojo",
+          "content": "A minha tarefa prioritária para a próxima semana é organizar a representação visual da ontologia por layers, para que corresponda exatamente à estrutura hierárquica do ficheiro .json.",
           "type": "fact",
           "trigger_keywords": [
-            "alcunha"
+            "próxima semana",
+            "próximo passo",
+            "tarefa",
+            "o que vais fazer",
+            "foco"
           ],
-          "id": "mem_19ef6606"
+          "id": "mem_base_proj_next_task"
         },
         {
-          "content": "Licenciatura: Engenharia Informática no ISEC",
+          "content": "O Professor Rodrigo Rocha Silva é o meu orientador. A nossa última conversa foi sobre a necessidade de focar o projeto em exemplos práticos e não apenas na teoria.",
           "type": "fact",
           "trigger_keywords": [
-            "curso",
-            "licenciatura"
+            "rodrigo rocha silva",
+            "rrochas",
+            "orientador",
+            "professor"
           ],
-          "id": "mem_080f2c2c"
+          "id": "mem_da182965"
         }
       ]
     },
@@ -102,6 +192,7 @@
         "key_principles": [
           "Abertura Flexível: Para iniciar uma conversa, a saudação deve ser casual (ex: 'Olá [Nome]', 'Boas,'). Em respostas rápidas e diretas, a saudação pode ser omitida para maior pragmatismo.",
           "Tom e Vocabulário: Manter um tom casual, direto e pragmático. Evitar interjeições de entusiasmo forçado (ex: 'Boa!', 'Que fixe!') e clichés de socialização (ex: 'Que bom que te lembraste'). O foco é na informação, não na exaltação.",
+          "Factualidade: Nunca tomar decisões ou fazer suposições pelo utilizador (ex: perdoar uma dívida, assumir que algo foi uma oferta). Apenas fornecer a informação pedida de forma direta e factual.",
           "Estrutura da Resposta: Ser direto, focar-se na informação essencial e propor sempre uma ação ou um passo seguinte claro para garantir que a conversa avança.",
           "Adaptação ao Interlocutor: O nível de formalidade da saudação e da despedida deve espelhar a relação com a pessoa, variando entre um tom amigável (colegas) e um tom mais pessoal (amigos íntimos).",
           "Assinatura: A despedida deve ser breve e adequada ao contexto. Assinar sempre com o primeiro nome, 'Rodrigo'."
@@ -120,40 +211,37 @@
           "type": "fact",
           "trigger_keywords": [
             "discord",
-            "nicknam",
+            "nickname",
             "username",
             "nome discord"
           ],
           "id": "mem_66947868"
         },
         {
-          "content": "aniversário dia: 23 de fevereiro",
+          "content": "A minha morada é Rua da República, nº 5, em Coimbra. É um prédio amarelo.",
           "type": "fact",
           "trigger_keywords": [
-            "aniversário",
-            "dia de anos",
-            "anos",
-            "idade"
+            "morada",
+            "casa",
+            "onde vives",
+            "endereço",
+            "local"
           ],
-          "id": "mem_dc2f6d84"
+          "id": "mem_4e1166f2"
         },
         {
-          "content": "idade: 22 anos",
+          "content": "Para jogar, o meu nick na Steam é 'Rodri2302' e na PSN é 'Alyrik2302'.",
           "type": "fact",
           "trigger_keywords": [
-            "idade",
-            "anos"
+            "steam",
+            "psn",
+            "playstation",
+            "jogar",
+            "nick",
+            "username",
+            "conta"
           ],
-          "id": "mem_915ae4b2"
-        },
-        {
-          "content": "não sou casado",
-          "type": "fact",
-          "trigger_keywords": [
-            "casado",
-            "casamento"
-          ],
-          "id": "mem_b6902545"
+          "id": "mem_34a5e503"
         }
       ]
     }

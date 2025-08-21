@@ -85,6 +85,7 @@ const saveMemorySpinner = document.getElementById('saveMemorySpinner');
 const cancelEditMemoryBtn = document.getElementById('cancelEditMemoryBtn');
 const memoryListErrorEl = document.getElementById('memoryListError');
 const memoryTableBody = document.getElementById('memoryTableBody');
+const manageBaseMemoryBtn = document.getElementById('manageBaseMemoryBtn');
 
 // --- Seletores para Dashboard ---
 const navButtons = document.querySelectorAll('.nav-btn');
@@ -216,6 +217,8 @@ function initializeMainApp() {
     memoryForm.addEventListener('submit', handleMemoryFormSubmit);
     cancelEditMemoryBtn.addEventListener('click', clearMemoryForm);
     memoryTableBody.addEventListener('click', handleMemoryTableClick);
+    
+    manageBaseMemoryBtn.addEventListener('click', openBaseMemoryManagementModal);
 
     // Draft Actions for Dashboard
     draftsTableBody.addEventListener('click', handleDraftAction);
@@ -731,28 +734,56 @@ async function openMemoryManagementModal(personaKey, personaName) {
     await fetchAndRenderMemories(personaKey);
 }
 
-async function fetchAndRenderMemories(personaKey) {
+// EM APP.JS, substitua a sua função fetchAndRenderMemories por esta
+async function fetchAndRenderMemories(contextKey) {
     memoryTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-secondary">A carregar...</td></tr>';
     hideError(memoryListErrorEl);
+
+    // ESCOLHE A ROTA DA API CORRETA: BASE OU PERSONA
+    const isBaseContext = contextKey === 'base_knowledge';
+    const apiUrl = isBaseContext ? '/api/base_knowledge' : `/api/personas/${contextKey}/memories`;
+
     try {
-        const response = await fetch(`/api/personas/${personaKey}/memories`);
+        const response = await fetch(apiUrl);
         if (!response.ok) throw new Error(`Erro: ${response.statusText}`);
         const memories = await response.json();
         memoryTableBody.innerHTML = '';
+
         if (memories.length === 0) {
             memoryTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-secondary">Nenhuma memória guardada.</td></tr>';
             return;
         }
+
         memories.forEach(memory => {
             const tr = document.createElement('tr');
             tr.dataset.memoryId = memory.id;
+
+            let sourceBadge = '';
+            // Se o 'source' não vier da API (no caso da rota /api/base_knowledge), assumimos que é 'Base'
+            const source = memory.source || (isBaseContext ? 'Base' : 'Persona');
+            
+            if (source === 'Base') {
+                sourceBadge = `<span class="badge bg-info" title="Esta memória é partilhada por todas as personas.">Base</span>`;
+            } else {
+                sourceBadge = `<span class="badge bg-primary" title="Esta memória é específica desta persona.">Persona</span>`;
+            }
+
+            // ATIVA/DESATIVA BOTÕES COM BASE NO CONTEXTO
+            // Se estamos no contexto de uma persona, os botões para memórias 'Base' são desativados.
+            // Se estamos no contexto 'Base', todos os botões são ativados.
+            const buttonsDisabled = !isBaseContext && source === 'Base' ? 'disabled' : '';
+            const disabledTitle = buttonsDisabled ? 'title="Memórias Base devem ser editadas no gestor de Memória Base."' : '';
+
             tr.innerHTML = `
-                <td><span class="badge bg-secondary">${escapeHtml(memory.type)}</span></td>
+                <td>
+                    <span class="badge bg-secondary me-2">${escapeHtml(memory.type)}</span>
+                    ${sourceBadge}
+                </td>
                 <td>${escapeHtml(memory.content)}</td>
                 <td>${escapeHtml((memory.trigger_keywords || []).join(', '))}</td>
                 <td class="persona-actions">
-                    <button class="btn btn-sm btn-info edit-memory-btn"><i class="fas fa-edit"></i></button>
-                    <button class="btn btn-sm btn-danger delete-memory-btn"><i class="fas fa-trash-alt"></i></button>
+                    <button class="btn btn-sm btn-info edit-memory-btn" ${buttonsDisabled} ${disabledTitle}><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-danger delete-memory-btn" ${buttonsDisabled} ${disabledTitle}><i class="fas fa-trash-alt"></i></button>
                 </td>
             `;
             memoryTableBody.appendChild(tr);
@@ -786,7 +817,10 @@ async function handleMemoryFormSubmit(event) {
     saveMemoryBtn.disabled = true;
     hideError(memoryFormErrorEl);
 
-    const personaKey = currentMemoryPersonaKeyInput.value;
+    // --- LÓGICA ATUALIZADA ---
+    // 1. Determinar o contexto (Base ou Persona) a partir do input escondido
+    const contextKey = currentMemoryPersonaKeyInput.value;
+    const isBaseContext = contextKey === 'base_knowledge';
     const memoryId = currentMemoryIdInput.value;
     const isEditing = !!memoryId;
 
@@ -803,8 +837,15 @@ async function handleMemoryFormSubmit(event) {
         return;
     }
 
-    const url = isEditing ? `/api/personas/${personaKey}/memories/${memoryId}` : `/api/personas/${personaKey}/memories`;
-    const method = isEditing ? 'PUT' : 'POST';
+    // 2. Definir a URL da API e o método com base no contexto
+    let url, method;
+    if (isEditing) {
+        method = 'PUT';
+        url = isBaseContext ? `/api/base_knowledge/${memoryId}` : `/api/personas/${contextKey}/memories/${memoryId}`;
+    } else {
+        method = 'POST';
+        url = isBaseContext ? '/api/base_knowledge' : `/api/personas/${contextKey}/memories`;
+    }
 
     try {
         const response = await fetch(url, {
@@ -814,8 +855,10 @@ async function handleMemoryFormSubmit(event) {
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || `Erro HTTP ${response.status}`);
+        
         clearMemoryForm();
-        await fetchAndRenderMemories(personaKey);
+        // 3. Recarregar as memórias do contexto em que estamos a trabalhar
+        await fetchAndRenderMemories(contextKey);
     } catch (error) {
         showError(memoryFormErrorEl, `Erro ao guardar: ${error.message}`);
     } finally {
@@ -827,13 +870,25 @@ async function handleMemoryFormSubmit(event) {
 async function handleMemoryTableClick(event) {
     const editBtn = event.target.closest('.edit-memory-btn');
     const deleteBtn = event.target.closest('.delete-memory-btn');
-    const personaKey = currentMemoryPersonaKeyInput.value;
-    
+
+    // --- LÓGICA ATUALIZADA ---
+    // 1. Ignorar cliques em botões desativados (importante para a segurança da UI)
+    if ((editBtn && editBtn.disabled) || (deleteBtn && deleteBtn.disabled)) {
+        return;
+    }
+
+    // 2. Determinar o contexto (Base ou Persona)
+    const contextKey = currentMemoryPersonaKeyInput.value;
+    const isBaseContext = contextKey === 'base_knowledge';
+
     if (editBtn) {
         const row = editBtn.closest('tr');
         const memoryId = row.dataset.memoryId;
+        // 3. Escolher a API correta para ir buscar os dados para o formulário de edição
+        const apiUrl = isBaseContext ? `/api/base_knowledge` : `/api/personas/${contextKey}/memories`;
+        
         try {
-            const response = await fetch(`/api/personas/${personaKey}/memories`);
+            const response = await fetch(apiUrl);
             const memories = await response.json();
             const memoryData = memories.find(m => m.id === memoryId);
             if (memoryData) populateMemoryForm(memoryData);
@@ -845,12 +900,16 @@ async function handleMemoryTableClick(event) {
     if (deleteBtn) {
         const row = deleteBtn.closest('tr');
         const memoryId = row.dataset.memoryId;
+        // 4. Escolher a API correta para enviar o pedido de eliminação
+        const apiUrl = isBaseContext ? `/api/base_knowledge/${memoryId}` : `/api/personas/${contextKey}/memories/${memoryId}`;
+        
         if (confirm('Tem a certeza que deseja apagar esta memória?')) {
             try {
-                const response = await fetch(`/api/personas/${personaKey}/memories/${memoryId}`, { method: 'DELETE' });
+                const response = await fetch(apiUrl, { method: 'DELETE' });
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error);
-                await fetchAndRenderMemories(personaKey);
+                // 5. Recarregar as memórias do contexto atual para refletir a eliminação
+                await fetchAndRenderMemories(contextKey);
             } catch (error) {
                 showError(memoryListErrorEl, `Erro ao apagar: ${error.message}`);
             }
@@ -1011,4 +1070,18 @@ async function handleDraftAction(event) {
         alert(`Não foi possível processar o rascunho: ${error.message}`);
         btn.disabled = false; // Reativa o botão se houver erro
     }
+}
+
+// EM APP.JS, pode adicionar esta função perto da openMemoryManagementModal
+function openBaseMemoryManagementModal() {
+    memoryPersonaNameEl.textContent = "Base (Partilhada por todas as Personas)";
+    
+    // Usamos o mesmo input escondido para guardar o 'contexto', mas com um valor especial
+    currentMemoryPersonaKeyInput.value = 'base_knowledge'; 
+    
+    clearMemoryForm();
+    memoryManagementModalInstance.show();
+    
+    // Chamamos a função de renderização, que agora saberá o que fazer
+    fetchAndRenderMemories('base_knowledge'); 
 }

@@ -141,5 +141,21 @@ def mark_thread_as_processed(thread_id):
     conn.commit()
     conn.close()
 
+def get_draft_by_id(draft_id):
+    """Busca um rascunho específico pelo seu ID, independentemente do status."""
+    conn = sqlite3.connect(DATABASE_FILE)
+    conn.row_factory = sqlite3.Row 
+    draft = conn.execute('SELECT * FROM pending_drafts WHERE id = ?', (draft_id,)).fetchone()
+    conn.close()
+    return dict(draft) if draft else None
+
+def update_draft_body(draft_id, new_body):
+    """Atualiza o corpo de um rascunho específico."""
+    conn = sqlite3.connect(DATABASE_FILE)
+    conn.execute('UPDATE pending_drafts SET body = ? WHERE id = ?', (new_body, draft_id))
+    conn.commit()
+    conn.close()
+    return True
+
 if __name__ == '__main__':
     init_db()

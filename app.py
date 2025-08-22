@@ -20,7 +20,8 @@ import googleapiclient.discovery
 import google.auth.transport.requests # Necessário para refresh de tokens
 # NEW IMPORTS FOR AUTOMATION
 import sqlite3
-from automation.database import get_pending_draft, update_draft_status, save_user_credentials, get_user_credentials, is_thread_processed, mark_thread_as_processed, get_dashboard_stats
+from automation.database import get_pending_draft, update_draft_status, save_user_credentials, get_user_credentials, is_thread_processed, mark_thread_as_processed, get_dashboard_stats, get_draft_by_id, update_draft_body
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 # --- CONFIGURAÇÃO INICIAL E CONSTANTES ---
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -40,6 +41,7 @@ CLIENT_SECRETS_FILE = os.path.join(BASE_DIR, 'client_secret.json')
 DATABASE_FILE = os.path.join(BASE_DIR, 'automation.db')
 
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1) 
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'uma-chave-secreta-para-sessoes')
 
 if DEBUG_MODE:
@@ -193,7 +195,7 @@ def find_relevant_knowledge(new_email_text, personal_knowledge, learned_correcti
 @app.route('/login')
 def login():
     flow = Flow.from_client_secrets_file(CLIENT_SECRETS_FILE, scopes=SCOPES, redirect_uri=url_for('authorize', _external=True))
-    authorization_url, state = flow.authorization_url(access_type='offline', include_granted_scopes='true')
+    authorization_url, state = flow.authorization_url(access_type='offline', include_granted_scopes='true')    
     session['state'] = state
     return redirect(authorization_url)
 
@@ -824,6 +826,32 @@ def reject_draft_route(draft_id):
         return "<h1>Draft Rejected</h1><p>The draft has been cancelled and will not be sent. You can close this window.</p>"
     else:
         return "<h1>Draft Not Found</h1><p>This draft may have already been processed or does not exist.</p>", 404
+
+@app.route('/api/draft/<draft_id>', methods=['GET'])
+def get_draft_details_route(draft_id):
+    """Devolve os detalhes de um rascunho específico para o modal de edição."""
+    if 'credentials' not in session:
+        return jsonify({"error": "Não autenticado."}), 401
+    
+    draft = get_draft_by_id(draft_id)
+    if not draft:
+        return jsonify({"error": "Rascunho não encontrado."}), 404
+        
+    return jsonify(draft)
+
+@app.route('/api/draft/<draft_id>', methods=['PUT'])
+def update_draft_details_route(draft_id):
+    """Atualiza o corpo de um rascunho a partir do modal de edição."""
+    if 'credentials' not in session:
+        return jsonify({"error": "Não autenticado."}), 401
+        
+    data = request.json
+    new_body = data.get('body')
+    if new_body is None:
+        return jsonify({"error": "Corpo do e-mail em falta."}), 400
+
+    update_draft_body(draft_id, new_body)
+    return jsonify({"message": "Rascunho atualizado com sucesso."})
     
 # --- AUTOMATION TRIGGER & SETUP ---
 

@@ -101,6 +101,7 @@ let sendEmailConfirmModalInstance = null;
 let personaFormModalInstance = null;
 let deletePersonaConfirmModalInstance = null;
 let memoryManagementModalInstance = null;
+let reviewDraftModalInstance = null;
 
 // --- Estado da Aplicação ---
 let currentStep = 1;
@@ -181,6 +182,10 @@ function initializeMainApp() {
     if (deletePersonaConfirmModalEl) deletePersonaConfirmModalInstance = new bootstrap.Modal(deletePersonaConfirmModalEl);
     if (memoryManagementModalEl) memoryManagementModalInstance = new bootstrap.Modal(memoryManagementModalEl);
 
+    if (document.getElementById('reviewDraftModal')) {
+        reviewDraftModalInstance = new bootstrap.Modal(document.getElementById('reviewDraftModal'));
+    }
+
     // Adiciona Event Listeners
     analyzeBtn.addEventListener('click', handleAnalysisAndAdvance);
     draftBtn.addEventListener('click', handleDrafting);
@@ -199,6 +204,7 @@ function initializeMainApp() {
     backToAnalysisBtn.addEventListener('click', () => showStep(2));
     document.getElementById('progress-step-4').addEventListener('click', () => showStep(4));
     document.getElementById('backToMainFlowBtn').addEventListener('click', () => showStep(1));
+    document.getElementById('saveAndApproveBtn')?.addEventListener('click', handleSaveAndApprove);
     originalEmailEl.addEventListener('input', () => {
         analyzeBtn.disabled = originalEmailEl.value.trim() === '';
     });
@@ -212,6 +218,7 @@ function initializeMainApp() {
     personaForm.addEventListener('submit', submitPersonaForm);
     personasTableBody.addEventListener('click', handlePersonaTableClick);
     confirmDeletePersonaBtn.addEventListener('click', deletePersona);
+    draftsTableBody.addEventListener('click', handleDraftAction);
 
     // Event Listeners para Gestão de Memória
     memoryForm.addEventListener('submit', handleMemoryFormSubmit);
@@ -976,9 +983,16 @@ function updateDraftsTable(drafts) {
             <td>${escapeHtml(draft.recipient)}</td>
             <td>${escapeHtml(draft.subject)}</td>
             <td>${new Date(draft.created_at).toLocaleDateString('pt-PT')}</td>
-            <td>
-                <button class="action-btn approve" data-draft-id="${draft.id}" title="Aprovar">✓</button>
-                <button class="action-btn reject" data-draft-id="${draft.id}" title="Rejeitar">✗</button>
+            <td class="draft-actions">
+                <button class="action-btn review" data-draft-id="${draft.id}" title="Rever e Editar Antes de Enviar">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="action-btn approve" data-draft-id="${draft.id}" title="Aprovar e Enviar Sem Rever">
+                    <i class="fas fa-check"></i>
+                </button>
+                <button class="action-btn reject" data-draft-id="${draft.id}" title="Rejeitar Rascunho">
+                    <i class="fas fa-times"></i>
+                </button>
             </td>
         `;
         draftsTableBody.appendChild(tr);
@@ -1028,23 +1042,25 @@ async function handleDraftAction(event) {
     const btn = event.target.closest('.action-btn');
     if (!btn || btn.disabled) return;
 
-    btn.disabled = true; // Desativa o botão para evitar cliques duplos
     const draftId = btn.dataset.draftId;
-    const action = btn.classList.contains('approve') ? 'approved' : 'rejected';
+    const action = btn.classList.contains('review') ? 'review'
+                 : btn.classList.contains('approve') ? 'approved' 
+                 : 'rejected';
+
+    if (action === 'review') {
+        openReviewModal(draftId);
+        return; // Pára a execução aqui para o botão de rever
+    }
+    
+    btn.disabled = true;
     const row = btn.closest('tr');
     
-    let url = `/api/draft/${draftId}/status`;
+    let url = (action === 'approved') ? `/api/draft/${draftId}/send` : `/api/draft/${draftId}/status`;
     let options = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: action })
+        body: (action === 'rejected') ? JSON.stringify({ status: 'rejected' }) : null
     };
-
-    // Se a ação for "approve", usamos a nova rota de envio
-    if (action === 'approved') {
-        url = `/api/draft/${draftId}/send`;
-        options.body = null; // Não precisamos de corpo para este pedido
-    }
 
     try {
         const response = await fetch(url, options);
@@ -1053,22 +1069,20 @@ async function handleDraftAction(event) {
             throw new Error(errorData.error || 'Falha ao processar o pedido.');
         }
 
-        // Se tudo correu bem, anima a remoção da linha e atualiza os dados
         if (row) {
             row.classList.add('fade-out');
             setTimeout(() => {
                 row.remove();
-                // Verifica se a tabela ficou vazia
                 if (draftsTableBody.children.length === 0) {
-                    draftsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-secondary p-4">Nenhum rascunho pendente.</td></tr>';
+                    updateDraftsTable([]);
                 }
-                fetchDashboardData(); // Atualiza os contadores KPI e o gráfico
+                fetchDashboardData();
             }, 500);
         }
     } catch (error) {
         console.error(`Erro ao ${action} rascunho:`, error);
         alert(`Não foi possível processar o rascunho: ${error.message}`);
-        btn.disabled = false; // Reativa o botão se houver erro
+        btn.disabled = false;
     }
 }
 
@@ -1084,4 +1098,62 @@ function openBaseMemoryManagementModal() {
     
     // Chamamos a função de renderização, que agora saberá o que fazer
     fetchAndRenderMemories('base_knowledge'); 
+}
+
+async function openReviewModal(draftId) {
+    const reviewErrorEl = document.getElementById('reviewError');
+    hideError(reviewErrorEl);
+    try {
+        const response = await fetch(`/api/draft/${draftId}`);
+        if (!response.ok) throw new Error("Não foi possível carregar os detalhes do rascunho.");
+        
+        const draft = await response.json();
+        if (draft.error) throw new Error(draft.error);
+
+        // O erro acontece numa destas 4 linhas se os IDs não corresponderem ao HTML
+        document.getElementById('reviewDraftId').value = draft.id;
+        document.getElementById('reviewRecipient').value = draft.recipient;
+        document.getElementById('reviewSubject').value = draft.subject;
+        document.getElementById('reviewBody').value = draft.body;
+
+        reviewDraftModalInstance.show();
+
+    } catch (error) {
+        alert(`Erro: ${error.message}`);
+    }
+}
+
+async function handleSaveAndApprove() {
+    const draftId = document.getElementById('reviewDraftId').value;
+    const updatedBody = document.getElementById('reviewBody').value;
+    const btn = document.getElementById('saveAndApproveBtn');
+    const spinner = document.getElementById('saveAndApproveSpinner');
+    const reviewErrorEl = document.getElementById('reviewError');
+    
+    showSpinner(spinner);
+    btn.disabled = true;
+    hideError(reviewErrorEl);
+
+    try {
+        // Passo 1: Guarda as alterações na base de dados (chama a rota PUT)
+        const updateResponse = await fetch(`/api/draft/${draftId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ body: updatedBody })
+        });
+        if (!updateResponse.ok) throw new Error("Falha ao guardar as alterações.");
+
+        // Passo 2: Envia o e-mail (chama a rota de envio que já existia)
+        const sendResponse = await fetch(`/api/draft/${draftId}/send`, { method: 'POST' });
+        if (!sendResponse.ok) throw new Error("Alterações guardadas, mas falha ao enviar o email.");
+
+        reviewDraftModalInstance.hide();
+        await fetchDashboardData(); // Atualiza o dashboard
+
+    } catch (error) {
+        showError(reviewErrorEl, error.message);
+    } finally {
+        hideSpinner(spinner);
+        btn.disabled = false;
+    }
 }

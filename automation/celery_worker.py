@@ -1,4 +1,4 @@
-# celery_worker.py
+# automation/celery_worker.py
 
 import os
 from dotenv import load_dotenv
@@ -9,12 +9,12 @@ import googleapiclient.discovery
 from bs4 import BeautifulSoup
 import re
 
-# Garante que as variáveis de ambiente são carregadas quando o worker inicia
+# Make sure environment variables are loaded when the worker starts
 load_dotenv()
 
 from celery import Celery
 
-# Importa de outros ficheiros do nosso projeto
+# Import from other files in our project
 from app import (
     app, parse_sender_info, find_relevant_knowledge, call_gemini,
     ONTOLOGY_DATA, resolve_component, get_component
@@ -22,7 +22,7 @@ from app import (
 from .database import add_pending_draft
 from .notifications import send_approval_notification
 
-# --- Configuração do Celery ---
+# --- Celery Configuration ---
 celery = Celery(
     app.import_name,
     backend='redis://localhost:6379/1',
@@ -31,16 +31,16 @@ celery = Celery(
 celery.conf.update(app.config)
 
 
-# --- Função Auxiliar para Extrair o Corpo do Email ---
+# --- Helper Function to Extract Email Body ---
 def get_email_body(payload):
-    """Procura recursivamente pelo melhor corpo de texto num payload de email."""
+    """Recursively searches for the best text body in an email payload."""
     if "parts" in payload:
         for part in payload['parts']:
             if part['mimeType'] == 'text/plain':
                 data = part['body'].get('data')
                 if data:
                     return base64.urlsafe_b64decode(data).decode('utf-8')
-        # Fallback para HTML se não houver texto simples
+        # Fallback to HTML if no plain text is found
         for part in payload['parts']:
             if part['mimeType'] == 'text/html':
                 data = part['body'].get('data')
@@ -59,14 +59,14 @@ def get_email_body(payload):
     return ""
 
 
-# --- A Tarefa Principal em Background ---
+# --- The Main Background Task ---
 @celery.task
 def process_new_email(thread_id, user_credentials):
     """
-    Busca um email, gera um rascunho de alta qualidade e salva-o para aprovação.
-    Esta lógica agora espelha a da rota /draft do app.py para consistência total.
+    Fetches an email, generates a high-quality draft, and saves it for approval.
+    This logic now mirrors the /draft route from app.py for full consistency.
     """
-    logging.info(f"A iniciar o processamento do novo email da thread: {thread_id}")
+    logging.info(f"Starting processing of new email from thread: {thread_id}")
     
     try:
         creds = google.oauth2.credentials.Credentials(**user_credentials)
@@ -76,7 +76,7 @@ def process_new_email(thread_id, user_credentials):
         
         last_message = thread['messages'][-1]
         if 'SENT' in last_message.get('labelIds', []):
-            logging.info(f"Thread {thread_id} ignorada (prevenção de loop).")
+            logging.info(f"Thread {thread_id} skipped (loop prevention).")
             return
 
         payload = last_message.get('payload', {})
@@ -87,15 +87,15 @@ def process_new_email(thread_id, user_credentials):
         email_body_text = get_email_body(payload)
         
         if not email_body_text:
-            logging.warning(f"Não foi possível extrair um corpo de texto da thread {thread_id}. A ignorar.")
+            logging.warning(f"Could not extract a text body from thread {thread_id}. Skipping.")
             return
 
-        # --- PASSO 1: RESUMO PARA NOTIFICAÇÃO (Rápido e Simples) ---
-        summary_prompt = f"Resume o ponto principal deste email numa frase curta (máximo 15 palavras) em português. EMAIL: '{email_body_text}'"
+        # --- STEP 1: SUMMARY FOR NOTIFICATION (Quick and Simple) ---
+        summary_prompt = f"Summarize the main point of this email in a short phrase (max 15 words) in Portuguese. EMAIL: '{email_body_text}'"
         summary_response = call_gemini(summary_prompt, temperature=0.2)
-        original_email_summary = summary_response.get("text", "Não foi possível resumir.").strip()
+        original_email_summary = summary_response.get("text", "Could not summarize.").strip()
 
-        # --- PASSO 2: SELEÇÃO DE PERSONA (Idêntico ao app.py) ---
+        # --- STEP 2: PERSONA SELECTION (Identical to app.py) ---
         sender_name, sender_email = parse_sender_info(str(headers))
         interlocutor_profile = None
         persona_id = 'rodrigo_novelo_formal'
@@ -111,80 +111,81 @@ def process_new_email(thread_id, user_credentials):
                     break
         
         if not interlocutor_profile:
-            tone_analysis_prompt = f"Analise o tom do seguinte e-mail e classifique-o como 'formal' ou 'informal'. Responda APENAS com uma palavra.\n\nE-MAIL:\n\"{email_body_text}\""
+            tone_analysis_prompt = f"Analyze the tone of the following email and classify it as 'formal' or 'informal'. Respond with ONLY one word.\n\nE-MAIL:\n\"{email_body_text}\""
             tone_response = call_gemini(tone_analysis_prompt, temperature=0.0)
             if "informal" in tone_response.get("text", "formal").strip().lower():
                 persona_id = 'rodrigo_novelo_informal'
         
         persona = ONTOLOGY_DATA.get("personas", {}).get(persona_id)
         if not persona:
-            logging.error(f"Persona '{persona_id}' não encontrada.")
+            logging.error(f"Persona '{persona_id}' not found.")
             return
-        logging.info(f"A usar a persona: {persona.get('label')}")
+        logging.info(f"Using persona: {persona.get('label')}")
 
-        # --- PASSO 3: CONSTRUÇÃO DO CONTEXTO (LÓGICA 100% IGUAL AO APP.PY) ---
-        personal_knowledge = persona.get("personal_knowledge_base", [])
+        # --- STEP 3: CONTEXT CONSTRUCTION (WITH THE MEMORY FIX) ---
+        base_knowledge = ONTOLOGY_DATA.get("base_knowledge", [])
+        persona_specific_knowledge = persona.get("personal_knowledge_base", [])
+        combined_knowledge = base_knowledge + persona_specific_knowledge
+        
         learned_corrections = persona.get("learned_knowledge_base", [])
+        
         relevant_memories, relevant_corrections = find_relevant_knowledge(
-            email_body_text, personal_knowledge, learned_corrections
+            email_body_text, combined_knowledge, learned_corrections
         )
 
         prompt_context_parts = []
         
         if key_principles := persona.get("style_profile", {}).get('key_principles', []):
-            prompt_context_parts.append("--- Princípios Chave da Persona (Regras Base) ---\n- " + "\n- ".join(key_principles))
+            prompt_context_parts.append("--- Persona Key Principles (Base Rules) ---\n- " + "\n- ".join(key_principles))
 
         if interlocutor_profile:
-            context_parts = [f"Nome: {interlocutor_profile.get('full_name')}", f"Relação: {interlocutor_profile.get('relationship')}"]
-            prompt_context_parts.append("--- Contexto Sobre o Interlocutor ---\n" + " | ".join(filter(None, context_parts)))
+            context_parts = [f"Name: {interlocutor_profile.get('full_name')}", f"Relationship: {interlocutor_profile.get('relationship')}"]
+            prompt_context_parts.append("--- Context About the Interlocutor ---\n" + " | ".join(filter(None, context_parts)))
 
-            # Passa TODAS as regras diretamente para a IA
             if personalization_rules := interlocutor_profile.get("personalization_rules", []):
-                prompt_context_parts.append(f"--- Regras Específicas Para Este Contacto (Prioridade Máxima) ---\n- " + "\n- ".join(personalization_rules))
+                prompt_context_parts.append(f"--- Specific Rules For This Contact (Highest Priority) ---\n- " + "\n- ".join(personalization_rules))
     
         if relevant_memories:
+            # --- THIS IS THE MISSING LINE THAT IS NOW FIXED ---
             formatted_memories = "\n- ".join(relevant_memories)
-            prompt_context_parts.append(f"--- Informação Relevante da Memória (Usar no conteúdo) ---\n- {formatted_memories}")
+            prompt_context_parts.append(f"--- Relevant Information from Memory (Use in content) ---\n- {formatted_memories}")
 
         if relevant_corrections:
-            formatted_corrections = "\n- ".join(relevant_corrections)
-            prompt_context_parts.append(f"--- Regras Aprendidas (Sobrepõem-se aos Princípios Chave) ---\n- {formatted_corrections}")
+            prompt_context_parts.append(f"--- Learned Rules (Overrides Key Principles) ---\n- {formatted_corrections}")
 
         final_context_block = "\n\n".join(prompt_context_parts)
 
-        # --- PASSO 4: PROMPT FINAL E CHAMADA À IA (LÓGICA LIMPA DO APP.PY) ---
-        # A instrução é genérica para permitir que a IA use as regras de contexto
+        # --- STEP 4: FINAL PROMPT AND AI CALL (Logic is clean from app.py) ---
         guidance_summary = "Nenhuma instrução específica. Gerar uma resposta com base no contexto do email e na persona."
 
-        # O prompt agora é construído de forma idêntica ao do /draft
         final_prompt = f"""
-Você é um assistente de escrita que encarna a persona '{persona.get('label', persona_id)}'.
-A sua tarefa é escrever um rascunho de e-mail completo e natural, seguindo TODAS as regras do contexto.
+You are a writing assistant embodying the persona '{persona.get('label', persona_id)}'.
+Your task is to write a complete and natural email draft, following ALL rules in the context.
 
 {final_context_block}
 
---- E-mail Original a Responder ---
+--- Original Email to Reply To ---
 {email_body_text}
 
---- Instruções do Utilizador (Seguir à risca) ---
+--- User Instructions (Follow strictly) ---
 {guidance_summary}
 
---- Rascunho Final (Comece aqui) ---
+--- Final Draft (Start here) ---
 """
         
         llm_response = call_gemini(final_prompt, temperature=0.5)
         if "error" in llm_response:
-            logging.error(f"Erro da API Gemini: {llm_response['error']}")
+            logging.error(f"Gemini API Error: {llm_response['error']}")
             return
 
-        # --- PASSO 5: LIMPEZA DA RESPOSTA (SEM MONTAGEM, A IA GERA TUDO) ---
+        # --- STEP 5: CLEANING THE RESPONSE ---
         raw_draft = llm_response.get("text", "").strip()
-        if "--- Rascunho Final (Comece aqui) ---" in raw_draft:
-            raw_draft = raw_draft.split("--- Rascunho Final (Comece aqui) ---")[-1].strip()
+        if "--- Final Draft (Start here) ---" in raw_draft:
+            raw_draft = raw_draft.split("--- Final Draft (Start here) ---")[-1].strip()
         
         final_draft_body = re.sub(r'\n{3,}', '\n\n', raw_draft)
         
-        # --- PASSO 6: SALVAR E NOTIFICAR ---
+        # --- STEP 6: SAVING AND NOTIFYING ---
         new_draft_id = add_pending_draft(
             thread_id=thread_id,
             recipient=sender_email,
@@ -192,7 +193,7 @@ A sua tarefa é escrever um rascunho de e-mail completo e natural, seguindo TODA
             body=final_draft_body,
             original_message_id=original_message_id
         )
-        logging.info(f"Rascunho {new_draft_id} gerado e salvo com sucesso para a thread {thread_id}.")
+        logging.info(f"Draft {new_draft_id} generated and successfully saved for thread {thread_id}.")
         
         draft_details = {
             "recipient": sender_email,
@@ -203,4 +204,4 @@ A sua tarefa é escrever um rascunho de e-mail completo e natural, seguindo TODA
         send_approval_notification(new_draft_id, draft_details)
 
     except Exception as e:
-        logging.error(f"Ocorreu um erro inesperado ao processar a thread {thread_id}: {e}", exc_info=True)
+        logging.error(f"An unexpected error occurred while processing thread {thread_id}: {e}", exc_info=True)

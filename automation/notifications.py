@@ -1,54 +1,62 @@
+# automation/notifications.py
+
 import os
-import chump
+import requests
+import json
+import logging
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Load keys from .env file
+# As suas chaves continuam a ser carregadas do ficheiro .env
 PUSHOVER_USER_KEY = os.environ.get("PUSHOVER_USER_KEY")
 PUSHOVER_API_TOKEN = os.environ.get("PUSHOVER_API_TOKEN")
-FLASK_BASE_URL = os.environ.get("FLASK_BASE_URL")
+FLASK_BASE_URL = os.environ.get("FLASK_BASE_URL") # O seu link do ngrok
 
 def send_approval_notification(draft_id, draft_details):
-    """Sends a push notification with context and approve/reject links."""
-    if not all([PUSHOVER_USER_KEY, PUSHOVER_API_TOKEN]):
-        print("Pushover keys not configured. Skipping notification.")
+    """Envia uma notificação push diretamente para a API do Pushover."""
+    if not all([PUSHOVER_USER_KEY, PUSHOVER_API_TOKEN, FLASK_BASE_URL]):
+        logging.warning("Pushover ou FLASK_BASE_URL não configurados. A saltar notificação.")
         return
 
     try:
-        app = chump.Application(PUSHOVER_API_TOKEN)
-        user = app.get_user(PUSHOVER_USER_KEY)
-        
-        # --- LÓGICA DE MENSAGEM MELHORADA ---
-        # Extrai os detalhes para uma formatação mais clara
-        recipient = draft_details.get('recipient', 'N/A')
         subject = draft_details.get('subject', 'N/A')
-        original_summary = draft_details.get('original_summary', 'Sem resumo.')
-        proposed_reply = draft_details.get('body', 'Erro ao gerar rascunho.')
-
-        # Constrói o título e o corpo da mensagem com contexto
-        title = f"Rascunho para: {recipient}"
+        body_preview = draft_details.get('body_preview', 'Sem pré-visualização.')
+        title = "Novo Rascunho para Aprovação"
         
-        message_body = (
-            f"📥 RESUMO DO ORIGINAL:\n{original_summary}\n"
-            f"-------------------------------------\n"
-            f"🤖 RESPOSTA PROPOSTA:\n{proposed_reply}"
-        )
-
+        dashboard_url = f"{FLASK_BASE_URL}"
         approve_url = f"{FLASK_BASE_URL}/approve/{draft_id}"
         reject_url = f"{FLASK_BASE_URL}/reject/{draft_id}"
+
+        # A lista de ações (dicionários) continua igual
+        actions_list = [
+            {"action": "view", "label": "✓ Aprovar Direto", "url": approve_url},
+            {"action": "view", "label": "✗ Rejeitar", "url": reject_url}
+        ]
+
+        # --- NOVA LÓGICA DE ENVIO DIRETO ---
+        # Construímos o payload exatamente como a API do Pushover documenta
+        payload = {
+            "token": PUSHOVER_API_TOKEN,
+            "user": PUSHOVER_USER_KEY,
+            "url": dashboard_url,
+            "url_title": "✍️ Rever e Editar no Dashboard",
+            "title": title,
+            "message": f"Assunto: {subject}\n\nPreview: {body_preview}",
+            "actions": json.dumps(actions_list) # As ações têm de ser uma string JSON
+        }
+
+        # Fazemos o pedido POST para a API do Pushover
+        response = requests.post("https://api.pushover.net/1/messages.json", data=payload)
+        response.raise_for_status() # Isto irá gerar um erro para respostas 4xx ou 5xx
         
-        message = user.create_message(
-            message=f"{message_body}\n\nRejeitar aqui: {reject_url}",
-            title=title,
-            url=approve_url,
-            url_title="✅ Aprovar e Enviar"
-        )
-        
-        if message.send():
-            print(f"Sent contextual approval notification for draft {draft_id}")
+        response_data = response.json()
+        if response_data.get("status") == 1:
+            logging.info(f"Notificação de revisão enviada com sucesso para o rascunho {draft_id}")
         else:
-            print(f"Failed to send notification for draft {draft_id}. Errors: {message.errors}")
-            
+            logging.error(f"Falha ao enviar notificação para {draft_id}. Erros: {response_data.get('errors')}")
+
+    except requests.exceptions.RequestException as http_error:
+        logging.error(f"Erro de HTTP ao enviar notificação: {http_error}")
     except Exception as e:
-        print(f"An error occurred in the notification function: {e}")
+        logging.error(f"Ocorreu um erro na função de notificação: {e}", exc_info=True)

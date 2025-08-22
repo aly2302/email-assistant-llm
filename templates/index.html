@@ -467,6 +467,40 @@
         </div>
     </div>
 
+    <div class="modal fade" id="reviewDraftModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Rever e Enviar Rascunho</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="reviewDraftId">
+                <div class="mb-3">
+                    <label class="form-label">Destinatário:</label>
+                    <input type="text" id="reviewRecipient" class="form-control" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Assunto:</label>
+                    <input type="text" id="reviewSubject" class="form-control" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Corpo do E-mail:</label>
+                    <textarea id="reviewBody" class="form-control" rows="10"></textarea>
+                </div>
+                <div id="reviewError" class="error-message mt-2"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="saveAndApproveBtn">
+                    <div class="spinner-border spinner-border-sm loading-spinner" role="status" id="saveAndApproveSpinner"></div>
+                    Guardar e Enviar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
     <script src="{{ url_for('static', filename='app.js') }}"></script>

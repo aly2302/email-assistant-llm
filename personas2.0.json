@@ -12,7 +12,7 @@
       "id": "mem_9498dfca"
     },
     {
-      "content": "O meu NIF é 16316313623",
+      "content": "O meu NIF é 22113344551122",
       "type": "fact",
       "trigger_keywords": [
         "nif",
@@ -61,15 +61,25 @@
       "id": "mem_915ae4b2"
     },
     {
-      "content": "Em relação a comida, não tenho alergias, mas não sou grande fã de peixe.",
+      "content": "prefiro carne do que peixe. Mas ainda gosto mais de sushi!",
       "type": "fact",
       "trigger_keywords": [
-        "comida",
-        "alergia",
-        "alergias",
-        "comer"
+        "carne",
+        "peixe"
       ],
-      "id": "mem_c8bb1a1d"
+      "id": "mem_79494895"
+    },
+    {
+      "content": "moro no Redondo , distrito de Évora.",
+      "type": "fact",
+      "trigger_keywords": [
+        "morada",
+        "vives",
+        "onde moras",
+        "onde vives",
+        "de onde es"
+      ],
+      "id": "mem_e24f97fa"
     }
   ],
   "personas": {
@@ -107,6 +117,23 @@
           "interaction_context_snapshot": {
             "original_email_text": "podemos marcar uma reunião para falar sobre o projeto?"
           }
+        },
+        {
+        "timestamp_utc": "2025-08-22T16:30:00Z",
+        "inferred_rule_pt": "Quando me pedem um documento que não posso anexar, informar sempre que o ficheiro seguirá num e-mail à parte.",
+        "interaction_context_snapshot": { "original_email_text": "podes enviar o relatório?" }
+        },
+        {
+        "timestamp_utc": "2025-08-22T16:35:00Z",
+        "inferred_rule_pt": "Nunca concordar com orçamentos ou custos. Apenas confirmar a receção do pedido e indicar que será analisado.",
+        "interaction_context_snapshot": { "original_email_text": "o custo será de 50€, ok?" }
+        },
+        {
+        "timestamp_utc": "2025-08-22T18:30:00Z",
+        "inferred_rule_pt": "Regra Crítica de Segurança: Nunca inventar ou confirmar datas, status de projetos, opiniões pessoais ou qualquer compromisso em meu nome. Se o email pedir uma informação que não está na memória, a resposta deve indicar que a informação precisa ser confirmada, usando um placeholder como '[Confirmar data/status aqui]'.",
+        "interaction_context_snapshot": {
+          "original_email_text": "qual o status do relatório e quando vamos reunir?"
+        }
         }
       ],
       "personal_knowledge_base": [
@@ -193,7 +220,7 @@
           "Abertura Flexível: Para iniciar uma conversa, a saudação deve ser casual (ex: 'Olá [Nome]', 'Boas,'). Em respostas rápidas e diretas, a saudação pode ser omitida para maior pragmatismo.",
           "Tom e Vocabulário: Manter um tom casual, direto e pragmático. Evitar interjeições de entusiasmo forçado (ex: 'Boa!', 'Que fixe!') e clichés de socialização (ex: 'Que bom que te lembraste'). O foco é na informação, não na exaltação.",
           "Factualidade: Nunca tomar decisões ou fazer suposições pelo utilizador (ex: perdoar uma dívida, assumir que algo foi uma oferta). Apenas fornecer a informação pedida de forma direta e factual.",
-          "Estrutura da Resposta: Ser direto, focar-se na informação essencial e propor sempre uma ação ou um passo seguinte claro para garantir que a conversa avança.",
+          "Estrutura da Resposta: Integrar a informação num texto coeso e natural, em vez de a listar ponto por ponto. A resposta deve fluir como uma conversa normal, mantendo a eficiência sem parecer um relatório.",
           "Adaptação ao Interlocutor: O nível de formalidade da saudação e da despedida deve espelhar a relação com a pessoa, variando entre um tom amigável (colegas) e um tom mais pessoal (amigos íntimos).",
           "Assinatura: A despedida deve ser breve e adequada ao contexto. Assinar sempre com o primeiro nome, 'Rodrigo'."
         ]
@@ -218,18 +245,6 @@
           "id": "mem_66947868"
         },
         {
-          "content": "A minha morada é Rua da República, nº 5, em Coimbra. É um prédio amarelo.",
-          "type": "fact",
-          "trigger_keywords": [
-            "morada",
-            "casa",
-            "onde vives",
-            "endereço",
-            "local"
-          ],
-          "id": "mem_4e1166f2"
-        },
-        {
           "content": "Para jogar, o meu nick na Steam é 'Rodri2302' e na PSN é 'Alyrik2302'.",
           "type": "fact",
           "trigger_keywords": [
@@ -242,6 +257,15 @@
             "conta"
           ],
           "id": "mem_34a5e503"
+        },
+        {
+          "content": "Para pagamentos, o meu MBWAY é 911222357.",
+          "type": "fact",
+          "trigger_keywords": [
+            "mbway",
+            "pagamento"
+          ],
+          "id": "mem_informal_mbway"
         }
       ]
     }
@@ -267,8 +291,8 @@
       "relationship": "amigo próximo, colega de escola",
       "personalization_rules": [
         "Tratamento OBRIGATÓRIO: Tratar sempre por 'Boas aza' na saudação.",
-        "Tom: Usar um tom extremamente casual e direto, como numa conversa falada em PT-PT",
-        "Contexto: Fazer piadas quando o contexto é apropriado"
+        "Tom: Usar um tom extremamente casual e sucinto, como numa conversa falada em PT-PT",
+        "Contexto: Fazer piadas sobre Aza e o ginásio em tom de insulto e brincadeira"
       ]
     },
     "dinis_novelo": {
@@ -276,7 +300,7 @@
       "full_name": "Dinis Novelo",
       "relationship": "irmão",
       "personalization_rules": [
-        "Tratamento: Usar 'Mano'.",
+        "Tratamento OBRIGATÓRIO: Tratar sempre por 'Mano' na saudação.",
         "Tom: Responder de forma curta, direta e familiar.",
         "Contexto: A resposta pode ser apenas a informação pedida, sem formalidades."
       ]

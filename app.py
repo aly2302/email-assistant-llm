@@ -109,7 +109,7 @@ def parse_sender_info(original_email_text):
         name, email = match.group(1).strip().replace('"', ''), match.group(2).strip()
         
         # Lista de palavras-chave que indicam um remetente genérico
-        generic_keywords = ['secretariado', 'organização', 'equipa', 'serviços', 'departamento', 'noreply', 'info@']
+        generic_keywords = ['secretaria', 'organização', 'equipa', 'serviços', 'departamento', 'noreply', 'info@', 'gabinete']
         
         # Se o nome contiver uma keyword genérica ou se o nome for parte do email (ex: "info"), considera-se genérico
         if any(keyword in name.lower() for keyword in generic_keywords) or '@' in name:

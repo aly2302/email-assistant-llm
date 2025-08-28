@@ -161,9 +161,10 @@ def calculate_relevance_for_corrections(new_email_words, learned_corrections, to
     scored_rules.sort(key=lambda x: x[0], reverse=True)
     return [rule_text for score, rule_text in scored_rules[:top_n] if rule_text]
 
-def find_relevant_knowledge(new_email_text, personal_knowledge, learned_corrections, top_n=10): # Aumentamos o top_n por segurança
+def find_relevant_knowledge(new_email_text, personal_knowledge, learned_corrections, top_n=10):
     """
-    Encontra o conhecimento relevante de forma mais robusta, confiando na pré-filtragem por keywords.
+    Encontra o conhecimento relevante com base em keywords.
+    Devolve os objetos de memória completos.
     """
     if not new_email_text: 
         return [], []
@@ -172,17 +173,14 @@ def find_relevant_knowledge(new_email_text, personal_knowledge, learned_correcti
     new_email_words = set(re.sub(r'[^\w\s]', '', unidecode.unidecode(new_email_text.lower())).split()) - stopwords
 
     # 1. Busca na Memória Explícita (personal_knowledge_base)
-    # A lógica foi simplificada: se uma keyword corresponde, a memória é relevante.
-    # O cálculo complexo de Jaccard foi removido por ser ineficaz para factos curtos.
     relevant_memories = [
-        mem.get("content") for mem in personal_knowledge
-        if mem.get("content") and not set(mem.get("trigger_keywords", [])).isdisjoint(new_email_words)
+        mem for mem in personal_knowledge
+        if mem.get("value") and not set(mem.get("keywords", [])).isdisjoint(new_email_words)
     ]
     
-    # Limita o número de memórias para evitar sobrecarregar o prompt, mas com um limite mais generoso.
     top_memories = relevant_memories[:top_n]
 
-    # 2. Busca nas Correções Implícitas (learned_knowledge_base) - Lógica inalterada
+    # 2. Busca nas Correções Implícitas (learned_knowledge_base)
     top_corrections = calculate_relevance_for_corrections(new_email_words, learned_corrections, top_n=2)
     
     if top_memories or top_corrections:
@@ -319,18 +317,11 @@ def send_email_route():
         message['to'] = data['recipient']
         message['subject'] = data['subject']
         
-        # Nota: Não adicionamos cabeçalhos de threading aqui porque este é o fluxo
-        # manual. Se o utilizador colar uma thread inteira, podemos adicionar
-        # os cabeçalhos se o threadId for fornecido.
-        
         raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
         send_options = {'raw': raw_message}
         
-        # Se for uma resposta manual a um e-mail carregado, ele terá um threadId.
         if data.get('thread_id'):
             send_options['threadId'] = data['thread_id']
-            # Numa versão futura, poderíamos também extrair o Message-ID para adicionar aqui.
-            # Por agora, confiar no threadId é suficiente para o fluxo manual.
 
         sent_message = service.users().messages().send(userId='me', body=send_options).execute()
         return jsonify({"message": "Email enviado com sucesso!", "id": sent_message['id']})
@@ -351,7 +342,6 @@ def analyze_email_route():
     email_text = request.json.get('email_text', '')
     if not email_text.strip(): return jsonify({"error": "O texto do email não pode estar vazio."}), 400
     
-    # --- PROMPT ATUALIZADO COM FOCO NO CONTEXTO ---
     prompt = f"""
 Analise o seguinte email. A sua tarefa é identificar as perguntas diretas ou pedidos de ação que exigem uma resposta do destinatário.
 Para cada ponto, reescreva-o de forma a incluir o contexto essencial para que seja compreensível isoladamente.
@@ -399,64 +389,107 @@ def draft_response_route():
     # --- LÓGICA DO PROMPT RECONSTRUÍDA PARA MÁXIMA QUALIDADE ---
 
     # 1. Obter todo o conhecimento disponível
-
     base_knowledge = ONTOLOGY_DATA.get("base_knowledge", [])
     persona_specific_knowledge = persona.get("personal_knowledge_base", [])
-    combined_knowledge = base_knowledge + persona_specific_knowledge # Juntamos as duas fontes!
+    combined_knowledge = base_knowledge + persona_specific_knowledge
 
     learned_corrections = persona.get("learned_knowledge_base", [])
     relevant_memories, relevant_corrections = find_relevant_knowledge(
         original_email, combined_knowledge, learned_corrections
     )
 
+        # --- INÍCIO DA LÓGICA DE ESTADO E DESCONFLITUALIZAÇÃO (VERSÃO FINAL) ---
+    final_task_instruction = "A sua tarefa é escrever um rascunho de e-mail completo e natural, seguindo as instruções."
+
+    is_scheduling_request = 'reunião' in original_email.lower() or 'marcar' in original_email.lower()
+    has_scheduling_guidance = any('reunião' in item.get('point', '').lower() or 'marcar' in item.get('point', '').lower() for item in user_inputs if item.get('guidance'))
+
+    # Cenário 1: Pedido de agendamento SEM guidance do utilizador. Ativa o modo de segurança.
+    if is_scheduling_request and not has_scheduling_guidance:
+        relevant_corrections = [rule for rule in relevant_corrections if "agendamento" not in rule.lower()]
+        logging.info("Regra de agendamento suprimida para ativar o protocolo de segurança.")
+        # A tarefa da IA é refinada para ser mais natural e proativa, mas segura.
+        final_task_instruction = "A sua tarefa é acusar a receção do pedido de agendamento e indicar que as datas/horas precisam de ser confirmadas internamente. Para isso, construa uma frase natural que utilize os placeholders '[Confirmar data aqui]' e '[Confirmar hora aqui]' para propor as datas. NÃO INVENTE NENHUMA DATA OU HORA."
+
+    # Cenário 2: O utilizador DEU guidance sobre o agendamento. A guidance tem prioridade.
+    elif has_scheduling_guidance:
+        relevant_corrections = [rule for rule in relevant_corrections if "agendamento" not in rule.lower()]
+        logging.info("Regra de agendamento suprimida para garantir que a guidance do utilizador é seguida.")
+    # --- FIM DA LÓGICA ---
+
     # 2. Construir um bloco de contexto limpo e dinâmico
     prompt_context_parts = []
     
-    # Adiciona sempre os princípios chave, que são a base da persona
     style_profile = persona.get("style_profile", {})
+    
+    # --- INÍCIO DA CORREÇÃO 1: INJETAR ESTILO E TOM ---
+    tone_keywords = style_profile.get('tone_keywords', [])
+    verbosity = style_profile.get('verbosity')
+    
+    style_instructions = []
+    if tone_keywords:
+        style_instructions.append(f"Tom geral a adotar: {', '.join(tone_keywords)}.")
+    if verbosity:
+        style_instructions.append(f"Nível de detalhe do texto: {verbosity}.")
+    
+    if style_instructions:
+        prompt_context_parts.append("--- Estilo e Tom (Seguir estritamente) ---\n" + "\n".join(style_instructions))
+    # --- FIM DA CORREÇÃO 1 ---
+
     key_principles = style_profile.get('key_principles', [])
     if key_principles:
-        prompt_context_parts.append("--- Princípios Chave da Persona (Regras Base) ---\n- " + "\n- ".join(key_principles))
+        prompt_context_parts.append("--- Princípios Chave da Persona (Regras Gerais) ---\n- " + "\n- ".join(key_principles))
 
     # Adiciona contexto do interlocutor, se existir
     if sender_email:
         profiles = ONTOLOGY_DATA.get("interlocutor_profiles", {})
         for key, profile in profiles.items():
             if profile.get("email_match", "").lower() == sender_email.lower():
-                # Adiciona o contexto geral como antes
                 context_parts = [f"Nome: {profile.get('full_name')}", f"Relação: {profile.get('relationship')}"]
                 interlocutor_context = "--- Contexto Sobre o Interlocutor ---\n" + " | ".join(filter(None, context_parts))
                 prompt_context_parts.append(interlocutor_context)
 
-                # NOVA PARTE: Adiciona as regras de personalização com prioridade máxima
                 personalization_rules = profile.get("personalization_rules", [])
                 if personalization_rules:
                     formatted_rules = "\n- ".join(personalization_rules)
                     override_rules_context = f"--- Regras Específicas Para Este Contacto (Prioridade Máxima) ---\n- {formatted_rules}"
                     prompt_context_parts.append(override_rules_context)
-                break # Sai do loop assim que encontra o perfil
+                break
     
-    # Adiciona memórias relevantes, APENAS se existirem
+    # --- INÍCIO DA CORREÇÃO 3: PROCESSAR FACTOS ESTRUTURADOS ---
     if relevant_memories:
-        formatted_memories = "\n- ".join(relevant_memories)
-        prompt_context_parts.append(f"--- Informação Relevante da Memória (Usar no conteúdo) ---\n- {formatted_memories}")
+        formatted_memories = [f"{mem.get('label', 'Facto')} = {mem.get('value')}" for mem in relevant_memories if mem.get('value')]
+        if formatted_memories:
+            prompt_context_parts.append(f"--- Factos Relevantes da Memória (Usar apenas se solicitado) ---\n- " + "\n- ".join(formatted_memories))
+    # --- FIM DA CORREÇÃO 3 ---
 
-    # Adiciona correções aprendidas, APENAS se existirem
+    # --- INÍCIO DA CORREÇÃO 2: PROCESSAR REGRAS CRÍTICAS E STANDARD ---
     if relevant_corrections:
-        formatted_corrections = "\n- ".join(relevant_corrections)
-        prompt_context_parts.append(f"--- Regras Aprendidas (Sobrepõem-se aos Princípios Chave) ---\n- {formatted_corrections}")
+        critical_rules = []
+        standard_rules = []
+        for rule in relevant_corrections:
+            if re.search(r'\b(Nunca|Jamais|Regra Crítica)\b', rule, re.IGNORECASE):
+                critical_rules.append(rule)
+            else:
+                standard_rules.append(rule)
+        
+        if standard_rules:
+            formatted_corrections = "\n- ".join(standard_rules)
+            prompt_context_parts.append(f"--- Regras Aprendidas (Sobrepõem-se aos Princípios Chave) ---\n- {formatted_corrections}")
 
-    # Junta todas as partes do contexto numa única variável
+        if critical_rules:
+            formatted_critical_rules = "\n- ".join(critical_rules)
+            prompt_context_parts.insert(0, f"--- REGRAS CRÍTICAS E INVIOLÁVEIS (OBRIGATÓRIO CUMPRIR) ---\n- {formatted_critical_rules}")
+    # --- FIM DA CORREÇÃO 2 ---
+
     final_context_block = "\n\n".join(prompt_context_parts)
 
     # 3. Obter as diretrizes do utilizador
     guidance_parts = []
     for item in user_inputs:
-        point = item.get('point', '').strip()      # O ponto original extraído pela análise
-        guidance = item.get('guidance', '').strip()  # A resposta que inseriu
-
-        if guidance: # Apenas processa se deu uma resposta
-            # Criamos uma instrução explícita que liga a sua resposta ao ponto de ação
+        point = item.get('point', '').strip()
+        guidance = item.get('guidance', '').strip()
+        if guidance:
             instruction = f"Relativamente à questão '{point}', a informação a transmitir é: '{guidance}'."
             guidance_parts.append(instruction)
 
@@ -465,24 +498,16 @@ def draft_response_route():
     else:
         guidance_summary = "\n- ".join(guidance_parts)
 
-
-    # 4. Construir o prompt final, agora muito mais limpo e direto
+    # 4. Construir o prompt final
     default_ids = persona.get("default_components", {})
-
-    recipient_first_name = ""
-    if sender_name:  # This checks if sender_name is not None
-        recipient_first_name = sender_name.split()[0]
-
+    recipient_first_name = sender_name.split()[0] if sender_name else ""
     greeting_text = resolve_component(get_component("greetings", default_ids.get("greeting_id")), recipient_first_name)
-
-
-            
     closing_text = resolve_component(get_component("closings", default_ids.get("closing_id")))
     signature_text = resolve_component(get_component("signatures", default_ids.get("signature_id")))
 
     prompt = f"""
 Você é um assistente de escrita que encarna a persona '{persona.get('label', persona_id)}'.
-A sua tarefa é escrever um rascunho de e-mail completo e natural.
+{final_task_instruction}
 
 {final_context_block}
 
@@ -503,19 +528,16 @@ A sua tarefa é escrever um rascunho de e-mail completo e natural.
 
     llm_response = call_gemini(prompt, temperature=0.5)
     if "error" in llm_response:
-        # Para debugging, podemos devolver o prompt que foi gerado
         return jsonify({"error": llm_response["error"], "prompt_sent": prompt}), 500
 
     raw_draft = llm_response.get("text", "").strip()
     
-    # Limpeza da resposta da IA para garantir que não inclui texto extra
     if "--- Rascunho Final (Comece aqui) ---" in raw_draft:
         raw_draft = raw_draft.split("--- Rascunho Final (Comece aqui) ---")[-1]
 
     final_draft = raw_draft.replace('[ESCREVA O CORPO DO E-MAIL AQUI]', '').strip()
     final_draft = re.sub(r'\n{3,}', '\n\n', final_draft).strip()
 
-    # Devolvemos também o prompt para fins de depuração, se necessário
     return jsonify({"draft": final_draft, "prompt_sent_for_debug": prompt})
 
 # --- ROTAS ADICIONAIS (Feedback, Refine, etc.) ---
@@ -536,21 +558,15 @@ def suggest_guidance_route():
 def refine_text_route():
     data = request.json
     action_instructions = {
-        # Estrutura e Conteúdo
         "shorten": "Condense o texto ao máximo, mantendo apenas a informação essencial. Usa PT-PT.",
         "expand": "Elabore sobre o texto, adicionando mais detalhes e contexto para o enriquecer. Usa PT-PT.",
         "organize_paragraph": "Reescreve o texto selecionado para melhorar a sua estrutura e fluidez, otimizando a organização das ideias. Mantém o significado original. Usa PT-PT.",        
-        # Tom e Estilo
         "make_formal": "Reescreva o texto para ser mais formal, usando vocabulário profissional. Usa PT-PT.",
         "make_casual": "Reescreva o texto com um tom mais casual e descontraído. Usa PT-PT.",
         "make_persuasive": "Altera o texto para um tom mais persuasivo e convincente, ideal para propostas ou marketing. Usa PT-PT.",
-
-        # Clareza e Vocabulário
         "simplify": "Reescreva o texto com linguagem mais simples e frases mais curtas para ser fácil de entender. Usa PT-PT.",
         "rephrase": "Refraseie o texto com palavras diferentes, mantendo o significado e o tom originais. Usa PT-PT.",
         "find_synonym": "Sugira um sinónimo para a palavra ou frase selecionada. Devolva apenas a palavra ou frase sinónima em PT-PT.",
-
-        # Correção e Tradução
         "correct_grammar": "Corrija a gramática e a ortografia do texto, mantendo o significado original. Usa português europeu.",
         "translate_en": "Traduza o seguinte texto para inglês profissional e natural."
     }
@@ -671,9 +687,7 @@ def memories_api_route(persona_key):
         if not persona: return jsonify({"error": "Persona não encontrada."}), 404
 
         if request.method == 'GET':
-            # LÓGICA ATUALIZADA PARA DEVOLVER MEMÓRIA HÍBRIDA
             base_knowledge = current_data.get("base_knowledge", [])
-            # Adicionamos uma chave 'source' para o frontend saber a origem
             for mem in base_knowledge:
                 mem['source'] = 'Base'
 
@@ -685,7 +699,7 @@ def memories_api_route(persona_key):
             return jsonify(combined_knowledge)
         if request.method == 'POST':
             new_memory = request.json
-            if not new_memory or 'content' not in new_memory: return jsonify({"error": "Conteúdo obrigatório."}), 400
+            if not new_memory or 'value' not in new_memory: return jsonify({"error": "Campo 'value' obrigatório."}), 400
             persona.setdefault("personal_knowledge_base", [])
             new_memory['id'] = f"mem_{uuid.uuid4().hex[:8]}"
             persona["personal_knowledge_base"].append(new_memory)
@@ -705,7 +719,7 @@ def memory_detail_api_route(persona_key, memory_id):
         if not memory_to_modify: return jsonify({"error": "Memória não encontrada."}), 404
         if request.method == 'PUT':
             updated_data = request.json
-            if not updated_data or 'content' not in updated_data: return jsonify({"error": "Conteúdo obrigatório."}), 400
+            if not updated_data or 'value' not in updated_data: return jsonify({"error": "Campo 'value' obrigatório."}), 400
             memory_to_modify.update(updated_data)
             if not save_ontology_file(current_data): return jsonify({"error": "Falha ao atualizar."}), 500
             ONTOLOGY_DATA = current_data
@@ -729,8 +743,8 @@ def base_knowledge_api_route():
         
         if request.method == 'POST':
             new_memory = request.json
-            if not new_memory or 'content' not in new_memory:
-                return jsonify({"error": "Conteúdo obrigatório."}), 400
+            if not new_memory or 'value' not in new_memory:
+                return jsonify({"error": "Campo 'value' obrigatório."}), 400
             new_memory['id'] = f"mem_{uuid.uuid4().hex[:8]}"
             base_knowledge.append(new_memory)
             if not save_ontology_file(current_data):
@@ -752,8 +766,8 @@ def base_knowledge_detail_api_route(memory_id):
             
         if request.method == 'PUT':
             updated_data = request.json
-            if not updated_data or 'content' not in updated_data:
-                return jsonify({"error": "Conteúdo obrigatório."}), 400
+            if not updated_data or 'value' not in updated_data:
+                return jsonify({"error": "Campo 'value' obrigatório."}), 400
             memory_to_modify.update(updated_data)
             if not save_ontology_file(current_data):
                 return jsonify({"error": "Falha ao atualizar."}), 500
@@ -799,7 +813,6 @@ def approve_draft_route(draft_id):
         message['to'] = draft['recipient']
         message['subject'] = draft['subject']
         
-        # --- ADICIONAR CABEÇALHOS DE THREADING ---
         if draft.get('original_message_id'):
             message['In-Reply-To'] = draft['original_message_id']
             message['References'] = draft['original_message_id']
@@ -818,9 +831,6 @@ def approve_draft_route(draft_id):
 
 @app.route('/reject/<draft_id>')
 def reject_draft_route(draft_id):
-    # This route is triggered when you tap the "Reject" link
-    
-    # We just need to update the status in the database. We don't send anything.
     if update_draft_status(draft_id, 'rejected'):
         logging.info(f"Draft {draft_id} was rejected by the user.")
         return "<h1>Draft Rejected</h1><p>The draft has been cancelled and will not be sent. You can close this window.</p>"
@@ -872,21 +882,17 @@ def gmail_webhook_route():
             logging.warning(f"Received webhook for {user_email}, but no credentials found in database. Skipping.")
             return "OK", 200
 
-        # --- FINAL, MOST ROBUST LOGIC ---
         creds = google.oauth2.credentials.Credentials(**user_credentials)
         service = googleapiclient.discovery.build('gmail', 'v1', credentials=creds)
         
-        # Directly ask for the most recent thread in the inbox
         response = service.users().threads().list(userId='me', labelIds=['INBOX'], maxResults=1).execute()
         
         if 'threads' in response and response['threads']:
             latest_thread_id = response['threads'][0]['id']
             
-            # Check if we've already processed this thread
             if is_thread_processed(latest_thread_id):
                 logging.info(f"Webhook: Thread {latest_thread_id} has already been processed. Skipping.")
             else:
-                # Mark it as processed now to prevent duplicates, then start the job
                 mark_thread_as_processed(latest_thread_id)
                 process_new_email.delay(latest_thread_id, user_credentials)
                 logging.info(f"Webhook: Found new thread {latest_thread_id}. Queued for processing.")
@@ -907,7 +913,6 @@ def start_watch_route():
         return redirect(url_for('login'))
 
     try:
-        # Get the full topic name from your Google Cloud Project ID
         PROJECT_ID = "emailllm-463115" 
         topic_name = f"projects/{PROJECT_ID}/topics/gmail-inbox-updates"
         
@@ -952,13 +957,7 @@ def update_draft_status_route(draft_id):
 
     try:
         if new_status == 'approved':
-            # A lógica de aprovação real (envio de email) é tratada pela rota /approve/<id>
-            # Aqui, apenas simulamos a atualização para o frontend, ou poderíamos chamar essa lógica.
-            # Por simplicidade, vamos apenas atualizar a base de dados.
-            # A notificação Pushover já envia para a rota /approve que faz o trabalho.
-            # Esta rota é para o clique direto no dashboard.
             if update_draft_status(draft_id, 'approved'):
-                 # AQUI você poderia adicionar a lógica para enviar o e-mail se necessário
                 return jsonify({"message": f"Rascunho {draft_id} marcado como aprovado."})
             else:
                 return jsonify({"error": "Rascunho não encontrado."}), 404
@@ -999,7 +998,6 @@ def send_draft_from_dashboard_route(draft_id):
         message['to'] = draft['recipient']
         message['subject'] = draft['subject']
 
-        # --- ADICIONAR CABEÇALHOS DE THREADING ---
         if draft.get('original_message_id'):
             message['In-Reply-To'] = draft['original_message_id']
             message['References'] = draft['original_message_id']

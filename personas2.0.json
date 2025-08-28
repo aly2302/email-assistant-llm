@@ -1,80 +1,99 @@
 {
   "base_knowledge": [
     {
-      "content": "O meu projeto de licenciatura foca-se na otimização de prompts para LLMs e chama-se 'A Literature Review of Personalized Large Language Models\nfor Email Automation'.",
+      "label": "Projeto de Licenciatura (Título)",
+      "value": "A Literature Review of Personalized Large Language Models for Email Automation",
       "type": "fact",
-      "trigger_keywords": [
+      "keywords": [
         "licenciatura",
         "curso",
         "tese",
-        "projeto"
+        "projeto",
+        "titulo do projeto"
       ],
       "id": "mem_9498dfca"
     },
     {
-      "content": "O meu NIF é 22113344551122",
+      "label": "NIF (Número de Identificação Fiscal)",
+      "value": "22113344551122",
       "type": "fact",
-      "trigger_keywords": [
+      "keywords": [
         "nif",
-        "numero identificação fiscal"
+        "numero identificacao fiscal",
+        "contribuinte"
       ],
       "id": "mem_1418268c"
     },
     {
-      "content": "O meu número de aluno é 2021137254",
+      "label": "Número de Aluno (ISEC)",
+      "value": "2021137254",
       "type": "fact",
-      "trigger_keywords": [
-        "numero",
+      "keywords": [
+        "numero de aluno",
         "aluno",
-        "estudante"
+        "estudante",
+        "numero de estudante",
+        "isec",
+        "faculdade"
       ],
       "id": "mem_55f75b02"
     },
     {
-      "content": "Licenciatura: Engenharia Informática no ISEC",
+      "label": "Curso (Licenciatura)",
+      "value": "Engenharia Informática no ISEC",
       "type": "fact",
-      "trigger_keywords": [
+      "keywords": [
         "curso",
-        "licenciatura"
+        "licenciatura",
+        "formacao"
       ],
       "id": "mem_080f2c2c"
     },
     {
-      "content": "O meu contacto telefónico principal é o 911222357.",
+      "label": "Contacto Telefónico (Principal)",
+      "value": "911222357",
       "type": "fact",
-      "trigger_keywords": [
+      "keywords": [
         "telefone",
-        "telemóvel",
+        "telemovel",
         "contacto",
         "telefonico",
-        "numero"
+        "contacto telefonico",
+        "numero de telemovel",
+        "numero de telefone"
       ],
       "id": "mem_f2556761"
     },
     {
-      "content": "idade: 22 anos",
+      "label": "Idade",
+      "value": "22 anos",
       "type": "fact",
-      "trigger_keywords": [
+      "keywords": [
         "idade",
         "anos"
       ],
       "id": "mem_915ae4b2"
     },
     {
-      "content": "prefiro carne do que peixe. Mas ainda gosto mais de sushi!",
+      "label": "Preferência Alimentar",
+      "value": "Prefiro carne a peixe, mas gosto mais de sushi.",
       "type": "fact",
-      "trigger_keywords": [
+      "keywords": [
+        "comida",
+        "preferencia",
         "carne",
-        "peixe"
+        "peixe",
+        "sushi"
       ],
       "id": "mem_79494895"
     },
     {
-      "content": "moro no Redondo , distrito de Évora.",
+      "label": "Localidade (Morada)",
+      "value": "Redondo, distrito de Évora",
       "type": "fact",
-      "trigger_keywords": [
+      "keywords": [
         "morada",
-        "vives",
+        "localidade",
         "onde moras",
         "onde vives",
         "de onde es"
@@ -101,7 +120,8 @@
           "Tom: Manter a neutralidade factual e usar o tempo presente. Evitar linguagem emotiva.",
           "Lógica de Resposta: Se for um pedido, confirmar a receção. Se for uma notificação, agradecer brevemente.",
           "Verbos: Nunca usar o futuro do indicativo ('consultarei', 'enviarei').",
-          "Despedida: Garantir que a despedida soa natural e não repetitiva."
+          "Despedida: Garantir que a despedida soa natural e não repetitiva.",
+          "Regra de Relevância: Usar factos da memória APENAS E SÓ se responderem diretamente a uma pergunta explícita no e-mail original. Nunca oferecer informação da memória que não tenha sido solicitada, mesmo que o tema seja relacionado."
         ]
       },
       "default_components": {
@@ -113,34 +133,46 @@
       "learned_knowledge_base": [
         {
           "timestamp_utc": "2025-08-18T10:00:00Z",
-          "inferred_rule_pt": "Quando me pedem uma reunião, propor sempre duas datas e horas específicas em vez de perguntar 'quando dá jeito'.",
+          "inferred_rule_pt": "Diretriz de Agendamento: Se for necessário sugerir horários para uma reunião, propor duas datas e horas específicas em vez de perguntar 'quando dá jeito'.",
           "interaction_context_snapshot": {
             "original_email_text": "podemos marcar uma reunião para falar sobre o projeto?"
           }
         },
         {
-        "timestamp_utc": "2025-08-22T16:30:00Z",
-        "inferred_rule_pt": "Quando me pedem um documento que não posso anexar, informar sempre que o ficheiro seguirá num e-mail à parte.",
-        "interaction_context_snapshot": { "original_email_text": "podes enviar o relatório?" }
+          "timestamp_utc": "2025-08-22T16:30:00Z",
+          "inferred_rule_pt": "Quando me pedem um documento que não posso anexar, informar sempre que o ficheiro seguirá num e-mail à parte.",
+          "interaction_context_snapshot": {
+            "original_email_text": "podes enviar o relatório?, Anexe"
+          }
         },
         {
-        "timestamp_utc": "2025-08-22T16:35:00Z",
-        "inferred_rule_pt": "Nunca concordar com orçamentos ou custos. Apenas confirmar a receção do pedido e indicar que será analisado.",
-        "interaction_context_snapshot": { "original_email_text": "o custo será de 50€, ok?" }
+          "timestamp_utc": "2025-08-22T16:35:00Z",
+          "inferred_rule_pt": "Nunca concordar com orçamentos ou custos. Apenas confirmar a receção do pedido e indicar que será analisado.",
+          "interaction_context_snapshot": {
+            "original_email_text": "o custo será de 50€, ok?"
+          }
         },
         {
-        "timestamp_utc": "2025-08-22T18:30:00Z",
-        "inferred_rule_pt": "Regra Crítica de Segurança: Nunca inventar ou confirmar datas, status de projetos, opiniões pessoais ou qualquer compromisso em meu nome. Se o email pedir uma informação que não está na memória, a resposta deve indicar que a informação precisa ser confirmada, usando um placeholder como '[Confirmar data/status aqui]'.",
-        "interaction_context_snapshot": {
-          "original_email_text": "qual o status do relatório e quando vamos reunir?"
-        }
+          "timestamp_utc": "2025-08-22T18:30:00Z",
+          "inferred_rule_pt": "Regra Crítica de Segurança: Nunca inventar ou confirmar datas, status de projetos, opiniões pessoais ou qualquer compromisso em meu nome. Se o email pedir uma informação que não está na memória, a resposta deve indicar que a informação precisa ser confirmada, usando um placeholder como '[Confirmar data/status aqui]'.",
+          "interaction_context_snapshot": {
+            "original_email_text": "qual o status do relatório e quando vamos reunir?"
+          }
+        },
+        {
+          "timestamp_utc": "2025-08-27T22:30:29.425425+00:00",
+          "inferred_rule_pt": "Usar memórias guardadas APENAS quando os factos guardados são DIRETAMENTE requisitados.",
+          "ai_original_response_text": "Boa noite,\n\nConfirmo a receção do vosso e-mail e a solicitação de agendamento de uma reunião para a próxima semana.\n\nEm anexo, segue o relatório de progresso mais recente do meu projeto de licenciatura, intitulado 'A Literature Review of Personalized Large Language Models for Email Automation', desenvolvido no âmbito da Licenciatura em Engenharia Informática no ISEC.\n\nProponho as seguintes datas e horários para a nossa reunião:\n\n* Terça-feira, [Data], às [Hora]\n* Quinta-feira, [Data], às [Hora]\n\nCaso estas opções não sejam convenientes, por favor, indiquem a vossa disponibilidade.\n\nCom os melhores cumprimentos,\nRodrigo Novelo",
+          "user_corrected_output_text": "Boa noite,\n\nConfirmo a receção do vosso e-mail e a solicitação de agendamento de uma reunião para a próxima semana.\n\nEm anexo, segue o relatório de progresso mais recente do projeto.\n\nProponho as seguintes datas e horários para a nossa reunião:\n\n* Terça-feira, [Data], às [Hora]\n* Quinta-feira, [Data], às [Hora]\n\nCaso estas opções não sejam convenientes, por favor, indiquem a vossa disponibilidade.\n\nCom os melhores cumprimentos,\nRodrigo Novelo",
+          "interaction_context_snapshot": {}
         }
       ],
       "personal_knowledge_base": [
         {
-          "content": "A minha morada para envio de correspondência é Rua da Universidade, Bloco A, 3030-790 Coimbra.",
+          "label": "Morada para Correspondência",
+          "value": "Rua da Universidade, Bloco A, 3030-790 Coimbra",
           "type": "fact",
-          "trigger_keywords": [
+          "keywords": [
             "morada",
             "endereço",
             "correspondencia",
@@ -151,9 +183,10 @@
           "id": "mem_abaf17cb"
         },
         {
-          "content": "Para processamento de bolsas ou pagamentos, o meu IBAN é PT50 0000 0000 0000 0000 0000 0",
+          "label": "IBAN para Bolsas/Pagamentos",
+          "value": "PT50 0000 0000 0000 0000 0000 0",
           "type": "fact",
-          "trigger_keywords": [
+          "keywords": [
             "iban",
             "banco",
             "transferencias",
@@ -165,9 +198,10 @@
           "id": "mem_16e0c7cc"
         },
         {
-          "content": "O meu perfil de LinkedIn pode ser consultado em https://linkedin.com/in/rodrigonovelo.",
+          "label": "Perfil de LinkedIn",
+          "value": "https://linkedin.com/in/rodrigonovelo",
           "type": "fact",
-          "trigger_keywords": [
+          "keywords": [
             "linkedin",
             "cv",
             "curriculo",
@@ -179,9 +213,10 @@
           "id": "mem_410968a7"
         },
         {
-          "content": "A minha tarefa prioritária para a próxima semana é organizar a representação visual da ontologia por layers, para que corresponda exatamente à estrutura hierárquica do ficheiro .json.",
+          "label": "Tarefa Prioritária (Próxima Semana)",
+          "value": "Organizar a representação visual da ontologia por layers, para que corresponda exatamente à estrutura hierárquica do ficheiro .json.",
           "type": "fact",
-          "trigger_keywords": [
+          "keywords": [
             "próxima semana",
             "próximo passo",
             "tarefa",
@@ -191,9 +226,10 @@
           "id": "mem_base_proj_next_task"
         },
         {
-          "content": "O Professor Rodrigo Rocha Silva é o meu orientador. A nossa última conversa foi sobre a necessidade de focar o projeto em exemplos práticos e não apenas na teoria.",
+          "label": "Orientador de Projeto",
+          "value": "Professor Rodrigo Rocha Silva. A nossa última conversa foi sobre a necessidade de focar o projeto em exemplos práticos e não apenas na teoria.",
           "type": "fact",
-          "trigger_keywords": [
+          "keywords": [
             "rodrigo rocha silva",
             "rrochas",
             "orientador",
@@ -222,7 +258,8 @@
           "Factualidade: Nunca tomar decisões ou fazer suposições pelo utilizador (ex: perdoar uma dívida, assumir que algo foi uma oferta). Apenas fornecer a informação pedida de forma direta e factual.",
           "Estrutura da Resposta: Integrar a informação num texto coeso e natural, em vez de a listar ponto por ponto. A resposta deve fluir como uma conversa normal, mantendo a eficiência sem parecer um relatório.",
           "Adaptação ao Interlocutor: O nível de formalidade da saudação e da despedida deve espelhar a relação com a pessoa, variando entre um tom amigável (colegas) e um tom mais pessoal (amigos íntimos).",
-          "Assinatura: A despedida deve ser breve e adequada ao contexto. Assinar sempre com o primeiro nome, 'Rodrigo'."
+          "Assinatura: A despedida deve ser breve e adequada ao contexto. Assinar sempre com o primeiro nome, 'Rodrigo'.",
+          "Regra de Relevância: Usar factos da memória APENAS E SÓ se responderem diretamente a uma pergunta explícita no e-mail original. Nunca oferecer informação da memória que não tenha sido solicitada, mesmo que o tema seja relacionado."
         ]
       },
       "default_components": {
@@ -234,9 +271,10 @@
       "learned_knowledge_base": [],
       "personal_knowledge_base": [
         {
-          "content": "nickname no discord é #Alyrik2302",
+          "label": "Nickname (Discord)",
+          "value": "#Alyrik2302",
           "type": "fact",
-          "trigger_keywords": [
+          "keywords": [
             "discord",
             "nickname",
             "username",
@@ -245,9 +283,10 @@
           "id": "mem_66947868"
         },
         {
-          "content": "Para jogar, o meu nick na Steam é 'Rodri2302' e na PSN é 'Alyrik2302'.",
+          "label": "Nicknames (Gaming)",
+          "value": "Steam: 'Rodri2302', PSN: 'Alyrik2302'",
           "type": "fact",
-          "trigger_keywords": [
+          "keywords": [
             "steam",
             "psn",
             "playstation",
@@ -259,11 +298,13 @@
           "id": "mem_34a5e503"
         },
         {
-          "content": "Para pagamentos, o meu MBWAY é 911222357.",
+          "label": "MBWAY (Contacto)",
+          "value": "911222357",
           "type": "fact",
-          "trigger_keywords": [
+          "keywords": [
             "mbway",
-            "pagamento"
+            "pagamento",
+            "enviar dinheiro"
           ],
           "id": "mem_informal_mbway"
         }

@@ -88,7 +88,7 @@
                     <div class="chart-container">
                         <canvas id="statusChart"></canvas>
                         <div class="chart-center">
-                            <h3 id="chartCenterMetric">85%</h3>
+                            <h3 id="chartCenterMetric">0%</h3>
                             <p>Enviados</p>
                         </div>
                     </div>
@@ -401,25 +401,30 @@
         </div>
     </div>
 
+    <!-- MODAL DE GESTÃO DE MEMÓRIA ATUALIZADO -->
     <div class="modal fade" id="memoryManagementModal" tabindex="-1" aria-labelledby="memoryManagementModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="memoryManagementModalLabel"><i class="fas fa-brain me-2"></i> Memória Central da Persona: <span id="memoryPersonaName"></span></h5>
+                    <h5 class="modal-title" id="memoryManagementModalLabel"><i class="fas fa-brain me-2"></i> Memória Central: <span id="memoryPersonaName"></span></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="row">
-                        <div class="col-lg-4">
-                            <h6 id="memoryFormTitle">Adicionar Nova Memória</h6>
+                        <div class="col-lg-5">
+                            <h6 id="memoryFormTitle">Adicionar Novo Facto</h6>
                             <form id="memoryForm">
                                 <div id="memoryFormError" class="error-message mb-3" style="display: none;"></div>
                                 <input type="hidden" id="currentMemoryId">
                                 <input type="hidden" id="currentMemoryPersonaKey">
 
                                 <div class="mb-3">
-                                    <label for="memoryContentInput" class="form-label">Conteúdo do Conhecimento:</label>
-                                    <textarea class="form-control" id="memoryContentInput" rows="5" required placeholder="Ex: O meu NIF é 123456789."></textarea>
+                                    <label for="memoryLabelInput" class="form-label">Etiqueta do Facto (Label):</label>
+                                    <input type="text" class="form-control" id="memoryLabelInput" required placeholder="Ex: NIF, Contacto Telefónico, IBAN">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="memoryValueInput" class="form-label">Valor do Facto (Value):</label>
+                                    <textarea class="form-control" id="memoryValueInput" rows="3" required placeholder="Ex: 123456789, 912345678, PT50..."></textarea>
                                 </div>
                                 <div class="mb-3">
                                     <label for="memoryTypeSelect" class="form-label">Tipo de Conhecimento:</label>
@@ -431,27 +436,27 @@
                                     </select>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="memoryTriggersInput" class="form-label">Palavras-chave de Ativação:</label>
-                                    <input type="text" class="form-control" id="memoryTriggersInput" placeholder="Ex: nif, fiscal, fatura, telemovel">
+                                    <label for="memoryKeywordsInput" class="form-label">Palavras-chave de Ativação (Keywords):</label>
+                                    <input type="text" class="form-control" id="memoryKeywordsInput" placeholder="Ex: nif, fiscal, fatura, telemovel">
                                     <div class="form-text text-secondary">Separadas por vírgulas. Ajuda a IA a encontrar esta memória.</div>
                                 </div>
                                 <button type="submit" class="btn btn-primary" id="saveMemoryBtn">
                                     <div class="spinner-border spinner-border-sm loading-spinner" role="status" id="saveMemorySpinner"></div>
-                                    Guardar Memória
+                                    Guardar Facto
                                 </button>
                                 <button type="button" class="btn btn-secondary" id="cancelEditMemoryBtn" style="display: none;">Cancelar Edição</button>
                             </form>
                         </div>
 
-                        <div class="col-lg-8">
-                            <h6>Memórias Guardadas</h6>
+                        <div class="col-lg-7">
+                            <h6>Factos Guardados</h6>
                             <div id="memoryListError" class="error-message" style="display: none;"></div>
-                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <div class="table-responsive" style="max-height: 450px; overflow-y: auto;">
                                 <table class="table table-hover">
                                     <thead>
                                         <tr>
-                                            <th>Tipo</th>
-                                            <th>Conteúdo</th>
+                                            <th>Etiqueta (Label)</th>
+                                            <th>Valor (Value)</th>
                                             <th>Palavras-chave</th>
                                             <th>Ações</th>
                                         </tr>

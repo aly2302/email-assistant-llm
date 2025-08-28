@@ -69,7 +69,7 @@ const confirmDeletePersonaBtn = document.getElementById('confirmDeletePersonaBtn
 const deletePersonaSpinner = document.getElementById('deletePersonaSpinner');
 const currentPersonaKeyInput = document.getElementById('currentPersonaKey');
 
-// --- Seletores para Gestão de Memória ---
+// --- Seletores para Gestão de Memória (ATUALIZADOS) ---
 const memoryManagementModalEl = document.getElementById('memoryManagementModal');
 const memoryPersonaNameEl = document.getElementById('memoryPersonaName');
 const memoryFormTitleEl = document.getElementById('memoryFormTitle');
@@ -77,15 +77,17 @@ const memoryForm = document.getElementById('memoryForm');
 const memoryFormErrorEl = document.getElementById('memoryFormError');
 const currentMemoryIdInput = document.getElementById('currentMemoryId');
 const currentMemoryPersonaKeyInput = document.getElementById('currentMemoryPersonaKey');
-const memoryContentInput = document.getElementById('memoryContentInput');
+const memoryLabelInput = document.getElementById('memoryLabelInput');
+const memoryValueInput = document.getElementById('memoryValueInput');
 const memoryTypeSelect = document.getElementById('memoryTypeSelect');
-const memoryTriggersInput = document.getElementById('memoryTriggersInput');
+const memoryKeywordsInput = document.getElementById('memoryKeywordsInput');
 const saveMemoryBtn = document.getElementById('saveMemoryBtn');
 const saveMemorySpinner = document.getElementById('saveMemorySpinner');
 const cancelEditMemoryBtn = document.getElementById('cancelEditMemoryBtn');
 const memoryListErrorEl = document.getElementById('memoryListError');
 const memoryTableBody = document.getElementById('memoryTableBody');
 const manageBaseMemoryBtn = document.getElementById('manageBaseMemoryBtn');
+
 
 // --- Seletores para Dashboard ---
 const navButtons = document.querySelectorAll('.nav-btn');
@@ -158,10 +160,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (isLoggedIn) {
         initializeMainApp();
-        fetchDashboardData();  // Load dashboard data on start
+        fetchDashboardData();
     }
 
-    // View Switching
     navButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             navButtons.forEach(b => b.classList.remove('active'));
@@ -175,18 +176,15 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initializeMainApp() {
-    // Inicialização dos Modais
     if (feedbackModalEl) feedbackModalInstance = new bootstrap.Modal(feedbackModalEl);
     if (sendEmailConfirmModalEl) sendEmailConfirmModalInstance = new bootstrap.Modal(sendEmailConfirmModalEl);
     if (personaFormModalEl) personaFormModalInstance = new bootstrap.Modal(personaFormModalEl);
     if (deletePersonaConfirmModalEl) deletePersonaConfirmModalInstance = new bootstrap.Modal(deletePersonaConfirmModalEl);
     if (memoryManagementModalEl) memoryManagementModalInstance = new bootstrap.Modal(memoryManagementModalEl);
-
     if (document.getElementById('reviewDraftModal')) {
         reviewDraftModalInstance = new bootstrap.Modal(document.getElementById('reviewDraftModal'));
     }
 
-    // Adiciona Event Listeners
     analyzeBtn.addEventListener('click', handleAnalysisAndAdvance);
     draftBtn.addEventListener('click', handleDrafting);
     copyDraftBtn.addEventListener('click', handleCopy);
@@ -219,18 +217,12 @@ function initializeMainApp() {
     personasTableBody.addEventListener('click', handlePersonaTableClick);
     confirmDeletePersonaBtn.addEventListener('click', deletePersona);
     draftsTableBody.addEventListener('click', handleDraftAction);
-
-    // Event Listeners para Gestão de Memória
     memoryForm.addEventListener('submit', handleMemoryFormSubmit);
     cancelEditMemoryBtn.addEventListener('click', clearMemoryForm);
     memoryTableBody.addEventListener('click', handleMemoryTableClick);
-    
     manageBaseMemoryBtn.addEventListener('click', openBaseMemoryManagementModal);
-
-    // Draft Actions for Dashboard
     draftsTableBody.addEventListener('click', handleDraftAction);
 
-    // Funções de inicialização for Manual Flow
     showStep(1);
     fetchAndRenderEmails();
     fetchAndRenderPersonas();
@@ -524,7 +516,6 @@ async function handleGuidanceSuggestion(event) {
     }
 }
 
-// --- Lógica de Feedback ---
 function openFeedbackModal() {
     if (!lastGeneratedDraftForFeedback) {
         showError(draftErrorEl, "Não há rascunho para dar feedback.");
@@ -564,7 +555,6 @@ async function submitFeedback() {
     }
 }
 
-// --- Lógica de Envio de Email ---
 async function handleSendEmail() {
     const confirmation = await showSendEmailConfirmation(
         currentOriginalSenderEmail,
@@ -607,7 +597,6 @@ function showSendEmailConfirmation(recipient, subject, bodyPreview) {
     });
 }
 
-// --- Funções para Gestão de Personas ---
 async function fetchAndRenderPersonas() {
     personasTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-secondary">A carregar...</td></tr>';
     try {
@@ -732,7 +721,7 @@ async function deletePersona() {
     }
 }
 
-// --- Funções para Gestão de Memória ---
+// --- Funções para Gestão de Memória (ATUALIZADAS) ---
 async function openMemoryManagementModal(personaKey, personaName) {
     memoryPersonaNameEl.textContent = personaName;
     currentMemoryPersonaKeyInput.value = personaKey;
@@ -741,12 +730,17 @@ async function openMemoryManagementModal(personaKey, personaName) {
     await fetchAndRenderMemories(personaKey);
 }
 
-// EM APP.JS, substitua a sua função fetchAndRenderMemories por esta
+async function openBaseMemoryManagementModal() {
+    memoryPersonaNameEl.textContent = "Base (Partilhada por todas as Personas)";
+    currentMemoryPersonaKeyInput.value = 'base_knowledge'; 
+    clearMemoryForm();
+    memoryManagementModalInstance.show();
+    await fetchAndRenderMemories('base_knowledge'); 
+}
+
 async function fetchAndRenderMemories(contextKey) {
     memoryTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-secondary">A carregar...</td></tr>';
     hideError(memoryListErrorEl);
-
-    // ESCOLHE A ROTA DA API CORRETA: BASE OU PERSONA
     const isBaseContext = contextKey === 'base_knowledge';
     const apiUrl = isBaseContext ? '/api/base_knowledge' : `/api/personas/${contextKey}/memories`;
 
@@ -755,39 +749,21 @@ async function fetchAndRenderMemories(contextKey) {
         if (!response.ok) throw new Error(`Erro: ${response.statusText}`);
         const memories = await response.json();
         memoryTableBody.innerHTML = '';
-
         if (memories.length === 0) {
             memoryTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-secondary">Nenhuma memória guardada.</td></tr>';
             return;
         }
-
         memories.forEach(memory => {
             const tr = document.createElement('tr');
             tr.dataset.memoryId = memory.id;
-
-            let sourceBadge = '';
-            // Se o 'source' não vier da API (no caso da rota /api/base_knowledge), assumimos que é 'Base'
             const source = memory.source || (isBaseContext ? 'Base' : 'Persona');
-            
-            if (source === 'Base') {
-                sourceBadge = `<span class="badge bg-info" title="Esta memória é partilhada por todas as personas.">Base</span>`;
-            } else {
-                sourceBadge = `<span class="badge bg-primary" title="Esta memória é específica desta persona.">Persona</span>`;
-            }
-
-            // ATIVA/DESATIVA BOTÕES COM BASE NO CONTEXTO
-            // Se estamos no contexto de uma persona, os botões para memórias 'Base' são desativados.
-            // Se estamos no contexto 'Base', todos os botões são ativados.
             const buttonsDisabled = !isBaseContext && source === 'Base' ? 'disabled' : '';
             const disabledTitle = buttonsDisabled ? 'title="Memórias Base devem ser editadas no gestor de Memória Base."' : '';
 
             tr.innerHTML = `
-                <td>
-                    <span class="badge bg-secondary me-2">${escapeHtml(memory.type)}</span>
-                    ${sourceBadge}
-                </td>
-                <td>${escapeHtml(memory.content)}</td>
-                <td>${escapeHtml((memory.trigger_keywords || []).join(', '))}</td>
+                <td>${escapeHtml(memory.label)}</td>
+                <td>${escapeHtml(memory.value)}</td>
+                <td>${escapeHtml((memory.keywords || []).join(', '))}</td>
                 <td class="persona-actions">
                     <button class="btn btn-sm btn-info edit-memory-btn" ${buttonsDisabled} ${disabledTitle}><i class="fas fa-edit"></i></button>
                     <button class="btn btn-sm btn-danger delete-memory-btn" ${buttonsDisabled} ${disabledTitle}><i class="fas fa-trash-alt"></i></button>
@@ -803,19 +779,20 @@ async function fetchAndRenderMemories(contextKey) {
 function clearMemoryForm() {
     memoryForm.reset();
     currentMemoryIdInput.value = '';
-    memoryFormTitleEl.textContent = 'Adicionar Nova Memória';
+    memoryFormTitleEl.textContent = 'Adicionar Novo Facto';
     cancelEditMemoryBtn.style.display = 'none';
     hideError(memoryFormErrorEl);
 }
 
 function populateMemoryForm(memoryData) {
     currentMemoryIdInput.value = memoryData.id;
-    memoryContentInput.value = memoryData.content;
+    memoryLabelInput.value = memoryData.label;
+    memoryValueInput.value = memoryData.value;
     memoryTypeSelect.value = memoryData.type;
-    memoryTriggersInput.value = (memoryData.trigger_keywords || []).join(', ');
-    memoryFormTitleEl.textContent = 'Editar Memória';
+    memoryKeywordsInput.value = (memoryData.keywords || []).join(', ');
+    memoryFormTitleEl.textContent = 'Editar Facto';
     cancelEditMemoryBtn.style.display = 'inline-block';
-    memoryContentInput.focus();
+    memoryLabelInput.focus();
 }
 
 async function handleMemoryFormSubmit(event) {
@@ -824,27 +801,25 @@ async function handleMemoryFormSubmit(event) {
     saveMemoryBtn.disabled = true;
     hideError(memoryFormErrorEl);
 
-    // --- LÓGICA ATUALIZADA ---
-    // 1. Determinar o contexto (Base ou Persona) a partir do input escondido
     const contextKey = currentMemoryPersonaKeyInput.value;
     const isBaseContext = contextKey === 'base_knowledge';
     const memoryId = currentMemoryIdInput.value;
     const isEditing = !!memoryId;
 
     const payload = {
-        content: memoryContentInput.value.trim(),
+        label: memoryLabelInput.value.trim(),
+        value: memoryValueInput.value.trim(),
         type: memoryTypeSelect.value,
-        trigger_keywords: memoryTriggersInput.value.split(',').map(k => k.trim()).filter(Boolean)
+        keywords: memoryKeywordsInput.value.split(',').map(k => k.trim()).filter(Boolean)
     };
 
-    if (!payload.content) {
-        showError(memoryFormErrorEl, "O conteúdo não pode estar vazio.");
+    if (!payload.label || !payload.value) {
+        showError(memoryFormErrorEl, "Os campos 'Etiqueta' e 'Valor' são obrigatórios.");
         hideSpinner(saveMemorySpinner);
         saveMemoryBtn.disabled = false;
         return;
     }
 
-    // 2. Definir a URL da API e o método com base no contexto
     let url, method;
     if (isEditing) {
         method = 'PUT';
@@ -864,7 +839,6 @@ async function handleMemoryFormSubmit(event) {
         if (!response.ok) throw new Error(data.error || `Erro HTTP ${response.status}`);
         
         clearMemoryForm();
-        // 3. Recarregar as memórias do contexto em que estamos a trabalhar
         await fetchAndRenderMemories(contextKey);
     } catch (error) {
         showError(memoryFormErrorEl, `Erro ao guardar: ${error.message}`);
@@ -878,20 +852,16 @@ async function handleMemoryTableClick(event) {
     const editBtn = event.target.closest('.edit-memory-btn');
     const deleteBtn = event.target.closest('.delete-memory-btn');
 
-    // --- LÓGICA ATUALIZADA ---
-    // 1. Ignorar cliques em botões desativados (importante para a segurança da UI)
     if ((editBtn && editBtn.disabled) || (deleteBtn && deleteBtn.disabled)) {
         return;
     }
 
-    // 2. Determinar o contexto (Base ou Persona)
     const contextKey = currentMemoryPersonaKeyInput.value;
     const isBaseContext = contextKey === 'base_knowledge';
 
     if (editBtn) {
         const row = editBtn.closest('tr');
         const memoryId = row.dataset.memoryId;
-        // 3. Escolher a API correta para ir buscar os dados para o formulário de edição
         const apiUrl = isBaseContext ? `/api/base_knowledge` : `/api/personas/${contextKey}/memories`;
         
         try {
@@ -907,7 +877,6 @@ async function handleMemoryTableClick(event) {
     if (deleteBtn) {
         const row = deleteBtn.closest('tr');
         const memoryId = row.dataset.memoryId;
-        // 4. Escolher a API correta para enviar o pedido de eliminação
         const apiUrl = isBaseContext ? `/api/base_knowledge/${memoryId}` : `/api/personas/${contextKey}/memories/${memoryId}`;
         
         if (confirm('Tem a certeza que deseja apagar esta memória?')) {
@@ -915,7 +884,6 @@ async function handleMemoryTableClick(event) {
                 const response = await fetch(apiUrl, { method: 'DELETE' });
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error);
-                // 5. Recarregar as memórias do contexto atual para refletir a eliminação
                 await fetchAndRenderMemories(contextKey);
             } catch (error) {
                 showError(memoryListErrorEl, `Erro ao apagar: ${error.message}`);
@@ -938,7 +906,6 @@ async function fetchDashboardData() {
         chartCenterMetric.textContent = `${sentPercentage}%`;
     } catch (error) {
         console.error('Erro ao carregar dados do dashboard:', error);
-        // Opcional: mostrar um erro no UI
     }
 }
 
@@ -946,29 +913,16 @@ function updateKPICards(data) {
     const animateCount = (element, endValue) => {
         const startValue = parseInt(element.dataset.count, 10) || 0;
         if (startValue === endValue) return;
-
-        let current = startValue;
-        const increment = endValue > startValue ? 1 : -1;
-        const stepTime = Math.abs(Math.floor(1000 / (endValue - startValue))) || 50;
-
-        const timer = setInterval(() => {
-            current += increment;
-            element.textContent = current;
-            if (current == endValue) {
-                clearInterval(timer);
-            }
-        }, stepTime);
+        element.textContent = endValue; // Simple update without animation for now
     };
 
     kpiValues.forEach(card => {
-        // CORREÇÃO: Usar dataset.status do elemento pai (o .kpi-card)
         const status = card.parentElement.dataset.status; 
         const count = data[status] || 0;
         animateCount(card, count);
-        card.dataset.count = count; // Atualiza o valor para a próxima animação
+        card.dataset.count = count;
     });
 }
-
 
 function updateDraftsTable(drafts) {
     draftsTableBody.innerHTML = '';
@@ -1049,7 +1003,7 @@ async function handleDraftAction(event) {
 
     if (action === 'review') {
         openReviewModal(draftId);
-        return; // Pára a execução aqui para o botão de rever
+        return;
     }
     
     btn.disabled = true;
@@ -1086,20 +1040,6 @@ async function handleDraftAction(event) {
     }
 }
 
-// EM APP.JS, pode adicionar esta função perto da openMemoryManagementModal
-function openBaseMemoryManagementModal() {
-    memoryPersonaNameEl.textContent = "Base (Partilhada por todas as Personas)";
-    
-    // Usamos o mesmo input escondido para guardar o 'contexto', mas com um valor especial
-    currentMemoryPersonaKeyInput.value = 'base_knowledge'; 
-    
-    clearMemoryForm();
-    memoryManagementModalInstance.show();
-    
-    // Chamamos a função de renderização, que agora saberá o que fazer
-    fetchAndRenderMemories('base_knowledge'); 
-}
-
 async function openReviewModal(draftId) {
     const reviewErrorEl = document.getElementById('reviewError');
     hideError(reviewErrorEl);
@@ -1110,7 +1050,6 @@ async function openReviewModal(draftId) {
         const draft = await response.json();
         if (draft.error) throw new Error(draft.error);
 
-        // O erro acontece numa destas 4 linhas se os IDs não corresponderem ao HTML
         document.getElementById('reviewDraftId').value = draft.id;
         document.getElementById('reviewRecipient').value = draft.recipient;
         document.getElementById('reviewSubject').value = draft.subject;
@@ -1135,7 +1074,6 @@ async function handleSaveAndApprove() {
     hideError(reviewErrorEl);
 
     try {
-        // Passo 1: Guarda as alterações na base de dados (chama a rota PUT)
         const updateResponse = await fetch(`/api/draft/${draftId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -1143,12 +1081,11 @@ async function handleSaveAndApprove() {
         });
         if (!updateResponse.ok) throw new Error("Falha ao guardar as alterações.");
 
-        // Passo 2: Envia o e-mail (chama a rota de envio que já existia)
         const sendResponse = await fetch(`/api/draft/${draftId}/send`, { method: 'POST' });
         if (!sendResponse.ok) throw new Error("Alterações guardadas, mas falha ao enviar o email.");
 
         reviewDraftModalInstance.hide();
-        await fetchDashboardData(); // Atualiza o dashboard
+        await fetchDashboardData();
 
     } catch (error) {
         showError(reviewErrorEl, error.message);

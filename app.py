@@ -23,6 +23,9 @@ import sqlite3
 from automation.database import get_pending_draft, update_draft_status, save_user_credentials, get_user_credentials, is_thread_processed, mark_thread_as_processed, get_dashboard_stats, get_draft_by_id, update_draft_body
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+from sentence_transformers import SentenceTransformer, util
+import torch
+
 # --- CONFIGURAÇÃO INICIAL E CONSTANTES ---
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 load_dotenv()
@@ -39,6 +42,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ONTOLOGY_FILE = os.path.join(BASE_DIR, 'personas2.0.json')
 CLIENT_SECRETS_FILE = os.path.join(BASE_DIR, 'client_secret.json')
 DATABASE_FILE = os.path.join(BASE_DIR, 'automation.db')
+
+# Carrega o modelo de embedding uma vez para toda a aplicação
+embedding_model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
 
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1) 
@@ -161,32 +167,52 @@ def calculate_relevance_for_corrections(new_email_words, learned_corrections, to
     scored_rules.sort(key=lambda x: x[0], reverse=True)
     return [rule_text for score, rule_text in scored_rules[:top_n] if rule_text]
 
-def find_relevant_knowledge(new_email_text, personal_knowledge, learned_corrections, top_n=10):
-    """
-    Encontra o conhecimento relevante com base em keywords.
-    Devolve os objetos de memória completos.
-    """
-    if not new_email_text: 
-        return [], []
 
+
+def find_relevant_knowledge(new_email_text, all_knowledge, learned_corrections):
+    """
+    Função híbrida que executa busca por palavras-chave e semântica em paralelo,
+    combinando os resultados para máxima precisão e descoberta contextual.
+    """
+    logging.info("A executar busca HÍBRIDA (Keywords + Semântica).")
     stopwords = set(['a', 'o', 'e', 'de', 'do', 'da', 'em', 'um', 'uma', 'com', 'por', 'para'])
     new_email_words = set(re.sub(r'[^\w\s]', '', unidecode.unidecode(new_email_text.lower())).split()) - stopwords
-
-    # 1. Busca na Memória Explícita (personal_knowledge_base)
-    relevant_memories = [
-        mem for mem in personal_knowledge
+    
+    # --- BUSCA 1: PALAVRAS-CHAVE (PARA PRECISÃO MÁXIMA) ---
+    keyword_matches = [
+        mem for mem in all_knowledge
         if mem.get("value") and not set(mem.get("keywords", [])).isdisjoint(new_email_words)
     ]
-    
-    top_memories = relevant_memories[:top_n]
 
-    # 2. Busca nas Correções Implícitas (learned_knowledge_base)
-    top_corrections = calculate_relevance_for_corrections(new_email_words, learned_corrections, top_n=2)
-    
-    if top_memories or top_corrections:
-        logging.info(f"Conhecimento relevante encontrado: {len(top_memories)} memórias, {len(top_corrections)} correções.")
+    # --- BUSCA 2: SEMÂNTICA (PARA DESCOBERTA DE CONTEXTO) ---
+    semantic_matches = []
+    try:
+        email_embedding = embedding_model.encode(new_email_text, convert_to_tensor=True)
+        memories_with_embedding = [mem for mem in all_knowledge if 'embedding' in mem]
+        if memories_with_embedding:
+            memory_embeddings = torch.tensor([mem['embedding'] for mem in memories_with_embedding])
+            cosine_scores = util.cos_sim(email_embedding, memory_embeddings)[0]
+            top_results = torch.topk(cosine_scores, k=min(3, len(memories_with_embedding))) # Top 3 contextuais
 
-    return top_memories, top_corrections
+            for score, idx in zip(top_results[0], top_results[1]):
+                if score > 0.45: # Limiar de relevância ajustado
+                    semantic_matches.append(memories_with_embedding[int(idx)])
+    except Exception as e:
+        logging.error(f"Erro durante a busca semântica: {e}")
+
+    # --- FASE 3: UNIR RESULTADOS E REMOVER DUPLICADOS ---
+    combined_matches = keyword_matches + semantic_matches
+    final_memories = []
+    seen_ids = set()
+    for mem in combined_matches:
+        if (mem_id := mem.get("id")) and mem_id not in seen_ids:
+            final_memories.append(mem)
+            seen_ids.add(mem_id)
+
+    relevant_corrections = calculate_relevance_for_corrections(new_email_words, learned_corrections)
+    
+    logging.info(f"Busca Híbrida encontrou: {len(final_memories)} memórias ({len(keyword_matches)} por keyword, {len(semantic_matches)} por semântica) e {len(relevant_corrections)} correções.")
+    return final_memories, relevant_corrections
 
 # --- ROTAS DE AUTENTICAÇÃO E GMAIL API ---
 # (As rotas /login, /authorize, /logout, get_gmail_service, /api/emails, /api/thread, /api/send_email permanecem as mesmas)
@@ -397,7 +423,6 @@ def draft_response_route():
     relevant_memories, relevant_corrections = find_relevant_knowledge(
         original_email, combined_knowledge, learned_corrections
     )
-
         # --- INÍCIO DA LÓGICA DE ESTADO E DESCONFLITUALIZAÇÃO (VERSÃO FINAL) ---
     final_task_instruction = "A sua tarefa é escrever um rascunho de e-mail completo e natural, seguindo as instruções."
 

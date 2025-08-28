@@ -131,6 +131,7 @@ def process_new_email(thread_id, user_credentials):
         combined_knowledge = base_knowledge + persona_specific_knowledge
 
         learned_corrections = persona.get("learned_knowledge_base", [])
+
         relevant_memories, relevant_corrections = find_relevant_knowledge(
             email_body_text, combined_knowledge, learned_corrections
         )

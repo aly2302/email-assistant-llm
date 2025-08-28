@@ -159,13 +159,6 @@
           "interaction_context_snapshot": {
             "original_email_text": "qual o status do relatório e quando vamos reunir?"
           }
-        },
-        {
-          "timestamp_utc": "2025-08-27T22:30:29.425425+00:00",
-          "inferred_rule_pt": "Usar memórias guardadas APENAS quando os factos guardados são DIRETAMENTE requisitados.",
-          "ai_original_response_text": "Boa noite,\n\nConfirmo a receção do vosso e-mail e a solicitação de agendamento de uma reunião para a próxima semana.\n\nEm anexo, segue o relatório de progresso mais recente do meu projeto de licenciatura, intitulado 'A Literature Review of Personalized Large Language Models for Email Automation', desenvolvido no âmbito da Licenciatura em Engenharia Informática no ISEC.\n\nProponho as seguintes datas e horários para a nossa reunião:\n\n* Terça-feira, [Data], às [Hora]\n* Quinta-feira, [Data], às [Hora]\n\nCaso estas opções não sejam convenientes, por favor, indiquem a vossa disponibilidade.\n\nCom os melhores cumprimentos,\nRodrigo Novelo",
-          "user_corrected_output_text": "Boa noite,\n\nConfirmo a receção do vosso e-mail e a solicitação de agendamento de uma reunião para a próxima semana.\n\nEm anexo, segue o relatório de progresso mais recente do projeto.\n\nProponho as seguintes datas e horários para a nossa reunião:\n\n* Terça-feira, [Data], às [Hora]\n* Quinta-feira, [Data], às [Hora]\n\nCaso estas opções não sejam convenientes, por favor, indiquem a vossa disponibilidade.\n\nCom os melhores cumprimentos,\nRodrigo Novelo",
-          "interaction_context_snapshot": {}
         }
       ],
       "personal_knowledge_base": [
@@ -214,19 +207,6 @@
           "id": "mem_410968a7"
         },
         {
-          "label": "Tarefa Prioritária (Próxima Semana)",
-          "value": "Organizar a representação visual da ontologia por layers, para que corresponda exatamente à estrutura hierárquica do ficheiro .json.",
-          "type": "fact",
-          "keywords": [
-            "próxima semana",
-            "próximo passo",
-            "tarefa",
-            "o que vais fazer",
-            "foco"
-          ],
-          "id": "mem_base_proj_next_task"
-        },
-        {
           "label": "Orientador de Projeto",
           "value": "Professor Rodrigo Rocha Silva. A nossa última conversa foi sobre a necessidade de focar o projeto em exemplos práticos e não apenas na teoria.",
           "type": "fact",
@@ -237,6 +217,49 @@
             "professor"
           ],
           "id": "mem_da182965"
+        },
+        {
+          "label": "Disponibilidade para reuniões (Semana Corrente)",
+          "value": "Terças e quintas à tarde às 12h (PT) e sextas à tarde.",
+          "type": "fact",
+          "keywords": [
+            "disponibilidade",
+            "reunir",
+            "marcar",
+            "quando podes",
+            "horario",
+            "agenda"
+          ],
+          "id": "mem_c03458a4"
+        },
+        {
+          "label": "Estado Atual do Projeto de Licenciatura",
+          "value": "Estou a testar o código que fiz e a fazer o relatório final... está-me a dar mais trabalho do que aquilo que pensava porque tive que incluir aqui também de forma correta informação que já tinha no Artigo.",
+          "type": "fact",
+          "keywords": [
+            "ponto da situação",
+            "como está o projeto",
+            "estado do projeto",
+            "progresso",
+            "projeto",
+            "atualização",
+            "trabalho"
+          ],
+          "id": "mem_b82c96f0"
+        },
+        {
+          "label": "Stack Tecnológica Principal do Projeto",
+          "value": "A stack principal do projeto consiste num backend em Python com a framework Flask, que utiliza Celery e Redis para o processamento de tarefas assíncronas e uma base de dados SQLite para a persistência de dados. O frontend é uma aplicação web standard construída com HTML, CSS e JavaScript, que comunica com o backend através de uma API REST. O sistema integra-se com as APIs externas da Google (Gmail), Gemini (para a IA generativa) e Pushover (para notificações).",
+          "type": "fact",
+          "keywords": [
+            "stack",
+            "tecnologias",
+            "framework",
+            "linguagens",
+            "codigo",
+            "ferramentas"
+          ],
+          "id": "mem_8ae44e77"
         }
       ]
     },
@@ -256,7 +279,6 @@
         "key_principles": [
           "Identidade: És um indivíduo a falar com amigos/colegas, não um assistente formal.",
           "Tom: Casual, direto, pragmático. Foco na informação, sem entusiasmo forçado ou clichés.",
-          "Factualidade: Nunca tomar decisões ou fazer suposições (ex: perdoar dívidas). Apenas dar os factos pedidos.",
           "Saudação: Casual ('Boas,', 'Olá,') ou omitida se a resposta for muito rápida.",
           "Estrutura: Integrar a informação naturalmente no texto, não em listas.",
           "Assinatura: Assinar sempre como 'Rodrigo', com despedida breve e contextual.",
@@ -308,6 +330,32 @@
             "enviar dinheiro"
           ],
           "id": "mem_informal_mbway"
+        },
+        {
+          "label": "Disponibilidade para ir ao ginásio",
+          "value": "segundas, terças e quintas às 18h",
+          "type": "fact",
+          "keywords": [
+            "ginásio",
+            "disponibilidade",
+            "gym"
+          ],
+          "id": "mem_7d79f80a"
+        },
+        {
+          "label": "Hobbies Atuais",
+          "value": "Tenho andado a jogar Elden Ring, comecei a ver a nova temporada de House of the Dragon e tenho ido correr. Quero começar a ler também com mais frequência.",
+          "type": "fact",
+          "keywords": [
+            "hobbies",
+            "o que tens feito",
+            "hobby",
+            "tempos livres",
+            "jogar",
+            "correr",
+            "ver"
+          ],
+          "id": "mem_246548df"
         }
       ]
     }

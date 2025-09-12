@@ -1,3 +1,23 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment variables
 .env
-.env*
+.env.*
+!.env.example
+
+# Secrets
 client_secret.json
+
+# Databases
+*.db
+*.sqlite3
+
+# Virtual environment
+venv/
+.venv/
+env/
+.env/

@@ -91,6 +91,3 @@ celery -A automation.celery_worker.celery worker --loglevel=info
 
 Related Publications
 This project is the practical implementation of the research presented in: https://www.mdpi.com/1999-5903/17/12/536
-
-License
-This project is open-source for educational usage.
